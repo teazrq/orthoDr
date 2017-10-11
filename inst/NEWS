@@ -1,0 +1,15 @@
+Package: orthoDr
+Version: 0.2.0
+
+----------------------------------------------------------------------------------
+Added an experimental version of the semi-direct learning of personalized medicine
+model. Also added the efficient estimation procedure of Ma and Zhu (2013).
+----------------------------------------------------------------------------------
+
+Package: orthoDr
+Version: 0.1.0
+
+----------------------------------------------------------------------------------
+This is the first release of this package on CRAN.
+----------------------------------------------------------------------------------
+

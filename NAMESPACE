@@ -1,0 +1,12 @@
+exportPattern("^[[:alpha:]]+")
+
+importFrom("Rcpp", "evalCpp")
+importFrom("pracma", "gramSchmidt")
+importFrom("stats", "cancor", "cov", "dist", "weighted.mean", "sd")
+importFrom("survival", "survfit", "Surv")
+importFrom("plot3D", "mesh")
+importFrom("rgl", "surface3d", "axis3d", "mtext3d", "box3d")
+importFrom("grDevices", "rainbow")
+importFrom("graphics", "legend", "par", "plot", "plot.new")
+
+useDynLib(orthoDr)

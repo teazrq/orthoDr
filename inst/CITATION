@@ -1,0 +1,36 @@
+citHeader("To cite orthoDr in publications use:")
+
+titl <- meta$Title
+year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
+vers <- paste("R package version", meta$Version)
+
+citEntry(entry="Manual",
+         title = titl,
+         author = personList(person(family="Zhao", given="Ruilin"),
+                             person(family="Zhang", given="Jiyang"),
+                             person(family="Zhu", given="Ruoqing")),
+	       publisher = "manual",
+         year         = year,
+         note         = vers,
+         url          = "https://cran.r-project.org/package=orthoDr",
+         pdf          = "https://cran.r-project.org/web/packages/orthoDr/orthoDr.pdf",
+         textVersion =
+         paste("Zhao, R., Zhang, J., Zhu, R. (",year ,"). ",
+               titl, ", ", vers, ".", sep=""))
+
+citEntry(entry="Article",
+         title  = "Counting Process Based Dimension Reduction Method for Censored Outcomes",
+         author = personList(person(family="Sun", given="Qiang"),
+	                           person(family="Zhu", given="Ruoqing"),
+	                           person(family="Wang", given="Tao"),
+	                           person(family="Zeng", given="Donglin")),
+	       journal      = "arXiv preprint arXiv:1704.05046",
+         year         = "2017",
+         url          = "https://arxiv.org/pdf/1704.05046.pdf",
+
+         textVersion =
+         paste("Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2017). ",
+               "Counting Process Based Dimension Reduction Method for Censored Outcomes. ",
+               "arXiv preprint arXiv:1704.05046",
+               sep=""))
+
