@@ -1,12 +1,30 @@
 Package: orthoDr
+
+Version: 0.5.1
+
+----------------------------------------------------------------------------------
+Fixed minor compiling issues.
+----------------------------------------------------------------------------------
+
+Version: 0.5.0
+
+----------------------------------------------------------------------------------
+Added additonal regression functions. Added additional features for kernel predic-
+tion based on the dimentionality reduced space.
+----------------------------------------------------------------------------------
+
+Version: 0.3.0
+
+----------------------------------------------------------------------------------
+Added parallel computing using OpenMP.
+----------------------------------------------------------------------------------
+
 Version: 0.2.0
 
 ----------------------------------------------------------------------------------
-Added an experimental version of the semi-direct learning of personalized medicine
-model. Also added the efficient estimation procedure of Ma and Zhu (2013).
+Improved speed.
 ----------------------------------------------------------------------------------
 
-Package: orthoDr
 Version: 0.1.0
 
 ----------------------------------------------------------------------------------

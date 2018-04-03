@@ -3,7 +3,7 @@
 #' @param s1 first space
 #' @param s2 second space
 #' @param type type of distance measures: "dist" (default), "trace" or "canonical"
-#' @param x the covairate values, for canonical correlation only
+#' @param x the covariate values, for canonical correlation only
 #' @return The distance between \code{s1} and \code{s2}.
 #' @examples
 #' # two spaces
@@ -28,8 +28,11 @@ distance <- function(s1, s2, type = "dist", x = NULL)
   if (!is.vector(s2))
     s2 = as.matrix(s2)
 
-  if (ncol(s1) != ncol(s2) || nrow(s1) != nrow(s2))
-    stop("Dimention of two spaces do not match. Try using matrices.")
+  if (nrow(s1) != nrow(s2))
+    stop("Dimension P of two spaces do not match.")
+
+  if (ncol(s1) != ncol(s2))
+    warning("Dimention d of two spaces do not match.")
 
   match.arg(type, c("dist", "trace", "canonical"))
 
@@ -53,7 +56,9 @@ distance <- function(s1, s2, type = "dist", x = NULL)
       stop("x must be specified if use type = 'canonical'")
 
     if (ncol(x)!= nrow(s1))
-      stop("dimention of x is not correct.")
+      stop("Dimension of x is not correct.")
+
+
 
     return( mean(cancor(x %*% s1, x %*% s2, xcenter = FALSE, ycenter = FALSE)$cor) )
   }

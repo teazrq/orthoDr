@@ -3,7 +3,7 @@
 #' @description Silverman bandwidth
 #' @param d Number of dimension
 #' @param n Number of observation
-#' @return A simple bandwith choice
+#' @return A simple bandwidth choice
 #' @examples
 #' silverman(1, 300)
 

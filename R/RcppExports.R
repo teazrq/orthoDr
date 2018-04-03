@@ -27,19 +27,194 @@
 #' # gen_solver(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 #' # to solve for the parameters B.
 gen_solver <- function(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose) {
-    .Call('_orthoDr_gen_solver', PACKAGE = 'orthoDr', B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+    .Call(`_orthoDr_gen_solver`, B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 }
 
-#' @title surv_solver
-#' @name surv_solver
-#' @description The main optimization function for survival dimensional reduction, the IR-CP method. This is an internal function and should not be called directly.
+#' @title local_f
+#' @name local_f
+#' @description local method f value function
+#' @keywords internal
+local_f <- function(B, X, Y, bw, ncore) {
+    .Call(`_orthoDr_local_f`, B, X, Y, bw, ncore)
+}
+
+#' @title local semi regression solver \code{C++} function
+#' @name local_solver
+#' @description Sovling the local semiparametric estimating equations. This is an internal function and should not be called directly.
 #' @keywords internal
 #' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
-#' @param X The covariate matrix
+#' @param X A matrix of the parameters \code{X}
+#' @param Y A matrix of the parameters \code{Y}
+#' @param bw Kernel bandwidth for X
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for apprximating numerical gradient, if \code{g} is not given.
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Functional value tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @references Ma, Y., & Zhu, L. (2013). "Efficient estimation in sufficient dimension reduction." Annals of statistics, 41(1), 250.
+#' DOI:10.1214/12-AOS1072 \url{https://projecteuclid.org/euclid.aos/1364302742}
+#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#'
+local_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_local_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title phd_init
+#' @name phd_init
+#' @description phd initial value function
+#' @keywords internal
+phd_init <- function(B, X, Y, bw, ncore) {
+    .Call(`_orthoDr_phd_init`, B, X, Y, bw, ncore)
+}
+
+#' @title semi-phd solver \code{C++} function
+#' @name phd_solver
+#' @description Sovling the semi-phd estimating equations. This is an internal function and should not be called directly.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X A matrix of the parameters \code{X}
+#' @param Y A matrix of the parameters \code{Y}
+#' @param bw Kernel bandwidth for X
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for apprximating numerical gradient, if \code{g} is not given.
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Functional value tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
+#' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
+#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#'
+phd_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_phd_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title save_init
+#' @name save_init
+#' @description save initial value function
+#' @keywords internal
+save_init <- function(B, X, Y, bw, ncore) {
+    .Call(`_orthoDr_save_init`, B, X, Y, bw, ncore)
+}
+
+#' @title semi-save solver \code{C++} function
+#' @name save_solver
+#' @description Sovling the semi-save estimating equations. This is an internal function and should not be called directly.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X A matrix of the parameters \code{X}
+#' @param Y A matrix of the parameters \code{Y}
+#' @param bw Kernel bandwidth for X
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for apprximating numerical gradient, if \code{g} is not given.
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Functional value tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @references Ma, Y. & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
+#' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
+#' @references Wen, Z. & Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#'
+save_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_save_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title seff_init
+#' @name seff_init
+#' @description semiparametric efficient method initial value function
+#' @keywords internal
+seff_init <- function(B, X, Y, bw, ncore) {
+    .Call(`_orthoDr_seff_init`, B, X, Y, bw, ncore)
+}
+
+#' @title Eff semi regression solver \code{C++} function
+#' @name seff_solver
+#' @description Sovling the semiparametric efficient estimating equations. This is an internal function and should not be called directly.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X A matrix of the parameters \code{X}
+#' @param Y A matrix of the parameters \code{Y}
+#' @param bw Kernel bandwidth for X
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for apprximating numerical gradient, if \code{g} is not given.
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Functional value tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @references Ma, Y., & Zhu, L. (2013). "Efficient estimation in sufficient dimension reduction." Annals of statistics, 41(1), 250.
+#' DOI:10.1214/12-AOS1072 \url{https://projecteuclid.org/euclid.aos/1364302742}
+#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#'
+seff_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_seff_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title sir_init
+#' @name sir_init
+#' @description sir initial value function
+#' @keywords internal
+sir_init <- function(B, X, Y, bw, ncore) {
+    .Call(`_orthoDr_sir_init`, B, X, Y, bw, ncore)
+}
+
+#' @title semi-sir solver \code{C++} function
+#' @name sir_solver
+#' @description Sovling the semi-sir estimating equations. This is an internal function and should not be called directly.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X A matrix of the parameters \code{X}
+#' @param Y A matrix of the parameters \code{Y}
+#' @param bw Kernel bandwidth for X
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for apprximating numerical gradient, if \code{g} is not given.
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Functional value tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
+#' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
+#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#'
+sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_sir_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title surv_dm_solver \code{C++} function
+#' @name surv_dm_solver
+#' @description The main optimization function for survival dimensional reduction, the IR-Semi method. This is an internal function and should not be called directly.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
 #' @param Phit Phit as defined in Sun et al. (2017)
-#' @param inRisk A matrix of indicators shows whether each subject is still alive at each time point
-#' @param bw A Kernel bandwidth, assuming each variable have unit variance
 #' @param Fail_Ind The locations of the failure subjects
+#' @param bw Kernel bandwidth for X
+#' @param bw_optim whether to optimize the bandwidth
 #' @param rho (don't change) Parameter for control the linear approximation in line search
 #' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
 #' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
@@ -50,16 +225,93 @@ gen_solver <- function(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, 
 #' @param gtol (don't change) Gradient tolerance level
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
+#' @param ncore The number of cores for parallel computing
 #' @return The optimizer \code{B} for the esitmating equation.
-#' @references Sun, Q., Zhu, R., Wang T. and Zeng D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
+#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
 #' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 #' @examples
 #' # This function should be called internally. When having all objects pre-computed, one can call
-#' # surv_solver(B, X, Phit, inRisk, bw, Fail.Ind,
+#' # surv_solver(B, X, Phit, Fail.Ind,
 #' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 #' # to solve for the parameters B.
 #'
-surv_solver <- function(B, X, Phit, inRisk, bw, Fail_Ind, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose) {
-    .Call('_orthoDr_surv_solver', PACKAGE = 'orthoDr', B, X, Phit, inRisk, bw, Fail_Ind, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+surv_dm_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_surv_dm_solver`, B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title surv_dn_solver \code{C++} function
+#' @name surv_dn_solver
+#' @description The main optimization function for survival dimensional reduction, the IR-CP method. This is an internal function and should not be called directly.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
+#' @param Phit Phit as defined in Sun et al. (2017)
+#' @param Fail_Ind The locations of the failure subjects
+#' @param bw Kernel bandwidth for X
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for approximating numerical gradient
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Estimation equation 2-norm tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @param ncore The number of cores for parallel computing
+#' @return The optimizer \code{B} for the esitmating equation.
+#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
+#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' @examples
+#' # This function should be called internally. When having all objects pre-computed, one can call
+#' # surv_solver(B, X, Phit, Fail.Ind,
+#' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+#' # to solve for the parameters B.
+#'
+surv_dn_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_surv_dn_solver`, B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title surv_forward_solver \code{C++} function
+#' @name surv_forward_solver
+#' @description The main optimization function for survival dimensional reduction, the forward method. This is an internal function and should not be called directly.
+#' @keywords internal
+#' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+#' @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
+#' @param Phit Phit as defined in Sun et al. (2017)
+#' @param Fail_Ind The locations of the failure subjects
+#' @param bw Kernel bandwidth for X
+#' @param rho (don't change) Parameter for control the linear approximation in line search
+#' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+#' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+#' @param tau (don't change) Step size for updating
+#' @param epsilon (don't change) Parameter for approximating numerical gradient
+#' @param btol (don't change) The \code{$B$} parameter tolerance level
+#' @param ftol (don't change) Estimation equation 2-norm tolerance level
+#' @param gtol (don't change) Gradient tolerance level
+#' @param maxitr Maximum number of iterations
+#' @param verbose Should information be displayed
+#' @param ncore The number of cores for parallel computing
+#' @return The optimizer \code{B} for the esitmating equation.
+#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
+#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' @examples
+#' # This function should be called internally. When having all objects pre-computed, one can call
+#' # surv_solver(B, X, Phit, Fail.Ind,
+#' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+#' # to solve for the parameters B.
+#'
+surv_forward_solver <- function(B, X, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_surv_forward_solver`, B, X, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+}
+
+#' @title KernelDist_cross
+#' @name KernelDist_cross
+#' @description Calculate the kernel distance between testing data and training data
+#' @keywords internal
+#' @param TestX testing data
+#' @param X training data
+KernelDist_cross <- function(TestX, X) {
+    .Call(`_orthoDr_KernelDist_cross`, TestX, X)
 }
 

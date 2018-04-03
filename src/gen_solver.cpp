@@ -4,7 +4,7 @@ using namespace Rcpp;
 
 //[[Rcpp::depends(RcppArmadillo)]]
 
-double gen_f(arma::mat B, Rcpp::Function f, Environment env)
+double gen_f(arma::mat &B, Rcpp::Function f, Environment env)
 {
   SEXP x = Rcpp_eval(f(B), env);
   return(REAL(x)[0]);
@@ -20,32 +20,33 @@ void gen_g(arma::mat B, arma::mat &G, Rcpp::Function g, Environment env)
 
   for (int k=0; k<ndr; k++)
     for (int j=0; j<P; j++)
-      G(j, k) = REAL(x)[j + k*ndr];
+      G(j, k) = REAL(x)[j + k*P];
 
   return;
 }
 
 
-void gen_g_approx(arma::mat B, arma::mat &G, Rcpp::Function f, Rcpp::Function g, Environment env, double epsilon)
+void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g, Environment env, double epsilon)
 {
-  arma::mat B_new = B;
-  double F0 = gen_f(B, f, env);
 
+  double F0 = gen_f(B, f, env);
   int P = B.n_rows;
   int ndr = B.n_cols;
+  double temp;
 
   for (int j = 0; j < ndr; j++)
   {
     for(int i = 0; i < P; i++)
     {
       // small increment
-      B_new(i,j) = B(i,j) + epsilon;
+      temp = B(i,j);
+      B(i,j) += epsilon;
 
-      // calculate gradiant
-      G(i,j) = (gen_f(B_new, f, env) - F0) / epsilon;
+      // calculate gradient
+      G(i,j) = (gen_f(B, f, env) - F0) / epsilon;
 
       // reset
-      B_new(i,j) = B(i,j);
+      B(i,j) = temp;
 
     }
   }
@@ -86,26 +87,26 @@ double dmin(double a, double b);
 
 
 List gen_solver(arma::mat B,
-                     Rcpp::Function f,
-                     Rcpp::Function g,
-                     Environment env,
-                     int useg,
-                     double rho,
-                     double eta,
-                     double gamma,
-                     double tau,
-                     double epsilon,
-                     double btol,
-                     double ftol,
-                     double gtol,
-                     int maxitr,
-                     int verbose)
+                 Rcpp::Function f,
+                 Rcpp::Function g,
+                 Environment env,
+                 int useg,
+                 double rho,
+                 double eta,
+                 double gamma,
+                 double tau,
+                 double epsilon,
+                 double btol,
+                 double ftol,
+                 double gtol,
+                 int maxitr,
+                 int verbose)
 {
 
   int P = B.n_rows;
   int ndr = B.n_cols;
 
-  NumericMatrix crit(maxitr,3);
+  arma::mat crit(maxitr,3);
   bool invH = true;
   arma::mat eye2P(2*ndr,2*ndr);
 
@@ -125,8 +126,6 @@ List gen_solver(arma::mat B,
     gen_g(B, G, g, env);
   else
     gen_g_approx(B, G, f, g, env, epsilon);
-
-
 
   arma::mat GX = G.t() * B;
   arma::mat GXT;
@@ -166,10 +165,7 @@ List gen_solver(arma::mat B,
   double BDiff;
   double FDiff;
   arma::mat Y;
-  NumericMatrix S_Y;
   double SY;
-  NumericMatrix S_S;
-  NumericMatrix Y_Y;
 
   if (verbose > 1)
     Rcout << "Initial value,   F = " << F << std::endl;
@@ -183,6 +179,7 @@ List gen_solver(arma::mat B,
     int nls = 1;
     double deriv = rho * nrmG * nrmG;
 
+    // line search
     while(true){
       if(invH){
         diag_n.eye();
@@ -192,7 +189,6 @@ List gen_solver(arma::mat B,
         B = BP - U * (tau * aa);
       }
 
-
       F = gen_f(B, f, env);
 
       if (useg)
@@ -200,64 +196,61 @@ List gen_solver(arma::mat B,
       else
         gen_g_approx(B, G, f, g, env, epsilon);
 
-      if (verbose > 1 && (itr % 10 == 0) )
-        Rcout << "At iteration " << itr << ", F = " << F << std::endl;
-
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
       }
       tau = eta * tau;
       nls = nls + 1;
     }
+
     GX = G.t() * B;
 
     if(invH){
       GXT = G * B.t();
       H = 0.5 * (GXT - GXT.t());
       RX = H * B;
-    }else{
+    }else{ // algorithm 1
       U = join_rows(G, B);
       V = join_rows(B, -G);
       VU = V.t() * U;
       VX = V.t() * B;
     }
 
-    dtX = G - B * GX; // GX, dtX, nrmG slightly different from those of R code
+    dtX = G - B * GX;
     nrmG = norm(dtX, "fro");
 
     S = B - BP;
-    BDiff = norm(S, "fro")/sqrt((double)P);
+    BDiff = norm(S, "fro")/sqrt((double) P);
     FDiff = std::abs(FP - F)/(std::abs(FP)+1);
 
     Y = dtX - dtXP;
-    S_Y = wrap(S % Y);
-    SY = std::abs(sum(S_Y));
+    SY = std::abs(accu(S % Y));
 
     if(itr%2 == 0){
-      S_S = wrap(S % S);
-      tau = sum(S_S)/SY;
+      tau = accu(S % S)/SY;
     }else{
-      Y_Y = wrap(Y % Y);
-      tau = SY/sum(Y_Y);
+      tau = SY/accu(Y % Y);
     }
 
-    tau = dmax(dmin(tau, 1e10), 1e-20);
+    tau = dmax(dmin(tau, 1e20), 1e-20);
     crit(itr-1,0) = nrmG;
     crit(itr-1,1) = BDiff;
     crit(itr-1,2) = FDiff;
 
+    if (verbose > 1 && (itr % 10 == 0) )
+      Rcout << "At iteration " << itr << ", F = " << F << std::endl;
 
     if (itr >= 5) // so I will run at least 5 iterations before checking for convergence
     {
-      NumericMatrix mcrit(5, 3);
+      arma::mat mcrit(5, 3);
       for (int i=0; i<5; i++)
       {
-        mcrit(i, _) = crit(itr-1-i,_);
+        mcrit.row(i) = crit.row(itr-i-1);
       }
 
-      if ( (BDiff < btol && FDiff < ftol) || (nrmG < gtol) || ((mean(mcrit(_,1)) < btol) && (mean(mcrit(_,2)) < ftol)) )
+      if ( (BDiff < btol && FDiff < ftol) || (nrmG < gtol) || ((mean(mcrit.col(1)) < btol) && (mean(mcrit.col(2)) < ftol)) )
       {
-        Rcout << "converge" << std::endl;
+        if (verbose > 0) Rcout << "converge" << std::endl;
         break;
       }
     }
@@ -272,7 +265,7 @@ List gen_solver(arma::mat B,
     Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
-  arma::mat diag_P(ndr, ndr);
+  arma::mat diag_P(ndr,ndr);
   diag_P.eye();
   double feasi = norm(B.t() * B - diag_P, "fro");
 
@@ -289,5 +282,4 @@ List gen_solver(arma::mat B,
   ret["itr"] = itr;
   ret["converge"] = (itr<maxitr);
   return (ret);
-
 }

@@ -1,15 +1,16 @@
 Package: orthoDr
 Type: Package
 Title: An Orthogonality Constrained Optimization Approach for Semi-Parametric Dimension Reduction Problems
-Version: 0.2.0
-Author: Ruilin Zhao, Jiyang Zhang, and Ruoqing Zhu
+Version: 0.5.1
+Author: Ruilin Zhao, Jiyang Zhang and Ruoqing Zhu
 Maintainer: Ruoqing Zhu <teazrq@gmail.com>
-Description: Utilize an orthogonality constrained optimization algorithm of Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1> to solve a variety of dimension reduction problems in the semiparametric framework, such as Ma & Zhu (2013) <DOI:10.1214/12-AOS1072>, and Sun, Zhu, Wang & Zeng (2017) <arXiv:1704.05046>. It also serves as a general purpose optimization solver for problems with orthogonality constraints. 
+Description: Utilize an orthogonality constrained optimization algorithm of Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1> to solve a variety of dimension reduction problems in the semiparametric framework, such as Ma & Zhu (2012) <DOI:10.1080/01621459.2011.646925>, Ma & Zhu (2013) <DOI:10.1214/12-AOS1072>, and Sun, Zhu, Wang & Zeng (2017) <arXiv:1704.05046>. It also serves as a general purpose optimization solver for problems with orthogonality constraints. Parallel computing is enabled through `OpenMP'.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: TRUE
 RoxygenNote: 6.0.1
 NeedsCompilation: yes
 Repository: CRAN
-Imports: Rcpp (>= 0.12.12), survival, pracma, plot3D, rgl
+Imports: Rcpp (>= 0.12.12), survival, dr, pracma, plot3D, rgl, MASS
 LinkingTo: Rcpp, RcppArmadillo
+SystemRequirements: GNU make
