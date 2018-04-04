@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 .Rproj
+.ini
 src/*.o
 src/*.so
 src/*.dll
