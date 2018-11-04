@@ -8,6 +8,8 @@ citEntry(entry="Manual",
          title = titl,
          author = personList(person(family="Zhao", given="Ruilin"),
                              person(family="Zhang", given="Jiyang"),
+                             person(family="Zhou", given="Wenzhuo"),
+                             person(family="Xu", given="Peng"),
                              person(family="Zhu", given="Ruoqing")),
 	       publisher = "manual",
          year         = year,
@@ -24,15 +26,32 @@ citEntry(entry="Article",
 	                           person(family="Zhu", given="Ruoqing"),
 	                           person(family="Wang", given="Tao"),
 	                           person(family="Zeng", given="Donglin")),
-	       journal      = "arXiv preprint arXiv:1704.05046",
-         year         = "2017",
-         url          = "https://arxiv.org/pdf/1704.05046.pdf",
+	       journal      = "Biometrika",
+         year         = "2018+",
+         url          = "https://arxiv.org/abs/1704.05046",
 
          textVersion =
          paste("Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2017). ",
                "Counting Process Based Dimension Reduction Method for Censored Outcomes. ",
+               "Biometrika (Accepted)",
                "arXiv preprint arXiv:1704.05046",
-               sep=""))
+               sep=""),
+         header = "If orthoDr_surv is used, please also cite:")
+
+citEntry(entry="Article",
+         title  = "A Parsimonious Personalized Dose Finding Model via Dimension Reduction",
+         author = personList(person(family="Zhou", given="Wenzhuo"),
+	                           person(family="Zhu", given="Ruoqing")),
+	       journal      = "Journal of the American Statistical Association",
+         year         = "2018+",
+         url          = "https://arxiv.org/abs/1802.06156",
+
+         textVersion =
+         paste("Zhou, W. & Zhu, R. (2018+). ",
+               "A Parsimonious Personalized Dose Finding Model via Dimension Reduction.",
+               "arXiv preprint arXiv:1802.06156",
+               sep=""),
+         header = "If orthoDr_pt is used, please also cite:")
 
 citEntry(entry="Article",
          title  = "A semiparametric approach to dimension reduction",
@@ -46,11 +65,7 @@ citEntry(entry="Article",
          paste("Ma, Y. & Zhu, L. (2012). ",
                "A semiparametric approach to dimension reduction. ",
                "Journal of the American Statistical Association, 107(497)",
-               sep=""))
-
-
-
-
-
+               sep=""),
+         header = "If orthoDr_reg is used, please also cite:")
 
 

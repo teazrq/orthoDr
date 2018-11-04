@@ -1,5 +1,5 @@
 #' @title predict.orthoDr
-#' @name predict
+#' @name predict.orthoDr
 #' @description The prediction function for orthoDr fitted models
 #' @param object A fitted orthoDr object
 #' @param testx Testing data
@@ -41,8 +41,8 @@ predict.orthoDr <- function(object, testx, ...)
 
   # predict rewards and optimal dose on the testing data
 
-  # if (class(object)[3] == "personalize_treatment")
-  #  pred = predict_orthoDr_pt(object, testx, ...)
+  if (class(object)[3] == "personalized_treatment")
+    pred = predict_orthoDr_pt(object, testx, ...)
 
   class(pred) <- c("orthoDr", "predict", class(object)[3])
 
@@ -52,8 +52,10 @@ predict.orthoDr <- function(object, testx, ...)
 
 
 #' @title predict_orthoDr_surv
+#' @name predict_orthoDr_surv
 #' @description Internal prediction function for survival models
 #' @keywords internal
+#' @param object fitted object
 #' @param testx Testing data
 #' @param ... ...
 #' @return The predicted object
@@ -106,8 +108,10 @@ predict_orthoDr_surv <- function(object, testx, ...)
 
 
 #' @title predict_orthoDr_reg
+#' @name predict_orthoDr_reg
 #' @description Internal prediction function for regression models
 #' @keywords internal
+#' @param object fitted object
 #' @param testx Testing data
 #' @param ... ...
 #' @return The predicted object
@@ -141,4 +145,86 @@ predict_orthoDr_reg <- function(object, testx, ...)
 
   return(list("pred" = pred))
 }
+
+
+
+#' @title predict_orthoDr_pt
+#' @name predict_orthoDr_pt
+#' @description Internal prediction function for personalized treatment models
+#' @keywords internal
+#' @param object fitted object
+#' @param testx Testing data
+#' @param ... ...
+#' @return The predicted object
+
+
+predict_orthoDr_pt <- function(object, testx, ...)
+{
+  # check test data
+  if (missing(testx)) stop("testx is missing")
+  if (!is.matrix(testx) || !is.numeric(testx)) stop("testx must be a numercial matrix")
+
+  if (class(object)[2] !="fit")
+    stop("This is not an orthoDr fitted object")
+
+  if (!object$keep.data)
+    stop("Need the original data for prediction. Please specify keep.data = TRUE in model fitting.")
+
+
+  if (class(object)[3] == "personalized_treatment")
+    if  (class(object)[4] == "direct_kernel"){
+      pred = predict_orthoDr_pt_direct_kernel(object, testx, ...)
+    }
+  if  (class(object)[4] == "semi_svm"){
+    pred = predict_orthoDr_pt_semi_svm(object, testx, ...)
+  }
+
+  class(pred) <- c("orthoDr", "predict", class(object)[3],class(object)[4])
+
+  return(pred)
+}
+
+#' @title predict_orthoDr_pt_direct_kernel
+#' @name predict_orthoDr_pt_direct_kernel
+#' @description Internal prediction function for personalized treatment models
+#' @keywords internal
+#' @param object fitted object
+#' @param testx Testing data
+#' @param ... ...
+#' @return The predicted object
+
+predict_orthoDr_pt_direct_kernel <- function(object, testx, ...)
+{
+
+  pred = Dosepred(object$B, object$x, testx, object$bw, object$W)
+  return(list("pred" = pred))
+
+}
+
+#' @title predict_orthoDr_pt_semi_svm
+#' @name predict_orthoDr_pt_semi_svm
+#' @description Internal prediction function for personalized treatment models
+#' @keywords internal
+#' @param object fitted object
+#' @param testx Testing data
+#' @param ... ...
+#' @return The predicted object
+
+predict_orthoDr_pt_semi_svm<- function(object, testx, ...)
+{
+
+  v = list()
+  v$X = object$x
+  v$A = object$a
+  v$R = object$r
+
+  index = which(v$R > quantile(v$R,0.6))
+  model_nopen  = svm(x = (v$X %*% as.matrix(object$B))[index,], y = v$A[index], w= v$R[index], type="eps-regression",
+                     epsilon = 0.15, scale=FALSE)
+
+  pred = predict(model_nopen, testx %*% as.matrix(object$B))
+  return(list("pred" = pred))
+
+}
+
 
