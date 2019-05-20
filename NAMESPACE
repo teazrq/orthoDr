@@ -10,7 +10,6 @@ importFrom("grDevices", rainbow)
 importFrom("graphics", legend, par, plot, plot.new)
 importFrom("dr", dr)
 importFrom("MASS", ginv, mvrnorm)
-importFrom("SVMW", svm)
 
 S3method(print, orthoDr)
 S3method(predict, orthoDr)

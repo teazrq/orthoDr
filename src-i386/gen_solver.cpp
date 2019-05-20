@@ -118,9 +118,7 @@ List gen_solver(arma::mat B,
   // Initial function value and gradient, prepare for iterations
 
   double F = gen_f(B, f, env);
-  arma::vec F_seq(maxitr);
-  F_seq.fill(0.0);
-  
+
   arma::mat G(P, ndr);
   G.fill(0);
 
@@ -205,7 +203,6 @@ List gen_solver(arma::mat B,
       nls = nls + 1;
     }
 
-    F_seq[itr-1] = F;
     GX = G.t() * B;
 
     if(invH){
@@ -282,7 +279,6 @@ List gen_solver(arma::mat B,
   List ret;
   ret["B"] = B;
   ret["fn"] = F;
-  ret["fn_Seq"] = F_seq;
   ret["itr"] = itr;
   ret["converge"] = (itr<maxitr);
   return (ret);
