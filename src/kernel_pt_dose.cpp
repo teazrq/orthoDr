@@ -1,19 +1,18 @@
 #include <RcppArmadillo.h>
 
-
 using namespace Rcpp;
 //[[Rcpp::depends(RcppArmadillo)]]
 
-//' @title Dosepred
+//' @title The prediction function for the personalized direct learning dose model
 //' @name Dosepred
-//' @description calculate the predicted dose
+//' @description Predict the fitted dose from the direct learning dose model
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 //' @param X The covariate matrix
-//' @param X_test Test x
+//' @param X_test The test covariate matrix
 //' @param bw A Kernel bandwidth, assuming each variable have unit variance
-//' @param w The kernel ridge regression w
-//' @return The Dose.
+//' @param w The kernel ridge regression coefficient 
+//' @return The predicted dose
 // [[Rcpp::export]]
 arma::vec Dosepred(arma::mat B,
                    arma::mat X,
@@ -52,7 +51,7 @@ arma::vec Dosepred(arma::mat B,
 
   arma::colvec Dose;
   Dose = kernel_matrix_X.t() * W;
-
+  
   return Dose;
 
 }

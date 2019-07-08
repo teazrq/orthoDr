@@ -40,12 +40,12 @@ double semi_pt_f(const arma::mat& B,
 
   arma::mat BX  = X * B;
   BX.insert_cols(1, A);
-
+  
   arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
-
+  
   for (int j=0; j<ndr+1; j++)
     BX.col(j) /= BX_scale(j);
-
+  
   arma::mat kernel_matrix;
 
   if (ncore > 1)
@@ -110,7 +110,7 @@ return;
 
 //' @title pseudo_pt_solver
 //' @name pseudo_pt_solver
-//' @description The main optimization function for personalized dose finding in the dimensional reduction framewrok, the Pseudo-direct Learning method.
+//' @description The pseudo direct learning optimization function for A Parsimonious Personalized Dose Finding Model via Dimension Reduction.
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 //' @param X The covariate matrix
@@ -130,6 +130,7 @@ return;
 //' @return The optimizer \code{B} for the esitmating equation.
 //' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
 //' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+//' @examples
 // [[Rcpp::export]]
 
 List semi_pt_solver(arma::mat& B,
@@ -209,7 +210,7 @@ List semi_pt_solver(arma::mat& B,
   double Cval = F;
 
   // main iteration
-  int itr = 1;
+  int itr;
   arma::mat BP;
   double FP;
   arma::mat GP;
@@ -223,7 +224,7 @@ List semi_pt_solver(arma::mat& B,
   double SY;
 
   if (verbose > 1)
-
+    
   for(itr = 1; itr < maxitr + 1; itr++){
     BP = B;
     FP = F;
@@ -244,7 +245,7 @@ List semi_pt_solver(arma::mat& B,
 
       F = semi_pt_f(B, X, R, A, bw, ncore);
       semi_pt_g(B, F, G, X, R, A, bw, epsilon, ncore);
-
+      
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
       }

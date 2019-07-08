@@ -173,6 +173,7 @@ List gen_solver(arma::mat B,
     Rcout << "Initial value,   F = " << F << std::endl;
 
   for(itr = 1; itr < maxitr + 1; itr++){
+
     BP = B;
     FP = F;
     GP = G;
@@ -180,7 +181,7 @@ List gen_solver(arma::mat B,
 
     int nls = 1;
     double deriv = rho * nrmG * nrmG;
-
+    
     // line search
     while(true){
       if(invH){

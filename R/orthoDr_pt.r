@@ -26,9 +26,9 @@
 #' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
 #' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 #' @examples
-#' # generate some survival data
-#' set.seed(1)
-#' Scenario1 <- function(size,ncov)
+#' # generate some personalized dose scenario
+#' 
+#' Scenario <- function(size,ncov)
 #' {
 #'  set.seed(as.integer((as.double(Sys.time())*100+Sys.getpid()) %% 2^14) )
 #'  X = matrix(runif(size*ncov,-1,1),ncol=ncov)
@@ -57,17 +57,27 @@
 #' test = Scenario1(500,p)
 #'
 #' # the pseudo direct learning method
-#' orthofit = orthoDr_pm(train$X, train$A, train$R, ndr = ndr,lambda = seq(0.1,0.2,0.01),
-#'                       method = "semi_svm", keep.data = TRUE)
+#'  orthoDr_pm(train$X,train$A,train$R,ndr =ndr,lambda = seq(0.1,0.2,0.01), 
+#'             method = "direct",keep.data = T)
 #'
 #' dose = predict(orthofit,test$X)
 #'
 #` # compare with the optimal dose
 #' dosedistance = mean((test$D_opt-dose$pred)^2)
 #' print(dosedistance)
+#' 
+#' the pseudo direct learning method 					  
+#' orthofit = orthoDr_pm(train$X,train$A,train$R,ndr = ndr,lambda = seq(0.1,0.2,0.01),
+#'                       method = "pseudo_direct", keep.data = T)
+#'                     
+#'dose = predict(orthofit,test$X)
+#'
+#' compare with the optimal dose
+#'dosedistance = mean((test$D_opt-dose$pred)^2)
+#'print(dosedistance)
 
 orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda = 0.1,
-                       K = sqrt(length(r)), method = c("direct_kernel","semi_svm"),
+                       K = sqrt(length(r)), method = c("direct","pseudo_direct"),
                        keep.data = FALSE, control = list(), maxitr = 500, verbose = FALSE, ncore = 0)
 {
   if (!is.matrix(x)) stop("x must be a matrix")
@@ -80,7 +90,7 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
   {
     n= nrow(x)
     p = ncol(x)
-    B.initial = P_SAVE(x, a, r, ndr = ndr, nslices0 =2)
+    B.initial = P_SAVE(x, a, r, ndr = ndr)
   }else{
     if (!is.matrix(B.initial)) stop("B.initial must be a matrix")
     if (ncol(x) != nrow(B.initial) | ndr != ncol(B.initial)) stop("Dimention of B.initial is not correct")
@@ -89,21 +99,18 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
   # check tuning parameters
   control = control.check(control)
 
-  # center matrix X, but do not scale
-
   B.initial = gramSchmidt(B.initial)$Q
 
   N = nrow(x)
   P = ncol(x)
-
-  # standerdize
   X = x
-
+  
+  # standerdize
   a_center = mean(a)
   a_scale = sd(a)
-  aa = a/a_scale/bw
+  a_scale_bw = a/a_scale/bw
 
-  if (method == "direct_kernel")
+  if (method == "direct")
   {
 
     cdose= seq(min(a), max(a), length.out = K)
@@ -113,7 +120,7 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
     A.dist <- matrix(NA, nrow(x), K)
     for (k in 1:K)
     {
-      A.dist[, k] = exp(-((aa - cdose_scale[k]))^2)
+      A.dist[, k] = exp(-((a_scale_bw - cdose_scale[k]))^2)
     }
 
     pre = Sys.time()
@@ -124,7 +131,7 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
       cat(paste("Total time: ", round(as.numeric(Sys.time() - pre, units = "secs"), digits = 2), " secs\n", sep = ""))
   }
 
-  if(method == "semi_svm")
+  if(method == "pseudo_direct")
   {
 
     pre = Sys.time()

@@ -23,11 +23,9 @@
 #include <RcppArmadillo.h>
 #include "utilities.h"
 
-
 using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
-
 
 double direct_pt_f(const arma::mat& B,
                    const arma::mat& X,
@@ -40,7 +38,6 @@ double direct_pt_f(const arma::mat& B,
 {
   int N = X.n_rows;
   int ndr = B.n_cols;
-
 
   arma::mat BX = X * B;
   arma::mat kernel_matrix_X;
@@ -135,8 +132,7 @@ void direct_pt_w(const arma::mat& B,
   arma::colvec Hat_Dose = a_seq(index);
   arma::mat Ident(N,N);
   Ident.eye();
-
-
+  
   // compute GCV
 
   int Nlda = lambda.n_elem;
@@ -151,7 +147,6 @@ void direct_pt_w(const arma::mat& B,
   for (int m = 0; m < Nlda; m++){
 
     dd = kernel_matrix_X + lambda(m) * Ident;
-
     k1 = (Ident - kernel_matrix_X.t() * inv(dd)) * Hat_Dose;
     upper = norm(k1,"fro")*norm(k1,"fro");
     k2 = (Ident -  kernel_matrix_X.t() * inv(dd));
@@ -162,7 +157,7 @@ void direct_pt_w(const arma::mat& B,
 
   double indexGCV = std::min_element(GCV.begin(), GCV.end()) - GCV.begin();
   double lambda0 = lambda(indexGCV);
-
+  
   dd = kernel_matrix_X + lambda0 * Ident;
   W = inv(dd) * Hat_Dose;
 
@@ -214,7 +209,7 @@ return;
 
 //' @title direct_pt_solver
 //' @name direct_pt_solver
-//' @description The main optimization function for personalized dose finding in the dimensional reduction framewrok, the Direct Learning method.
+//' @description The direct learning optimization function for A Parsimonious Personalized Dose Finding Model via Dimension Reduction.
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 //' @param X The covariate matrix
@@ -284,10 +279,8 @@ List direct_pt_solver(arma::mat B,
   }
 
   // Initial function value and gradient, prepare for iterations
-
-  // initiate W
-
-
+  
+  // Initiate W
   arma::mat BX = X * B;
   arma::mat kernel_matrix_X;
 
@@ -300,13 +293,12 @@ List direct_pt_solver(arma::mat B,
     kernel_matrix_X = KernelDist_multi(BX, ncore, 1);
   else
     kernel_matrix_X =  KernelDist_single(BX, 1);
-
+  
   arma::colvec W(N);
   W.fill(0);
   double lambda0 = 0.1;
 
   direct_pt_w(B, X, A, a_seq,a_dist,R, bw, W,lambda, ncore);
-
 
   double F = direct_pt_f(B, X, A, a_seq, R, bw, W,ncore);
   arma::mat G(P, ndr);
@@ -384,7 +376,6 @@ List direct_pt_solver(arma::mat B,
       F = direct_pt_f( B, X, A, a_seq, R, bw, W, ncore);
 
       direct_pt_g(B, F, G,  X, A, a_seq, R,bw,W,lambda0, epsilon, ncore);
-
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;

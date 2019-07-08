@@ -2,7 +2,7 @@
 #' @description Calculate the distance correlation between two linear spaces
 #' @param s1 first space
 #' @param s2 second space
-#' @param type type of distance measures: "dist" (default), "trace" or "canonical"
+#' @param type type of distance measures: "dist" (default), "trace", "canonical" or "sine"
 #' @param x the covariate values, for canonical correlation only
 #' @return The distance between \code{s1} and \code{s2}.
 #' @examples
@@ -34,7 +34,7 @@ distance <- function(s1, s2, type = "dist", x = NULL)
   if (ncol(s1) != ncol(s2))
     warning("Dimention d of two spaces do not match.")
 
-  match.arg(type, c("dist", "trace", "canonical"))
+  match.arg(type, c("dist", "trace", "canonical", "sine"))
 
   if (type == "dist")
   {
@@ -61,5 +61,14 @@ distance <- function(s1, s2, type = "dist", x = NULL)
 
 
     return( mean(cancor(x %*% s1, x %*% s2, xcenter = FALSE, ycenter = FALSE)$cor) )
+  }
+  
+  if (type == "sine")
+  {
+    Mat_1 = s1 %*% solve(t(s1) %*% s1) %*% t(s1)
+    Mat_2 = s2 %*% solve(t(s2) %*% s2) %*% t(s2)
+    d = eigen(Mat_1 %*% (diag(1, ncol(Mat_2)) - Mat_2))$values
+    
+    return( sqrt(sum(d^2)) )
   }
 }

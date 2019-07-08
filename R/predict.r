@@ -16,6 +16,42 @@
 #'
 #' #predict 10 new observations
 #' predict(orthoDr.fit, matrix(rnorm(10*P), 10, P))
+#'
+#' # generate some personalized dose scenario
+#' 
+#' Scenario <- function(size,ncov)
+#' {
+#'  set.seed(as.integer((as.double(Sys.time())*100+Sys.getpid()) %% 2^14) )
+#'  X = matrix(runif(size*ncov,-1,1),ncol=ncov)
+#'  A = runif(size,0,2)
+#'
+#'  Edr = as.matrix(cbind(c(1, 0.5,0, 0, -0.5, 0, 0, 0,rep(0,2)),
+#'                        c(0.5, 0, 0.5, -0.5, 1,0,0,0,rep(0, 2))))
+#'
+#'  D_opt = sin(X %*% Edr[,2] * X %*% Edr[,1]) + (3/4)*(X %*% Edr[,1])/ (5 + (X %*% Edr[,2] + 4)^2) + 1
+#'
+#'  mu = 7 + 0.5*(X %*% Edr[,1])^2 + 1*X %*% Edr[,2] - 13*abs(D_opt-A)
+#'
+#'  R = rnorm(length(mu),mu,1)
+#'
+#'  R = R - min(R)
+#'
+#'  datainfo = list(X=X,A=A,R=R,D_opt=D_opt,mu=mu)
+#'  return(datainfo)
+#' }
+#'
+#' # generate data
+#' n = 400
+#' p = 10
+#' ndr =2
+#' train = Scenario1(n,p)
+#' test = Scenario1(500,p)
+#'
+#' # the pseudo direct learning method
+#'  orthoDr_pm(train$X,train$A,train$R,ndr =ndr,lambda = seq(0.1,0.2,0.01), 
+#'             method = "direct",keep.data = T)
+#'
+#' predict(orthofit,test$X)
 
 predict.orthoDr <- function(object, testx, ...)
 {
@@ -48,7 +84,6 @@ predict.orthoDr <- function(object, testx, ...)
 
   return(pred)
 }
-
 
 
 #' @title predict_orthoDr_surv
@@ -147,7 +182,6 @@ predict_orthoDr_reg <- function(object, testx, ...)
 }
 
 
-
 #' @title predict_orthoDr_pt
 #' @name predict_orthoDr_pt
 #' @description Internal prediction function for personalized treatment models
@@ -172,11 +206,11 @@ predict_orthoDr_pt <- function(object, testx, ...)
 
 
   if (class(object)[3] == "personalized_treatment")
-    if  (class(object)[4] == "direct_kernel"){
-      pred = predict_orthoDr_pt_direct_kernel(object, testx, ...)
+    if  (class(object)[4] == "direct"){
+      pred = predict_orthoDr_pt_direct(object, testx, ...)
     }
-  if  (class(object)[4] == "semi_svm"){
-    pred = predict_orthoDr_pt_semi_svm(object, testx, ...)
+  if  (class(object)[4] == "pseudo_direct"){
+      pred = predict_orthoDr_pt_pseudo_direct(object, testx, ...)
   }
 
   class(pred) <- c("orthoDr", "predict", class(object)[3],class(object)[4])
@@ -184,16 +218,16 @@ predict_orthoDr_pt <- function(object, testx, ...)
   return(pred)
 }
 
-#' @title predict_orthoDr_pt_direct_kernel
+#' @title predict_orthoDr_pt_direct
 #' @name predict_orthoDr_pt_direct_kernel
-#' @description Internal prediction function for personalized treatment models
+#' @description Internal prediction function for direct personalized dose model
 #' @keywords internal
 #' @param object fitted object
 #' @param testx Testing data
 #' @param ... ...
 #' @return The predicted object
 
-predict_orthoDr_pt_direct_kernel <- function(object, testx, ...)
+predict_orthoDr_pt_direct<- function(object, testx, ...)
 {
 
   pred = Dosepred(object$B, object$x, testx, object$bw, object$W)
@@ -201,16 +235,16 @@ predict_orthoDr_pt_direct_kernel <- function(object, testx, ...)
 
 }
 
-#' @title predict_orthoDr_pt_semi_svm
+#' @title predict_orthoDr_pt_pseudo_direct
 #' @name predict_orthoDr_pt_semi_svm
-#' @description Internal prediction function for personalized treatment models
+#' @description Internal prediction function for pseudo_direct personalized dose model
 #' @keywords internal
 #' @param object fitted object
 #' @param testx Testing data
 #' @param ... ...
 #' @return The predicted object
 
-predict_orthoDr_pt_semi_svm<- function(object, testx, ...)
+predict_orthoDr_pt_pseudo_direct<- function(object, testx, ...)
 {
 
   v = list()
@@ -218,9 +252,9 @@ predict_orthoDr_pt_semi_svm<- function(object, testx, ...)
   v$A = object$a
   v$R = object$r
 
-  index = which(v$R > quantile(v$R,0.6))
+  index = which(v$R > quantile(v$R,0.65))
   model_nopen  = svm(x = (v$X %*% as.matrix(object$B))[index,], y = v$A[index], w= v$R[index], type="eps-regression",
-                     epsilon = 0.15, scale=FALSE)
+                     epsilon = 0.15, scale=F)
 
   pred = predict(model_nopen, testx %*% as.matrix(object$B))
   return(list("pred" = pred))

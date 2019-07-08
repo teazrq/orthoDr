@@ -3,7 +3,7 @@
 
 #' @title direct_pt_solver
 #' @name direct_pt_solver
-#' @description The main optimization function for personalized dose finding in the dimensional reduction framewrok, the Direct Learning method.
+#' @description The direct learning optimization function for A Parsimonious Personalized Dose Finding Model via Dimension Reduction.
 #' @keywords internal
 #' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 #' @param X The covariate matrix
@@ -59,16 +59,16 @@ gen_solver <- function(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, 
     .Call(`_orthoDr_gen_solver`, B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 }
 
-#' @title Dosepred
+#' @title The prediction function for the personalized direct learning dose model
 #' @name Dosepred
-#' @description calculate the predicted dose
+#' @description Predict the fitted dose from the direct learning dose model
 #' @keywords internal
 #' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 #' @param X The covariate matrix
-#' @param X_test Test x
+#' @param X_test The test covariate matrix
 #' @param bw A Kernel bandwidth, assuming each variable have unit variance
-#' @param w The kernel ridge regression w
-#' @return The Dose.
+#' @param w The kernel ridge regression coefficient 
+#' @return The predicted dose
 Dosepred <- function(B, X, X_test, bw, W) {
     .Call(`_orthoDr_Dosepred`, B, X, X_test, bw, W)
 }
@@ -250,7 +250,7 @@ sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, g
 
 #' @title pseudo_pt_solver
 #' @name pseudo_pt_solver
-#' @description The main optimization function for personalized dose finding in the dimensional reduction framewrok, the Pseudo-direct Learning method.
+#' @description The pseudo direct learning optimization function for A Parsimonious Personalized Dose Finding Model via Dimension Reduction.
 #' @keywords internal
 #' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 #' @param X The covariate matrix
@@ -270,6 +270,7 @@ sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, g
 #' @return The optimizer \code{B} for the esitmating equation.
 #' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
 #' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' @examples
 semi_pt_solver <- function(B, X, R, A, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_semi_pt_solver`, B, X, R, A, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }

@@ -1,8 +1,8 @@
 Package: orthoDr
 Type: Package
 Title: An Orthogonality Constrained Optimization Approach for Semi-Parametric Dimension Reduction Problems
-Version: 0.6.1
-Author: Ruilin Zhao, Jiyang Zhang, Wenzhuo Zhou, Peng Xu and Ruoqing Zhu,
+Version: 0.6.2
+Author: Ruilin Zhao, Ruoqing Zhu, Jiyang Zhang, Wenzhuo Zhou and Peng Xu
 Maintainer: Ruoqing Zhu <teazrq@gmail.com>
 Description: Utilize an orthogonality constrained optimization algorithm of Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1> to solve a variety of dimension reduction problems in the semiparametric framework, such as Ma & Zhu (2012) <DOI:10.1080/01621459.2011.646925>, Ma & Zhu (2013) <DOI:10.1214/12-AOS1072>, Sun, Zhu, Wang & Zeng (2017) <arXiv:1704.05046> and Zhou & Zhu (2018+) <arXiv:1802.06156>. It also serves as a general purpose optimization solver for problems with orthogonality constraints. Parallel computing is enabled through `OpenMP'.
 License: GPL (>= 2)

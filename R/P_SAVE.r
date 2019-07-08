@@ -4,7 +4,7 @@
 #' @param x A matrix for features (continuous only).
 #' @param a A vector of observed dose levels (continuous only).
 #' @param r A vector of reward (outcome).
-#' @param ndr The central subspace dimension
+#' @param ndr The dimension structure 
 #' @param nslices0 Number of slides used for save
 #' @return A list consisting of
 #' \item{vectors}{The basis of central subspace, ordered by eigenvalues}
@@ -24,7 +24,6 @@ P_SAVE <- function(x, a, r, ndr = 2, nslices0 =2){
   a = train$a
   a = sort(a)
 
-  #Z = A[150:235]
   Z = a[(n/2-50):(n/2+50)]
   M_i = list()
   jk = 0
@@ -48,7 +47,6 @@ P_SAVE <- function(x, a, r, ndr = 2, nslices0 =2){
   for (j in 1:length(Z)){
     M_total =  M_total + M_i[[j]]
   }
-
 
   Beta = eigen(M_total, symmetric =F, only.values = FALSE, EISPACK = FALSE)
   B = as.matrix(Beta$vectors[,1:ndr])
