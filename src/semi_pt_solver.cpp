@@ -311,7 +311,10 @@ List semi_pt_solver(arma::mat& B,
 
   }
 
-	if(itr>=maxitr){
+  //Rcout << "iteration " << itr << std::endl;
+ // Rcout << "maxitr " << maxitr << std::endl;
+  
+	if(itr> maxitr){
 		Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
