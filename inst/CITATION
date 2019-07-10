@@ -6,15 +6,16 @@ vers <- paste("R package version", meta$Version)
 
 citEntry(entry="Article",
          title = "orthoDr: Semiparametric Dimension Reduction via Orthogonality Constrained Optimization",
-         author = personList(person(family="Zhu", given="Ruoqing")
+         author = personList(person(family="Zhu", given="Ruoqing"),
                              person(family="Zhang", given="Jiyang"),
                              person(family="Zhao", given="Ruilin"),
                              person(family="Xu", given="Peng"),
                              person(family="Zhou", given="Wenzhuo"),
                              person(family="Zhang", given="Xin")),
-	       publisher = "The R Journal",
+	       journal = "The R Journal",
          year         = "2019",
          url          = "https://arxiv.org/abs/1811.11733",
+         
          textVersion =
          paste("Zhu, R., Zhang, J., Zhao, R., Xu, P., Zhou, W., & Zhang, X. (2019). ",
                "orthoDr: semiparametric dimension reduction via orthogonality constrained optimization. ",
@@ -43,6 +44,7 @@ citEntry(entry="Article",
          author = personList(person(family="Zhou", given="Wenzhuo"),
 	                           person(family="Zhu", given="Ruoqing")),
          year         = "2018+",
+         journal      = "arXiv preprint",
          url          = "https://arxiv.org/abs/1802.06156",
 
          textVersion =

@@ -16,42 +16,6 @@
 #'
 #' #predict 10 new observations
 #' predict(orthoDr.fit, matrix(rnorm(10*P), 10, P))
-#'
-#' # generate some personalized dose scenario
-#' 
-#' Scenario <- function(size,ncov)
-#' {
-#'  set.seed(as.integer((as.double(Sys.time())*100+Sys.getpid()) %% 2^14) )
-#'  X = matrix(runif(size*ncov,-1,1),ncol=ncov)
-#'  A = runif(size,0,2)
-#'
-#'  Edr = as.matrix(cbind(c(1, 0.5,0, 0, -0.5, 0, 0, 0,rep(0,2)),
-#'                        c(0.5, 0, 0.5, -0.5, 1,0,0,0,rep(0, 2))))
-#'
-#'  D_opt = sin(X %*% Edr[,2] * X %*% Edr[,1]) + (3/4)*(X %*% Edr[,1])/ (5 + (X %*% Edr[,2] + 4)^2) + 1
-#'
-#'  mu = 7 + 0.5*(X %*% Edr[,1])^2 + 1*X %*% Edr[,2] - 13*abs(D_opt-A)
-#'
-#'  R = rnorm(length(mu),mu,1)
-#'
-#'  R = R - min(R)
-#'
-#'  datainfo = list(X=X,A=A,R=R,D_opt=D_opt,mu=mu)
-#'  return(datainfo)
-#' }
-#'
-#' # generate data
-#' n = 400
-#' p = 10
-#' ndr =2
-#' train = Scenario1(n,p)
-#' test = Scenario1(500,p)
-#'
-#' # the pseudo direct learning method
-#'  orthoDr_pm(train$X,train$A,train$R,ndr =ndr,lambda = seq(0.1,0.2,0.01), 
-#'             method = "direct",keep.data = T)
-#'
-#' predict(orthofit,test$X)
 
 predict.orthoDr <- function(object, testx, ...)
 {

@@ -210,7 +210,7 @@ List semi_pt_solver(arma::mat& B,
   double Cval = F;
 
   // main iteration
-  int itr;
+  int itr = 0;
   arma::mat BP;
   double FP;
   arma::mat GP;
