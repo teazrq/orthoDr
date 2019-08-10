@@ -1,6 +1,6 @@
 Package: orthoDr
 Type: Package
-Title: An Orthogonality Constrained Optimization Approach for Semi-Parametric Dimension Reduction Problems
+Title: Semi-Parametric Dimension Reduction Models Using Orthogonality Constrained Optimization
 Version: 0.6.2
 Author: Ruilin Zhao, Ruoqing Zhu, Jiyang Zhang, Wenzhuo Zhou and Peng Xu
 Maintainer: Ruoqing Zhu <teazrq@gmail.com>

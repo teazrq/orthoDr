@@ -28,47 +28,53 @@
 #' @examples
 #' # generate some personalized dose scenario
 #' 
-#'  example <- function(size,ncov){
-#'    set.seed(123)
-#'    X = matrix(runif(size*ncov,-1,1),ncol=ncov)
-#'    A = runif(size,0,2)
-#'    Edr =  as.matrix(c(0.5,-0.5)) 
-#'    D_opt = X %*% Edr +1 
-#'    mu = 2 + 0.5*(X %*% Edr) - 7*abs(D_opt-A)
-#'    R = rnorm(length(mu),mu,1)
-#'    R = R - min(R)
-#'    datainfo = list(X=X,A=A,R=R,D_opt=D_opt,mu=mu)
-#'    return(datainfo)
-#'  }
-#' 
-#'  n = 150
-#'  p = 2
-#'  ndr =1
-#'  train = example(n,p)
-#'  test = example(500,p)
-#'  
-#'  # the direct learning method 
-#'  orthofit = orthoDr_pm(train$X,train$A,train$R,ndr = ndr,lambda = seq(0.1,0.2,0.01),
-#'                        method = "direct", K = sqrt(n),keep.data = T,maxitr = 150,verbose = F)
-#'                        
-#'  # prediction 
-#'  
-#'  dose = predict(orthofit,test$X)
-#'                 
-#'  # compare with the optimal dose
-#'  dosedistance = mean((test$D_opt-dose$pred)^2)
-#'  print(dosedistance)
+#' Scenario <- function(size,ncov)
+#' {
+#'  set.seed(as.integer((as.double(Sys.time())*100+Sys.getpid()) %% 2^14) )
+#'  X = matrix(runif(size*ncov,-1,1),ncol=ncov)
+#'  A = runif(size,0,2)
 #'
-#'  # the pseudo_direct learning method 
-
-#'  orthofit = orthoDr_pm(train$X,train$A,train$R,ndr = ndr,lambda = seq(0.1,0.2,0.01),
-#'                        method = "pseudo_direct", K = sqrt(n),keep.data = T,maxitr = 150,verbose = F)
-
-#'  dose = predict(orthofit,test$X)
-
-#'  # compare with the optimal dose
-#'  dosedistance = mean((test$D_opt-dose$pred)^2)
-#'  print(dosedistance)
+#'  Edr = as.matrix(cbind(c(1, 0.5,0, 0, -0.5, 0, 0, 0,rep(0,2)),
+#'                        c(0.5, 0, 0.5, -0.5, 1,0,0,0,rep(0, 2))))
+#'
+#'  D_opt = sin(X %*% Edr[,2] * X %*% Edr[,1]) + (3/4)*(X %*% Edr[,1])/ (5 + (X %*% Edr[,2] + 4)^2) + 1
+#'
+#'  mu = 7 + 0.5*(X %*% Edr[,1])^2 + 1*X %*% Edr[,2] - 13*abs(D_opt-A)
+#'
+#'  R = rnorm(length(mu),mu,1)
+#'
+#'  R = R - min(R)
+#'
+#'  datainfo = list(X=X,A=A,R=R,D_opt=D_opt,mu=mu)
+#'  return(datainfo)
+#' }
+#'
+#' # generate data
+#' n = 400
+#' p = 10
+#' ndr =2
+#' train = Scenario1(n,p)
+#' test = Scenario1(500,p)
+#'
+#' # the pseudo direct learning method
+#'  orthoDr_pm(train$X,train$A,train$R,ndr =ndr,lambda = seq(0.1,0.2,0.01), 
+#'             method = "direct",keep.data = T)
+#'
+#' dose = predict(orthofit,test$X)
+#'
+#` # compare with the optimal dose
+#' dosedistance = mean((test$D_opt-dose$pred)^2)
+#' print(dosedistance)
+#' 
+#' the pseudo direct learning method 					  
+#' orthofit = orthoDr_pm(train$X,train$A,train$R,ndr = ndr,lambda = seq(0.1,0.2,0.01),
+#'                       method = "pseudo_direct", keep.data = T)
+#'                     
+#'dose = predict(orthofit,test$X)
+#'
+#' compare with the optimal dose
+#'dosedistance = mean((test$D_opt-dose$pred)^2)
+#'print(dosedistance)
 
 orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda = 0.1,
                        K = sqrt(length(r)), method = c("direct","pseudo_direct"),
@@ -84,7 +90,7 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
   {
     n= nrow(x)
     p = ncol(x)
-    B.initial = P_SAVE(x, a, r, ndr = ndr)
+    B.initial = pSave(x, a, r, ndr = ndr)
   }else{
     if (!is.matrix(B.initial)) stop("B.initial must be a matrix")
     if (ncol(x) != nrow(B.initial) | ndr != ncol(B.initial)) stop("Dimention of B.initial is not correct")
@@ -104,19 +110,20 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
   a_scale = sd(a)
   a_scale_bw = a/a_scale/bw
 
+  
+  cdose= seq(min(a), max(a), length.out = K)
+  
+  cdose_scale = cdose/sd(cdose)/bw
+  
+  A.dist <- matrix(NA, nrow(x), K)
+  for (k in 1:K)
+  {
+    A.dist[, k] = exp(-((a_scale_bw - cdose_scale[k]))^2)
+  }
+  
   if (method == "direct")
   {
-
-    cdose= seq(min(a), max(a), length.out = K)
-
-    cdose_scale = cdose/sd(cdose)/bw
-
-    A.dist <- matrix(NA, nrow(x), K)
-    for (k in 1:K)
-    {
-      A.dist[, k] = exp(-((a_scale_bw - cdose_scale[k]))^2)
-    }
-
+    
     pre = Sys.time()
     fit = direct_pt_solver(B.initial, X, a, A.dist, cdose, r, lambda, bw,
                            control$rho, control$eta, control$gamma, control$tau, control$epsilon,
@@ -129,7 +136,7 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
   {
 
     pre = Sys.time()
-    fit = semi_pt_solver(B.initial, X, r, a, bw,
+    fit = semi_pt_solver(B.initial, X, r, a, A.dist, cdose, lambda, bw,
                          control$rho, control$eta, control$gamma, control$tau, control$epsilon,
                          control$btol, control$ftol, control$gtol, maxitr, verbose,ncore)
     if (verbose > 0)

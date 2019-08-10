@@ -116,6 +116,9 @@ return;
 //' @param X The covariate matrix
 //' @param R The perosnalzied medicine reward
 //' @param A observed dose levels
+//' @param a_dist A kernel distance matrix for the observed dose and girds of the dose levels
+//' @param a_seq A grid of dose levels
+//' @param lambda The penalty for the GCV for the kernel ridge regression
 //' @param bw A Kernel bandwidth, assuming each variable have unit variance
 //' @param rho (don't change) Parameter for control the linear approximation in line search
 //' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
@@ -137,6 +140,9 @@ List semi_pt_solver(arma::mat& B,
                   const arma::mat& X,
                   const arma::colvec& R,
                   const arma::colvec& A,
+                  const arma::mat a_dist,
+                  const arma::colvec a_seq,
+                  const arma::colvec lambda,
                   const double bw,
                   double rho,
                   double eta,
@@ -328,9 +334,75 @@ List semi_pt_solver(arma::mat& B,
     Rcout << "norm of gradient: " << nrmG << std::endl;
     Rcout << "norm of feasibility: " << feasi << std::endl;
   }
+  
+  int N = X.n_rows;
+  int K = a_dist.n_cols;
+  
+  // BX and kernel matrix
+  
+  arma::mat BX = X * B;
+  arma::mat kernel_matrix_X;
+  
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  
+  for (int j=0; j<ndr; j++)
+    BX.col(j) /= BX_scale(j);
+  
+  if (ncore > 1)
+    kernel_matrix_X = KernelDist_multi(BX, ncore, 1);
+  else
+    kernel_matrix_X =  KernelDist_single(BX, 1);
+  
+  
+  arma::mat Hat_R(N, N);
+  arma::vec X_a(N);
+  
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < K; j++) {
+      X_a =  kernel_matrix_X.col(i) % a_dist.col(j);
+      Hat_R.at(i, j) = sum(R % X_a)/sum(X_a);
+    }
+  }
+  
+  arma::colvec MAX_Hat_R = max(Hat_R, 1);
+  
+  arma::ucolvec index = index_max(Hat_R,1);
+  arma::colvec Hat_Dose = a_seq(index);
+  arma::mat Ident(N,N);
+  Ident.eye();
+  
+  // compute GCV
+  
+  int Nlda = lambda.n_elem;
+  arma::mat dd(N,N);
+  arma::mat k1(N,1);
+  arma::mat k2(N,N);
+  double upper;
+  double lower;
+  arma::colvec GCV(Nlda);
+  
+  
+  for (int m = 0; m < Nlda; m++){
+    
+    dd = kernel_matrix_X + lambda(m) * Ident;
+    k1 = (Ident - kernel_matrix_X.t() * inv(dd)) * Hat_Dose;
+    upper = norm(k1,"fro")*norm(k1,"fro");
+    k2 = (Ident -  kernel_matrix_X.t() * inv(dd));
+    lower = trace(k2);
+    GCV(m) = (N * upper) / (lower*lower);
+    
+  }
+  
+  double indexGCV = std::min_element(GCV.begin(), GCV.end()) - GCV.begin();
+  double lambda0 = lambda(indexGCV);
+  
+  dd = kernel_matrix_X + lambda0 * Ident;
+  arma::colvec W(N);
+  W = inv(dd) * Hat_Dose;
 
   List ret;
   ret["B"] = B;
+  ret["W"] = W;
   ret["fn"] = F;
   ret["itr"] = itr;
   ret["converge"] = (itr<maxitr);

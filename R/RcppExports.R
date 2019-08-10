@@ -256,6 +256,9 @@ sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, g
 #' @param X The covariate matrix
 #' @param R The perosnalzied medicine reward
 #' @param A observed dose levels
+#' @param a_dist A kernel distance matrix for the observed dose and girds of the dose levels
+#' @param a_seq A grid of dose levels
+#' @param lambda The penalty for the GCV for the kernel ridge regression
 #' @param bw A Kernel bandwidth, assuming each variable have unit variance
 #' @param rho (don't change) Parameter for control the linear approximation in line search
 #' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
@@ -271,8 +274,8 @@ sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, g
 #' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
 #' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 #' @examples
-semi_pt_solver <- function(B, X, R, A, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_semi_pt_solver`, B, X, R, A, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+semi_pt_solver <- function(B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_semi_pt_solver`, B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
 
 #' @title surv_dm_solver \code{C++} function

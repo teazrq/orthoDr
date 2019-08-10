@@ -276,8 +276,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // semi_pt_solver
-List semi_pt_solver(arma::mat& B, const arma::mat& X, const arma::colvec& R, const arma::colvec& A, const double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
-RcppExport SEXP _orthoDr_semi_pt_solver(SEXP BSEXP, SEXP XSEXP, SEXP RSEXP, SEXP ASEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
+List semi_pt_solver(arma::mat& B, const arma::mat& X, const arma::colvec& R, const arma::colvec& A, const arma::mat a_dist, const arma::colvec a_seq, const arma::colvec lambda, const double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
+RcppExport SEXP _orthoDr_semi_pt_solver(SEXP BSEXP, SEXP XSEXP, SEXP RSEXP, SEXP ASEXP, SEXP a_distSEXP, SEXP a_seqSEXP, SEXP lambdaSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -285,6 +285,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type R(RSEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type a_dist(a_distSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type a_seq(a_seqSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type bw(bwSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
@@ -297,7 +300,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(semi_pt_solver(B, X, R, A, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
+    rcpp_result_gen = Rcpp::wrap(semi_pt_solver(B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -405,7 +408,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_orthoDr_seff_solver", (DL_FUNC) &_orthoDr_seff_solver, 15},
     {"_orthoDr_sir_init", (DL_FUNC) &_orthoDr_sir_init, 5},
     {"_orthoDr_sir_solver", (DL_FUNC) &_orthoDr_sir_solver, 15},
-    {"_orthoDr_semi_pt_solver", (DL_FUNC) &_orthoDr_semi_pt_solver, 16},
+    {"_orthoDr_semi_pt_solver", (DL_FUNC) &_orthoDr_semi_pt_solver, 19},
     {"_orthoDr_surv_dm_solver", (DL_FUNC) &_orthoDr_surv_dm_solver, 16},
     {"_orthoDr_surv_dn_solver", (DL_FUNC) &_orthoDr_surv_dn_solver, 16},
     {"_orthoDr_surv_forward_solver", (DL_FUNC) &_orthoDr_surv_forward_solver, 15},

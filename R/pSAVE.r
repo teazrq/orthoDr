@@ -1,6 +1,6 @@
 #' @title Partial Sliced Averaged Variance Estimation
-#' @name P_SAVE
-#' @description The P_SAVE model. This model is correct only under very strong assumptions, the solution is used as the initial value in the orthoDr optimization.
+#' @name pSAVE
+#' @description The partial-SAVE model. This model is correct only under very strong assumptions, the solution is used as the initial value in the orthoDr optimization.
 #' @param x A matrix for features (continuous only).
 #' @param a A vector of observed dose levels (continuous only).
 #' @param r A vector of reward (outcome).
@@ -11,7 +11,7 @@
 #' @references Feng, Z., Wen, M.X, Yu, Z. and Zhu L. "On Partial Sufficient Dimension Reduction With Applications to Partially Linear Multi-Index Models" (2013)
 #' \url{https://arxiv.org/abs/1704.05046} .
 
-P_SAVE <- function(x, a, r, ndr = 2, nslices0 =2){
+pSAVE <- function(x, a, r, ndr = 2, nslices0 =2){
 
   if (!is.matrix(x)) stop("X must be a matrix")
   if (!is.numeric(x)) stop("x must be numerical")
@@ -38,7 +38,7 @@ P_SAVE <- function(x, a, r, ndr = 2, nslices0 =2){
     newtrain$a = newZ
     dimdr = dr(formula = r ~ x , data = newtrain ,group = ~a,
                nslices = nslices0, chi2approx = "bx",
-               numdir = 10, method = "save")
+               numdir = p, method = "save")
     M_i[[jk]] = dimdr$M
 
   }

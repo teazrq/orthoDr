@@ -29,7 +29,6 @@
 #' cpsir.fit = CP_SIR(dataX, Y, Censor)
 #' distance(failEDR, cpsir.fit$vectors[, 1:ndr, drop = FALSE], "dist")
 
-
 CP_SIR <- function(x, y, censor, bw = silverman(1, length(y)))
 {
   if (!is.matrix(x)) stop("X must be a matrix")
