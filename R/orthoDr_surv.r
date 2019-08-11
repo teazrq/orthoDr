@@ -159,7 +159,7 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
     fit[['censor']] = censor
   }
 
-  class(fit) <- c("orthoDr", "fit", "survival")
+  class(fit) <- c("orthoDr", "fit", "surv")
 
   return(fit)
 }

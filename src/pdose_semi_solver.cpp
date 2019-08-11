@@ -22,12 +22,13 @@
 
 #include <RcppArmadillo.h>
 #include "utilities.h"
+#include "orthoDr_pdose.h"
 
 using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
-double semi_pt_f(const arma::mat& B,
+double pdose_semi_f(const arma::mat& B,
                       const arma::mat& X,
                       const arma::colvec& R,
                       const arma::colvec& A,
@@ -40,12 +41,12 @@ double semi_pt_f(const arma::mat& B,
 
   arma::mat BX  = X * B;
   BX.insert_cols(1, A);
-  
+
   arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
-  
+
   for (int j=0; j<ndr+1; j++)
     BX.col(j) /= BX_scale(j);
-  
+
   arma::mat kernel_matrix;
 
   if (ncore > 1)
@@ -65,7 +66,7 @@ double semi_pt_f(const arma::mat& B,
 
 
 
-void  semi_pt_g( const arma::mat& B,
+void  pdose_semi_g( const arma::mat& B,
                  const double F0,
                  arma::mat& G,
                  const arma::mat& X,
@@ -95,7 +96,7 @@ void  semi_pt_g( const arma::mat& B,
       NewB(i, j) = B(i, j) + epsilon;
 
       // calculate gradiant
-      G(i,j) = (semi_pt_f(NewB, X, R, A, bw, ncore) - F0) / epsilon;
+      G(i,j) = (pdose_semi_f(NewB, X, R, A, bw, ncore) - F0) / epsilon;
 
       // reset
       NewB(i,j) = temp;
@@ -105,12 +106,9 @@ void  semi_pt_g( const arma::mat& B,
 return;
 }
 
-
-
-
-//' @title pseudo_pt_solver
-//' @name pseudo_pt_solver
-//' @description The pseudo direct learning optimization function for A Parsimonious Personalized Dose Finding Model via Dimension Reduction.
+//' @title pdose_semi_solver
+//' @name pdose_semi_solver
+//' @description The pseudo direct learning optimization function for personalized dose finding with dimension reduction.
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 //' @param X The covariate matrix
@@ -133,10 +131,9 @@ return;
 //' @return The optimizer \code{B} for the esitmating equation.
 //' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
 //' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
-//' @examples
 // [[Rcpp::export]]
 
-List semi_pt_solver(arma::mat& B,
+List pdose_semi_solver(arma::mat& B,
                   const arma::mat& X,
                   const arma::colvec& R,
                   const arma::colvec& A,
@@ -181,11 +178,11 @@ List semi_pt_solver(arma::mat& B,
 
   // Initial function value and gradient, prepare for iterations
 
-  double F = semi_pt_f(B, X, R, A, bw, ncore);
+  double F = pdose_semi_f(B, X, R, A, bw, ncore);
 
   arma::mat G(P, ndr);
   G.fill(0);
-  semi_pt_g(B, F, G, X, R, A, bw, epsilon, ncore);
+  pdose_semi_g(B, F, G, X, R, A, bw, epsilon, ncore);
 
   //return G;
 
@@ -230,7 +227,7 @@ List semi_pt_solver(arma::mat& B,
   double SY;
 
   if (verbose > 1)
-    
+
   for(itr = 1; itr < maxitr + 1; itr++){
     BP = B;
     FP = F;
@@ -249,9 +246,9 @@ List semi_pt_solver(arma::mat& B,
         B = BP - U * (tau * aa);
       }
 
-      F = semi_pt_f(B, X, R, A, bw, ncore);
-      semi_pt_g(B, F, G, X, R, A, bw, epsilon, ncore);
-      
+      F = pdose_semi_f(B, X, R, A, bw, ncore);
+      pdose_semi_g(B, F, G, X, R, A, bw, epsilon, ncore);
+
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
       }
@@ -319,7 +316,7 @@ List semi_pt_solver(arma::mat& B,
 
   //Rcout << "iteration " << itr << std::endl;
  // Rcout << "maxitr " << maxitr << std::endl;
-  
+
 	if(itr> maxitr){
 		Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
@@ -334,45 +331,45 @@ List semi_pt_solver(arma::mat& B,
     Rcout << "norm of gradient: " << nrmG << std::endl;
     Rcout << "norm of feasibility: " << feasi << std::endl;
   }
-  
+
   int N = X.n_rows;
   int K = a_dist.n_cols;
-  
+
   // BX and kernel matrix
-  
+
   arma::mat BX = X * B;
   arma::mat kernel_matrix_X;
-  
+
   arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
-  
+
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
-  
+
   if (ncore > 1)
     kernel_matrix_X = KernelDist_multi(BX, ncore, 1);
   else
     kernel_matrix_X =  KernelDist_single(BX, 1);
-  
-  
+
+
   arma::mat Hat_R(N, N);
   arma::vec X_a(N);
-  
+
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
       X_a =  kernel_matrix_X.col(i) % a_dist.col(j);
       Hat_R.at(i, j) = sum(R % X_a)/sum(X_a);
     }
   }
-  
+
   arma::colvec MAX_Hat_R = max(Hat_R, 1);
-  
+
   arma::ucolvec index = index_max(Hat_R,1);
   arma::colvec Hat_Dose = a_seq(index);
   arma::mat Ident(N,N);
   Ident.eye();
-  
+
   // compute GCV
-  
+
   int Nlda = lambda.n_elem;
   arma::mat dd(N,N);
   arma::mat k1(N,1);
@@ -380,22 +377,22 @@ List semi_pt_solver(arma::mat& B,
   double upper;
   double lower;
   arma::colvec GCV(Nlda);
-  
-  
+
+
   for (int m = 0; m < Nlda; m++){
-    
+
     dd = kernel_matrix_X + lambda(m) * Ident;
     k1 = (Ident - kernel_matrix_X.t() * inv(dd)) * Hat_Dose;
     upper = norm(k1,"fro")*norm(k1,"fro");
     k2 = (Ident -  kernel_matrix_X.t() * inv(dd));
     lower = trace(k2);
     GCV(m) = (N * upper) / (lower*lower);
-    
+
   }
-  
+
   double indexGCV = std::min_element(GCV.begin(), GCV.end()) - GCV.begin();
   double lambda0 = lambda(indexGCV);
-  
+
   dd = kernel_matrix_X + lambda0 * Ident;
   arma::colvec W(N);
   W = inv(dd) * Hat_Dose;

@@ -22,6 +22,7 @@
 
 #include <RcppArmadillo.h>
 #include "utilities.h"
+#include "orthoDr_surv.h"
 
 using namespace Rcpp;
 

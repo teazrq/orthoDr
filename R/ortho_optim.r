@@ -34,6 +34,7 @@
 #' sol = eigen(A)$vectors[, 1:k]
 #' fx(sol, A)
 
+
 ortho_optim <- function(B, fn, grad = NULL, ..., maximize = FALSE,
                         control = list(), maxitr = 500, verbose = FALSE)
 {

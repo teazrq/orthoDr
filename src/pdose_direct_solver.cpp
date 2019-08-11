@@ -22,12 +22,14 @@
 
 #include <RcppArmadillo.h>
 #include "utilities.h"
+#include "orthoDr_pdose.h"
+
 
 using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
-double direct_pt_f(const arma::mat& B,
+double pdose_direct_f(const arma::mat& B,
                    const arma::mat& X,
                    const arma::colvec& A,
                    const arma::colvec& a_seq,
@@ -84,7 +86,7 @@ double direct_pt_f(const arma::mat& B,
 
 }
 
-void direct_pt_w(const arma::mat& B,
+void pdose_direct_w(const arma::mat& B,
                  const arma::mat& X,
                  const arma::colvec& A,
                  const arma::colvec& a_seq,
@@ -132,7 +134,7 @@ void direct_pt_w(const arma::mat& B,
   arma::colvec Hat_Dose = a_seq(index);
   arma::mat Ident(N,N);
   Ident.eye();
-  
+
   // compute GCV
 
   int Nlda = lambda.n_elem;
@@ -157,14 +159,14 @@ void direct_pt_w(const arma::mat& B,
 
   double indexGCV = std::min_element(GCV.begin(), GCV.end()) - GCV.begin();
   double lambda0 = lambda(indexGCV);
-  
+
   dd = kernel_matrix_X + lambda0 * Ident;
   W = inv(dd) * Hat_Dose;
 
 }
 
 
-void direct_pt_g(arma::mat& B,
+void pdose_direct_g(arma::mat& B,
                  const double F0,
                  arma::mat& G,
                  const arma::mat& X,
@@ -197,7 +199,7 @@ void direct_pt_g(arma::mat& B,
       NewB(i, j) = B(i, j) + epsilon;
 
       // calculate gradiant
-      G(i,j) = (direct_pt_f(NewB, X, A, a_seq, R, bw, W, ncore) - F0) / epsilon;
+      G(i,j) = (pdose_direct_f(NewB, X, A, a_seq, R, bw, W, ncore) - F0) / epsilon;
 
       // reset
       NewB(i,j) = temp;
@@ -207,9 +209,9 @@ void direct_pt_g(arma::mat& B,
 return;
 }
 
-//' @title direct_pt_solver
-//' @name direct_pt_solver
-//' @description The direct learning optimization function for A Parsimonious Personalized Dose Finding Model via Dimension Reduction.
+//' @title pdose_direct_solver
+//' @name pdose_direct_solver
+//' @description The direct learning optimization function for personalized dose finding.
 //' @keywords internal
 //' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 //' @param X The covariate matrix
@@ -234,7 +236,7 @@ return;
 //' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 // [[Rcpp::export]]
 
-List direct_pt_solver(arma::mat B,
+List pdose_direct_solver(arma::mat B,
                       const arma::mat X,
                       const arma::colvec A,
                       const arma::mat a_dist,
@@ -279,7 +281,7 @@ List direct_pt_solver(arma::mat B,
   }
 
   // Initial function value and gradient, prepare for iterations
-  
+
   // Initiate W
   arma::mat BX = X * B;
   arma::mat kernel_matrix_X;
@@ -293,17 +295,17 @@ List direct_pt_solver(arma::mat B,
     kernel_matrix_X = KernelDist_multi(BX, ncore, 1);
   else
     kernel_matrix_X =  KernelDist_single(BX, 1);
-  
+
   arma::colvec W(N);
   W.fill(0);
   double lambda0 = 0.1;
 
-  direct_pt_w(B, X, A, a_seq,a_dist,R, bw, W,lambda, ncore);
+  pdose_direct_w(B, X, A, a_seq,a_dist,R, bw, W,lambda, ncore);
 
-  double F = direct_pt_f(B, X, A, a_seq, R, bw, W,ncore);
+  double F = pdose_direct_f(B, X, A, a_seq, R, bw, W,ncore);
   arma::mat G(P, ndr);
   G.fill(0);
-  direct_pt_g(B, F, G, X, A, a_seq, R, bw, W, lambda0, epsilon, ncore);
+  pdose_direct_g(B, F, G, X, A, a_seq, R, bw, W, lambda0, epsilon, ncore);
 
   //return G;
 
@@ -371,11 +373,11 @@ List direct_pt_solver(arma::mat B,
         B = BP - U * (tau * aa);
       }
 
-      direct_pt_w(B, X, A,a_seq,a_dist,R, bw, W, lambda, ncore);
+      pdose_direct_w(B, X, A,a_seq,a_dist,R, bw, W, lambda, ncore);
 
-      F = direct_pt_f( B, X, A, a_seq, R, bw, W, ncore);
+      F = pdose_direct_f( B, X, A, a_seq, R, bw, W, ncore);
 
-      direct_pt_g(B, F, G,  X, A, a_seq, R,bw,W,lambda0, epsilon, ncore);
+      pdose_direct_g(B, F, G,  X, A, a_seq, R,bw,W,lambda0, epsilon, ncore);
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;

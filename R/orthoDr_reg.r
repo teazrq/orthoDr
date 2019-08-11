@@ -99,7 +99,7 @@ orthoDr_reg <- function(x, y, method = "sir", ndr = 2,
     fit[['bw']] = bw
   }
 
-  class(fit) <- c("orthoDr", "fit", "regression")
+  class(fit) <- c("orthoDr", "fit", "reg")
 
   return(fit)
 }

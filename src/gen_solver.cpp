@@ -1,4 +1,28 @@
+//    ----------------------------------------------------------------
+//
+//    Orthogonality Constrained Optimization for Dimension Reduction
+//    (orthoDr)
+//
+//    This program is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU General Public License
+//    as published by the Free Software Foundation; either version 3
+//    of the License, or (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public
+//    License along with this program; if not, write to the Free
+//    Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+//    Boston, MA  02110-1301, USA.
+//
+//    ----------------------------------------------------------------
+
 #include <RcppArmadillo.h>
+#include "utilities.h"
+#include "orthoDr_gen.h"
 
 using namespace Rcpp;
 
@@ -53,9 +77,6 @@ void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g
 
   return;
 }
-
-double dmax(double a, double b);
-double dmin(double a, double b);
 
 
 //' @title General solver \code{C++} function
@@ -120,7 +141,7 @@ List gen_solver(arma::mat B,
   double F = gen_f(B, f, env);
   arma::vec F_seq(maxitr);
   F_seq.fill(0.0);
-  
+
   arma::mat G(P, ndr);
   G.fill(0);
 
@@ -181,7 +202,7 @@ List gen_solver(arma::mat B,
 
     int nls = 1;
     double deriv = rho * nrmG * nrmG;
-    
+
     // line search
     while(true){
       if(invH){

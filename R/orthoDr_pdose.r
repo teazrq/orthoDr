@@ -1,5 +1,5 @@
-#' @title orthoDr_pm model
-#' @name orthoDr_pm
+#' @title orthoDr_pdose model
+#' @name orthoDr_pdose
 #' @description The "Direct Learning & Pseudo-direct Learning" Method for personalized medicine.
 #' @param x A matrix or data.frame for features (continuous only).
 #' @param a A vector of observed dose
@@ -8,7 +8,7 @@
 #' @param B.initial Initial \code{B} values. Will use the counting process based SIR model \link[orthoDr]{CP_SIR} as the initial if leaving as \code{NULL}.
 #' If specified, must be a matrix with \code{ncol(x)} rows and \code{ndr} columns. Will be processed by Gram-Schmidt if not orthogonal
 #' @param bw A Kernel bandwidth, assuming each variables have unit variance
-#' @param lambda A GCV penalty for the kernel ridge regression
+#' @param lambda The penalty level for kernel ridge regression. If a range of values is specified, the GCV will be used to select the best tuning
 #' @param K A number of grids in the range of dose
 #' @param method A method the user will implement
 #' @param keep.data Should the original data be kept for prediction
@@ -27,19 +27,17 @@
 #' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 #' @examples
 #' # generate some personalized dose scenario
-#' 
-#' Scenario <- function(size,ncov)
-#' {
-#'  set.seed(as.integer((as.double(Sys.time())*100+Sys.getpid()) %% 2^14) )
+#'
+#' exampleset <- function(size,ncov){
+#'
 #'  X = matrix(runif(size*ncov,-1,1),ncol=ncov)
 #'  A = runif(size,0,2)
 #'
-#'  Edr = as.matrix(cbind(c(1, 0.5,0, 0, -0.5, 0, 0, 0,rep(0,2)),
-#'                        c(0.5, 0, 0.5, -0.5, 1,0,0,0,rep(0, 2))))
+#'  Edr =  as.matrix(c(0.5,-0.5))
 #'
-#'  D_opt = sin(X %*% Edr[,2] * X %*% Edr[,1]) + (3/4)*(X %*% Edr[,1])/ (5 + (X %*% Edr[,2] + 4)^2) + 1
+#'  D_opt = X %*% Edr +1
 #'
-#'  mu = 7 + 0.5*(X %*% Edr[,1])^2 + 1*X %*% Edr[,2] - 13*abs(D_opt-A)
+#'  mu = 2 + 0.5*(X %*% Edr) - 7*abs(D_opt-A)
 #'
 #'  R = rnorm(length(mu),mu,1)
 #'
@@ -50,33 +48,38 @@
 #' }
 #'
 #' # generate data
-#' n = 400
-#' p = 10
-#' ndr =2
-#' train = Scenario1(n,p)
-#' test = Scenario1(500,p)
 #'
-#' # the pseudo direct learning method
-#'  orthoDr_pm(train$X,train$A,train$R,ndr =ndr,lambda = seq(0.1,0.2,0.01), 
-#'             method = "direct",keep.data = T)
+#' set.seed(123)
+#' n = 150
+#' p = 2
+#' ndr =1
+#' train = exampleset(n,p)
+#' test = exampleset(500,p)
+#'
+#' # the direct learning method
+#'  orthofit = orthoDr_pdose(train$X,train$A,train$R,ndr = ndr,lambda = 0.1,
+#'                        method = "direct", K = sqrt(n),keep.data = TRUE,
+#'                        maxitr = 150,verbose = FALSE)
 #'
 #' dose = predict(orthofit,test$X)
 #'
 #` # compare with the optimal dose
 #' dosedistance = mean((test$D_opt-dose$pred)^2)
 #' print(dosedistance)
-#' 
-#' the pseudo direct learning method 					  
-#' orthofit = orthoDr_pm(train$X,train$A,train$R,ndr = ndr,lambda = seq(0.1,0.2,0.01),
-#'                       method = "pseudo_direct", keep.data = T)
-#'                     
-#'dose = predict(orthofit,test$X)
 #'
-#' compare with the optimal dose
-#'dosedistance = mean((test$D_opt-dose$pred)^2)
-#'print(dosedistance)
+#' # the pseudo direct learning method
+#' orthofit = orthoDr_pdose(train$X,train$A,train$R,ndr = ndr,lambda = seq(0.1,0.2,0.01),
+#'                       method = "pseudo_direct", K = sqrt(n),keep.data = TRUE,
+#'                       maxitr = 150,verbose = FALSE)
+#'
+#' dose = predict(orthofit,test$X)
+#'
+#' # compare with the optimal dose
+#'
+#' dosedistance = mean((test$D_opt-dose$pred)^2)
+#' print(dosedistance)
 
-orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda = 0.1,
+orthoDr_pdose <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda = 0.1,
                        K = sqrt(length(r)), method = c("direct","pseudo_direct"),
                        keep.data = FALSE, control = list(), maxitr = 500, verbose = FALSE, ncore = 0)
 {
@@ -90,7 +93,7 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
   {
     n= nrow(x)
     p = ncol(x)
-    B.initial = pSave(x, a, r, ndr = ndr)
+    B.initial = pSAVE(x, a, r, ndr = ndr)
   }else{
     if (!is.matrix(B.initial)) stop("B.initial must be a matrix")
     if (ncol(x) != nrow(B.initial) | ndr != ncol(B.initial)) stop("Dimention of B.initial is not correct")
@@ -104,28 +107,28 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
   N = nrow(x)
   P = ncol(x)
   X = x
-  
+
   # standerdize
   a_center = mean(a)
   a_scale = sd(a)
   a_scale_bw = a/a_scale/bw
 
-  
+
   cdose= seq(min(a), max(a), length.out = K)
-  
+
   cdose_scale = cdose/sd(cdose)/bw
-  
+
   A.dist <- matrix(NA, nrow(x), K)
   for (k in 1:K)
   {
     A.dist[, k] = exp(-((a_scale_bw - cdose_scale[k]))^2)
   }
-  
+
   if (method == "direct")
   {
-    
+
     pre = Sys.time()
-    fit = direct_pt_solver(B.initial, X, a, A.dist, cdose, r, lambda, bw,
+    fit = pdose_direct_solver(B.initial, X, a, A.dist, cdose, r, lambda, bw,
                            control$rho, control$eta, control$gamma, control$tau, control$epsilon,
                            control$btol, control$ftol, control$gtol, maxitr, verbose, ncore)
     if (verbose > 0)
@@ -136,7 +139,7 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
   {
 
     pre = Sys.time()
-    fit = semi_pt_solver(B.initial, X, r, a, A.dist, cdose, lambda, bw,
+    fit = pdose_semi_solver(B.initial, X, r, a, A.dist, cdose, lambda, bw,
                          control$rho, control$eta, control$gamma, control$tau, control$epsilon,
                          control$btol, control$ftol, control$gtol, maxitr, verbose,ncore)
     if (verbose > 0)
@@ -155,7 +158,7 @@ orthoDr_pm <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambda =
     fit[['bw']] = bw
   }
 
-  class(fit) <- c("orthoDr", "fit", "personalized_treatment", method)
+  class(fit) <- c("orthoDr", "fit", "pdose")
 
   return(fit)
 }

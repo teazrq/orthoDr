@@ -23,16 +23,18 @@ print.orthoDr<- function(x, ...)
 
   if (class(x)[2] == "predict")
   {
-    if (class(x)[3] == "survival")
+
+    if (class(x)[3] == "reg")
+      cat(paste("Prediction for orthoDr regression: mean prediction"))
+
+    if (class(x)[3] == "surv")
     {
       cat(paste("Prediction for orthoDr Survival:", ncol(x$surv), "testing subjects at", length(x$timepoints), "time points\n"))
       cat("See 'surv' and 'timepoints'.")
     }
-    if (class(x)[3] == "pt")
-      cat(paste("Prediction for orthoDr personalized treatment: best treatment dose and reward prediction"))
 
-    if (class(x)[3] == "regression")
-      cat(paste("Prediction for orthoDr regression: mean prediction"))
+    if (class(x)[3] == "pdose")
+      cat(paste("Prediction for orthoDr personalized treatment: best treatment dose and reward prediction"))
   }
 }
 

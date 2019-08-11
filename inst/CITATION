@@ -15,7 +15,7 @@ citEntry(entry="Article",
 	       journal = "The R Journal",
          year         = "2019",
          url          = "https://arxiv.org/abs/1811.11733",
-         
+
          textVersion =
          paste("Zhu, R., Zhang, J., Zhao, R., Xu, P., Zhou, W., & Zhang, X. (2019). ",
                "orthoDr: semiparametric dimension reduction via orthogonality constrained optimization. ",
@@ -55,7 +55,7 @@ citEntry(entry="Article",
          header = "If orthoDr_pt is used, please also cite:")
 
 citEntry(entry="Article",
-         title  = "A semiparametric approach to dimension reduction",
+         title  = "A Semiparametric Approach to Dimension Reduction",
          author = personList(person(family="Ma", given="Yanyuan"),
 	                           person(family="Zhu", given="Liping")),
 	       journal      = "Journal of the American Statistical Association",
@@ -64,7 +64,7 @@ citEntry(entry="Article",
 
          textVersion =
          paste("Ma, Y. & Zhu, L. (2012). ",
-               "A semiparametric approach to dimension reduction. ",
+               "A Aemiparametric Approach to Dimension Reduction. ",
                "Journal of the American Statistical Association, 107(497), 168-179",
                sep=""),
          header = "If orthoDr_reg is used, please also cite:")
