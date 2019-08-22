@@ -42,7 +42,7 @@ double pdose_semi_f(const arma::mat& B,
   arma::mat BX  = X * B;
   BX.insert_cols(1, A);
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
 
   for (int j=0; j<ndr+1; j++)
     BX.col(j) /= BX_scale(j);
@@ -340,7 +340,7 @@ List pdose_semi_solver(arma::mat& B,
   arma::mat BX = X * B;
   arma::mat kernel_matrix_X;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
 
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
@@ -351,7 +351,7 @@ List pdose_semi_solver(arma::mat& B,
     kernel_matrix_X =  KernelDist_single(BX, 1);
 
 
-  arma::mat Hat_R(N, N);
+  arma::mat Hat_R(N, K);
   arma::vec X_a(N);
 
   for (int i = 0; i < N; i++) {
@@ -363,7 +363,7 @@ List pdose_semi_solver(arma::mat& B,
 
   arma::colvec MAX_Hat_R = max(Hat_R, 1);
 
-  arma::ucolvec index = index_max(Hat_R,1);
+  arma::ucolvec index = index_max(Hat_R, 1);
   arma::colvec Hat_Dose = a_seq(index);
   arma::mat Ident(N,N);
   Ident.eye();

@@ -59,7 +59,7 @@
 #' # the direct learning method
 #'  orthofit = orthoDr_pdose(train$X,train$A,train$R,ndr = ndr,lambda = 0.1,
 #'                        method = "direct", K = sqrt(n),keep.data = TRUE,
-#'                        maxitr = 150,verbose = FALSE)
+#'                        maxitr = 150, verbose = FALSE, ncore = 2)
 #'
 #' dose = predict(orthofit,test$X)
 #'
@@ -69,8 +69,8 @@
 #'
 #' # the pseudo direct learning method
 #' orthofit = orthoDr_pdose(train$X,train$A,train$R,ndr = ndr,lambda = seq(0.1,0.2,0.01),
-#'                       method = "pseudo_direct", K = sqrt(n),keep.data = TRUE,
-#'                       maxitr = 150,verbose = FALSE)
+#'                       method = "pseudo_direct", K = as.integer(sqrt(n)), keep.data = TRUE,
+#'                       maxitr = 150, verbose = FALSE, ncore = 2)
 #'
 #' dose = predict(orthofit,test$X)
 #'
@@ -141,7 +141,7 @@ orthoDr_pdose <- function(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL, lambd
     pre = Sys.time()
     fit = pdose_semi_solver(B.initial, X, r, a, A.dist, cdose, lambda, bw,
                          control$rho, control$eta, control$gamma, control$tau, control$epsilon,
-                         control$btol, control$ftol, control$gtol, maxitr, verbose,ncore)
+                         control$btol, control$ftol, control$gtol, maxitr, verbose, ncore)
     if (verbose > 0)
       cat(paste("Total time: ", round(as.numeric(Sys.time() - pre, units = "secs"), digits = 2), " secs\n", sep = ""))
 

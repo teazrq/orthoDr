@@ -44,7 +44,7 @@ double pdose_direct_f(const arma::mat& B,
   arma::mat BX = X * B;
   arma::mat kernel_matrix_X;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
 
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
@@ -107,7 +107,7 @@ void pdose_direct_w(const arma::mat& B,
   arma::mat BX = X * B;
   arma::mat kernel_matrix_X;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
 
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
@@ -118,7 +118,7 @@ void pdose_direct_w(const arma::mat& B,
     kernel_matrix_X =  KernelDist_single(BX, 1);
 
 
-  arma::mat Hat_R(N, N);
+  arma::mat Hat_R(N, K);
   arma::vec X_a(N);
 
   for (int i = 0; i < N; i++) {
@@ -286,7 +286,7 @@ List pdose_direct_solver(arma::mat B,
   arma::mat BX = X * B;
   arma::mat kernel_matrix_X;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
 
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);

@@ -50,15 +50,15 @@
 #'
 #' # the direct learning method
 #' orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = 0.1,
-#'                       method = "direct", K = sqrt(n), keep.data = TRUE,
-#'                       maxitr = 150, verbose = FALSE)
+#'                       method = "direct", K = as.integer(sqrt(n)), keep.data = TRUE,
+#'                       maxitr = 150, verbose = FALSE, ncore = 2)
 #'
 #' predict(orthofit,test$X)
 #'
 #' # the pseudo direct learning method
 #' orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = seq(0.1,0.2,0.01),
-#'                       method = "pseudo_direct", K = sqrt(n), keep.data = TRUE,
-#'                       maxitr = 150, verbose = FALSE)
+#'                       method = "pseudo_direct", K = as.integer(sqrt(n)), keep.data = TRUE,
+#'                       maxitr = 150, verbose = FALSE, ncore = 2)
 #'
 #' predict(orthofit,test$X)
 

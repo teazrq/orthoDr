@@ -53,8 +53,8 @@ arma::vec dosepred(arma::mat B,
   arma::mat BX = X * B;
   arma::mat BX_test = X_test * B;
 
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2);
-  arma::rowvec BX_test_scale = stddev(BX, 0, 0)*bw*sqrt(2);
+  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
+  arma::rowvec BX_test_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
 
   for (int j=0; j<ndr; j++)
     BX.col(j) /= BX_scale(j);
