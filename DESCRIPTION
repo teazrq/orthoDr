@@ -13,4 +13,3 @@ NeedsCompilation: yes
 Repository: CRAN
 Imports: Rcpp (>= 0.12.12), survival, dr, pracma, plot3D, rgl, MASS
 LinkingTo: Rcpp, RcppArmadillo
-SystemRequirements: GNU make
