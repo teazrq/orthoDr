@@ -69,3 +69,4 @@ _site/
 *.o
 *.gitignore
 .Rhistory
+*.dll
