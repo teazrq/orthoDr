@@ -25,14 +25,14 @@
 #ifndef orthoDr_gen
 #define orthoDr_gen
 
-double gen_f(arma::mat &B, Rcpp::Function f, Environment env);
-void gen_g(arma::mat B, arma::mat &G, Rcpp::Function g, Environment env);
-void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g, Environment env, double epsilon);
+double gen_f(arma::mat &B, Rcpp::Function f, Rcpp::Environment env);
+void gen_g(arma::mat B, arma::mat &G, Rcpp::Function g, Rcpp::Environment env);
+void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g, Rcpp::Environment env, double epsilon);
 
-List gen_solver(arma::mat B,
+Rcpp::List gen_solver(arma::mat B,
                  Rcpp::Function f,
                  Rcpp::Function g,
-                 Environment env,
+                 Rcpp::Environment env,
                  int useg,
                  double rho,
                  double eta,

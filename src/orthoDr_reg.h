@@ -40,7 +40,7 @@ void local_g(arma::mat& B,
             double epsilon,
             int ncore);
 
-List local_solver(arma::mat B,
+Rcpp::List local_solver(arma::mat B,
                 arma::mat& X,
                 arma::mat& Y,
                 double bw,
@@ -79,7 +79,7 @@ double phd_init(const arma::mat& B,
                  double bw,
                  int ncore);
 
-List phd_solver(arma::mat B,
+Rcpp::List phd_solver(arma::mat B,
                  arma::mat& X,
                  arma::mat& Y,
                  double bw,
@@ -120,7 +120,7 @@ double save_init(const arma::mat& B,
                  double bw,
                  int ncore);
 				 
-List save_solver(arma::mat B,
+Rcpp::List save_solver(arma::mat B,
                  arma::mat& X,
                  arma::mat& Y,
                  double bw,
@@ -159,7 +159,7 @@ double seff_init(const arma::mat& B,
                 double bw,
                 int ncore);
 
-List seff_solver(arma::mat B,
+Rcpp::List seff_solver(arma::mat B,
                 arma::mat& X,
                 arma::mat& Y,
                 double bw,
@@ -196,7 +196,7 @@ double sir_init(const arma::mat& B,
                 double bw,
                 int ncore);
 
-List sir_solver(arma::mat B,
+Rcpp::List sir_solver(arma::mat B,
                 arma::mat& X,
                 arma::mat& Y,
                 double bw,
