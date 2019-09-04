@@ -69,7 +69,7 @@ void checkCores(int& ncore, int verbose)
 
   if (ncore > haveCore)
   {
-    if (verbose) Rcout << "Do not have " <<  ncore << " cores, use maximum " << haveCore << " cores." << std::endl;
+    if (verbose) Rcpp::Rcout << "Do not have " <<  ncore << " cores, use maximum " << haveCore << " cores." << std::endl;
     ncore = haveCore;
   }
 }
