@@ -70,3 +70,4 @@ _site/
 *.gitignore
 .Rhistory
 *.dll
+*.so
