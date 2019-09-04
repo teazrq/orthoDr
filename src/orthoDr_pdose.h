@@ -59,7 +59,7 @@ void pdose_direct_g(arma::mat& B,
                  const double epsilon,
                  int ncore);
 
-List pdose_direct_solver(arma::mat B,
+Rcpp::List pdose_direct_solver(arma::mat B,
                       const arma::mat X,
                       const arma::colvec A,
                       const arma::mat a_dist,
@@ -102,7 +102,7 @@ void  pdose_semi_g( const arma::mat& B,
                  const double epsilon,
                  int ncore);
 
-List pdose_semi_solver(arma::mat& B,
+Rcpp::List pdose_semi_solver(arma::mat& B,
                   const arma::mat& X,
                   const arma::colvec& R,
                   const arma::colvec& A,

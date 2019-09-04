@@ -20,29 +20,14 @@
 //
 //    ----------------------------------------------------------------
 
-#include "utilities.h"
-
-#ifndef orthoDr_gen
-#define orthoDr_gen
-
-double gen_f(arma::mat &B, Rcpp::Function f, Rcpp::Environment env);
-void gen_g(arma::mat B, arma::mat &G, Rcpp::Function g, Rcpp::Environment env);
-void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g, Rcpp::Environment env, double epsilon);
-
-Rcpp::List gen_solver(arma::mat B,
-                 Rcpp::Function f,
-                 Rcpp::Function g,
-                 Rcpp::Environment env,
-                 int useg,
-                 double rho,
-                 double eta,
-                 double gamma,
-                 double tau,
-                 double epsilon,
-                 double btol,
-                 double ftol,
-                 double gtol,
-                 int maxitr,
-                 int verbose);
-				 
+#ifdef _OPENMP
+#include <omp.h>
+#define OMPMSG(...)
+#else
+#define omp_get_thread_num() 0
+#define omp_get_max_threads() 1
+#define OMPMSG(...) Rprintf("Package is not compiled with OpenMP (omp.h).\n")
 #endif
+
+#include <RcppArmadillo.h>
+#include <Rcpp.h>

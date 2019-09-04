@@ -1,5 +1,4 @@
-exportPattern("^[[:alpha:]]+")
-
+exportPattern("^[[:alpha:]_]+")
 importFrom("Rcpp", evalCpp)
 importFrom("pracma", gramSchmidt, repmat)
 importFrom("stats", pnorm, cancor, cov, dist, weighted.mean, sd, quantile, predict)

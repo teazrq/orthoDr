@@ -69,7 +69,7 @@ void checkCores(int& ncore, int verbose)
 
   if (ncore > haveCore)
   {
-    if (verbose) Rcout << "Do not have " <<  ncore << " cores, use maximum " << haveCore << " cores." << std::endl;
+    if (verbose) Rcpp::Rcout << "Do not have " <<  ncore << " cores, use maximum " << haveCore << " cores." << std::endl;
     ncore = haveCore;
   }
 }
@@ -81,8 +81,10 @@ arma::mat KernelDist_multi(const arma::mat& X, int ncore, double diag)
   int N = X.n_rows;
   arma::mat kernel_matrix(N, N);
 
+  int threshold = static_cast<int>(ceil(static_cast<double>(N)/2.0));
+  
 #pragma omp parallel for schedule(static) num_threads(ncore)
-  for (int i = 0; i < (int) ceil((double) N /2); i++)
+  for (int i = 0; i < threshold; i++)
   {
     kernel_matrix(i, i) = diag;
     for (int j = 0; j < i; j ++)
@@ -151,9 +153,11 @@ arma::mat EpanKernelDist_multi(const arma::mat& X, int ncore, double diag)
 {
   int N = X.n_rows;
   arma::mat kernel_matrix(N, N, arma::fill::zeros);
-
+  
+  int threshold = static_cast<int>(ceil(static_cast<double>(N)/2.0));
+  
 #pragma omp parallel for schedule(static) num_threads(ncore)
-  for (int i = 0; i < (int) ceil((double) N /2); i++)
+  for (int i = 0; i < threshold; i++)
   {
     double u;
     kernel_matrix(i, i) = diag;

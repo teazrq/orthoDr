@@ -20,21 +20,7 @@
 //
 //    ----------------------------------------------------------------
 
-#ifdef _OPENMP
-#include <omp.h>
-#define OMPMSG(...)
-#else
-#define omp_get_thread_num() 0
-#define omp_get_max_threads() 1
-#define OMPMSG(...) Rprintf("Package is not compiled with OpenMP (omp.h).\n")
-#endif
-
-#include <RcppArmadillo.h>
-#include <Rcpp.h>
-
-using namespace Rcpp;
-
-// [[Rcpp::depends(RcppArmadillo)]]
+#include "orthDr.h"
 
 #ifndef orthoDr_utility
 #define orthoDr_utility
@@ -51,6 +37,6 @@ arma::mat KernelDist_single(const arma::mat& X, double diag);
 arma::mat EpanKernelDist_multi(const arma::mat& X, int ncore, double diag);
 arma::mat EpanKernelDist_single(const arma::mat& X, double diag);
 
-NumericMatrix KernelDist_cross(const arma::mat& TestX, const arma::mat& X);
+Rcpp::NumericMatrix KernelDist_cross(const arma::mat& TestX, const arma::mat& X);
 
 #endif

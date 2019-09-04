@@ -42,7 +42,7 @@ void surv_dm_g(arma::mat& B,
             const double epsilon,
             int ncore);
 			
-List surv_dm_solver(arma::mat B,
+Rcpp::List surv_dm_solver(arma::mat B,
                  const arma::mat& X,
                  const arma::mat& Phit,
                  const arma::vec& Fail_Ind,
@@ -76,7 +76,7 @@ void surv_dn_g(arma::mat& B,
             double epsilon,
             int ncore);
 
-List surv_dn_solver(arma::mat B,
+Rcpp::List surv_dn_solver(arma::mat B,
                  const arma::mat& X,
                  const arma::mat& Phit,
                  const arma::vec& Fail_Ind,
@@ -108,7 +108,7 @@ void surv_forward_g(arma::mat& B,
             double epsilon,
             int ncore);
 
-List surv_forward_solver(arma::mat B,
+Rcpp::List surv_forward_solver(arma::mat B,
                  const arma::mat& X,
                  const arma::vec& Fail_Ind,
                  double bw,
