@@ -9,17 +9,20 @@ view_dr_surv(x, y, censor, B = NULL, bw = NULL, FUN = "log",
   ylab = "Time", zlab = "Survival")
 }
 \arguments{
-\item{x}{A matrix or data.frame for features (continuous only). The algorithm will not scale the columns to unit variance}
+\item{x}{A \code{matrix} or \code{data.frame} for features (continuous only).
+The algorithm will not scale the columns to unit variance}
 
-\item{y}{A vector of observed time}
+\item{y}{A \code{vector} of observed time}
 
-\item{censor}{A vector of censoring indicator}
+\item{censor}{A \code{vector} of censoring indicator}
 
 \item{B}{The dimension reduction subspace, can only be 1 dimensional}
 
-\item{bw}{A Kernel bandwidth (3D plot only) for approximating the survival function, default is the Silverman's formula}
+\item{bw}{A Kernel bandwidth (3D plot only) for approximating the
+survival function, default is the Silverman's formula}
 
-\item{FUN}{A scaling function applied to the time points \code{y}. Default is \code{"log"}.}
+\item{FUN}{A scaling function applied to the time points \code{y}.
+Default is \code{"log"}.}
 
 \item{type}{\code{2D} or \code{3D} plot}
 
@@ -31,8 +34,12 @@ view_dr_surv(x, y, censor, B = NULL, bw = NULL, FUN = "log",
 
 \item{zlab}{z axis label}
 }
+\value{
+An \code{rgl} object that is rendered.
+}
 \description{
-Produce 2D or 3D plots of right censored survival data based on a given dimension reduction space
+Produce 2D or 3D plots of right censored survival data based on a given
+dimension reduction space
 }
 \examples{
 # generate some survival data

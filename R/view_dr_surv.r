@@ -1,18 +1,31 @@
-#' @title 2D or 2D view of survival data on reduced dimension
-#' @name view_dr_surv
-#' @description Produce 2D or 3D plots of right censored survival data based on a given dimension reduction space
-#' @param x A matrix or data.frame for features (continuous only). The algorithm will not scale the columns to unit variance
-#' @param y A vector of observed time
-#' @param censor A vector of censoring indicator
-#' @param B The dimension reduction subspace, can only be 1 dimensional
-#' @param bw A Kernel bandwidth (3D plot only) for approximating the survival function, default is the Silverman's formula
-#' @param FUN A scaling function applied to the time points `y`. Default is `"log"`.
-#' @param type `2D` or `3D` plot
+#' 2D or 2D view of survival data on reduced dimension
+#' 
+#' Produce 2D or 3D plots of right censored survival data based on a given
+#' dimension reduction space
+#' 
+#' @param x          A `matrix` or `data.frame` for features (continuous only).
+#'                   The algorithm will not scale the columns to unit variance
+#' @param y          A `vector` of observed time
+#' @param censor     A `vector` of censoring indicator
+#' @param B          The dimension reduction subspace, can only be 1 dimensional
+#' @param bw         A Kernel bandwidth (3D plot only) for approximating the 
+#'                   survival function, default is the Silverman's formula
+#' @param FUN        A scaling function applied to the time points `y`.
+#'                   Default is `"log"`.
+#' @param type       `2D` or `3D` plot
 #' @param legend.add Should legend be added (2D plot only)
-#' @param xlab x axis label
-#' @param ylab y axis label
-#' @param zlab z axis label
-#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
+#' @param xlab       x axis label
+#' @param ylab       y axis label
+#' @param zlab       z axis label
+#' 
+#' @return 
+#' 
+#' An `rgl` object that is rendered.
+#' 
+#' @export
+#' 
+#' @references 
+#' Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
 #' <https://arxiv.org/abs/1704.05046>.
 #' @examples
 #' # generate some survival data
