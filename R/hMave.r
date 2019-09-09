@@ -10,7 +10,7 @@
 #' \item{B}{The estimated B matrix}
 #' \item{cv}{Leave one out cross-validation error}
 #' @references Xia, Y., Zhang, D., & Xu, J. (2010). Dimension reduction and semiparametric estimation of survival models. Journal of the American Statistical Association, 105(489), 278-290.
-#' \url{http://dx.doi.org/10.1198/jasa.2009.tm09372}.
+#' <http://dx.doi.org/10.1198/jasa.2009.tm09372>.
 #' @examples
 #' # generate some survival data
 #' set.seed(1)

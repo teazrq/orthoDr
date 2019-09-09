@@ -9,7 +9,7 @@
 #' \item{values}{The eigenvalues of the estimation matrix}
 #' \item{vectors}{The estimated directions, ordered by eigenvalues}
 #' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-#' \url{https://arxiv.org/abs/1704.05046} .
+#' <https://arxiv.org/abs/1704.05046> .
 #' @examples
 #' # This is setting 1 in Sun et. al. (2017) with reduced sample size
 #' library(MASS)

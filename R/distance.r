@@ -4,7 +4,7 @@
 #' @param s2 second space
 #' @param type type of distance measures: "dist" (default), "trace", "canonical" or "sine"
 #' @param x the covariate values, for canonical correlation only
-#' @return The distance between \code{s1} and \code{s2}.
+#' @return The distance between `s1` and `s2`.
 #' @examples
 #' # two spaces
 #' failEDR = as.matrix(cbind(c(1, 1, 0, 0, 0, 0),

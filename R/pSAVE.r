@@ -9,7 +9,7 @@
 #' @return A list consisting of
 #' \item{vectors}{The basis of central subspace, ordered by eigenvalues}
 #' @references Feng, Z., Wen, M.X, Yu, Z. and Zhu L. "On Partial Sufficient Dimension Reduction With Applications to Partially Linear Multi-Index Models" (2013)
-#' \url{https://arxiv.org/abs/1704.05046} .
+#' <https://arxiv.org/abs/1704.05046> .
 
 pSAVE <- function(x, a, r, ndr = 2, nslices0 =2){
 

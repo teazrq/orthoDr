@@ -6,14 +6,14 @@
 #' @param censor A vector of censoring indicator
 #' @param B The dimension reduction subspace, can only be 1 dimensional
 #' @param bw A Kernel bandwidth (3D plot only) for approximating the survival function, default is the Silverman's formula
-#' @param FUN A scaling function applied to the time points \code{y}. Default is \code{"log"}.
-#' @param type \code{2D} or \code{3D} plot
+#' @param FUN A scaling function applied to the time points `y`. Default is `"log"`.
+#' @param type `2D` or `3D` plot
 #' @param legend.add Should legend be added (2D plot only)
 #' @param xlab x axis label
 #' @param ylab y axis label
 #' @param zlab z axis label
 #' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-#' \url{https://arxiv.org/abs/1704.05046}.
+#' <https://arxiv.org/abs/1704.05046>.
 #' @examples
 #' # generate some survival data
 #' N = 100; P = 4; dataX = matrix(rnorm(N*P), N, P)

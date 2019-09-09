@@ -19,7 +19,7 @@ orthoDr_surv(x, y, censor, method = "dm", ndr = ifelse(method ==
 
 \item{ndr}{The number of directions}
 
-\item{B.initial}{Initial \code{B} values. Will use the counting process based SIR model \link[orthoDr]{CP_SIR} as the initial if leaving as \code{NULL}.
+\item{B.initial}{Initial \code{B} values. Will use the counting process based SIR model \link[orthoDr:CP_SIR]{CP_SIR} as the initial if leaving as \code{NULL}.
 If specified, must be a matrix with \code{ncol(x)} rows and \code{ndr} columns. Will be processed by Gram-Schmidt if not orthogonal}
 
 \item{bw}{A Kernel bandwidth, assuming each variables have unit variance}
