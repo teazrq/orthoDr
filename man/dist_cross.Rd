@@ -2,20 +2,22 @@
 % Please edit documentation in R/dist_cross.r
 \name{dist_cross}
 \alias{dist_cross}
-\title{dist_cross}
+\title{Cross distance matrix}
 \usage{
 dist_cross(x1, x2)
 }
 \arguments{
-\item{x1}{first data matrix}
+\item{x1}{First data matrix}
 
-\item{x2}{second data matrix}
+\item{x2}{Second data matrix}
 }
 \value{
-A distance matrix, with its (i, j)th element being the Gaussian kernel distance between ith row of \code{X1} jth row of \code{X2}.
+A distance matrix with its (i, j)th element being the Gaussian kernel
+distance between ith row of \code{X1} jth row of \code{X2}.
 }
 \description{
-Cross distance matrix. An extension to the dist() function. Calculate the Gaussian kernel distance between rows of X1 and rows of X2
+Calculate the Gaussian kernel distance between rows of X1 and rows of X2.
+As a result, this is an extension to the \code{\link[stats:dist]{stats::dist()}} function.
 }
 \examples{
 # two matrices
