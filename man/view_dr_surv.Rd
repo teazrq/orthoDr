@@ -36,11 +36,13 @@ Produce 2D or 3D plots of right censored survival data based on a given dimensio
 }
 \examples{
 # generate some survival data
-N = 100; P = 4; dataX = matrix(rnorm(N*P), N, P)
-Y = exp(-1 + dataX[,1] + rnorm(N))
-Censor = rbinom(N, 1, 0.8)
+N <- 100
+P <- 4
+dataX <- matrix(rnorm(N * P), N, P)
+Y <- exp(-1 + dataX[, 1] + rnorm(N))
+Censor <- rbinom(N, 1, 0.8)
 
-orthoDr.fit = orthoDr_surv(dataX, Y, Censor, ndr = 1, method = "dm")
+orthoDr.fit <- orthoDr_surv(dataX, Y, Censor, ndr = 1, method = "dm")
 view_dr_surv(dataX, Y, Censor, orthoDr.fit$B)
 }
 \references{

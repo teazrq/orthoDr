@@ -28,17 +28,17 @@ This is an almost direct R translation of Xia, Zhang & Xu's (2010) hMave Matlab 
 \examples{
 # generate some survival data
 set.seed(1)
-P = 7
-N = 150
-dataX = matrix(runif(N*P), N, P)
-failEDR = as.matrix(cbind(c(1, 1.3, -1.3, 1, -0.5, 0.5, -0.5, rep(0, P-7))))
-T = exp(dataX \%*\% failEDR + rnorm(N))
-C = runif(N, 0, 15)
-Y = pmin(T, C)
-Censor = (T < C)
+P <- 7
+N <- 150
+dataX <- matrix(runif(N * P), N, P)
+failEDR <- as.matrix(cbind(c(1, 1.3, -1.3, 1, -0.5, 0.5, -0.5, rep(0, P - 7))))
+T <- exp(dataX \%*\% failEDR + rnorm(N))
+C <- runif(N, 0, 15)
+Y <- pmin(T, C)
+Censor <- (T < C)
 
 # fit the model
-hMave.fit = hMave(dataX, Y, Censor, 1)
+hMave.fit <- hMave(dataX, Y, Censor, 1)
 }
 \references{
 Xia, Y., Zhang, D., & Xu, J. (2010). Dimension reduction and semiparametric estimation of survival models. Journal of the American Statistical Association, 105(489), 278-290.

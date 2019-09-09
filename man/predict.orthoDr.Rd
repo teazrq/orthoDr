@@ -21,58 +21,65 @@ The prediction function for orthoDr fitted models
 }
 \examples{
 # generate some survival data
-N = 100; P = 4; dataX = matrix(rnorm(N*P), N, P)
-Y = exp(-1 + dataX[,1] + rnorm(N))
-Censor = rbinom(N, 1, 0.8)
+N <- 100
+P <- 4
+dataX <- matrix(rnorm(N * P), N, P)
+Y <- exp(-1 + dataX[, 1] + rnorm(N))
+Censor <- rbinom(N, 1, 0.8)
 
 # fit the model with keep.data = TRUE
-orthoDr.fit = orthoDr_surv(dataX, Y, Censor, ndr = 1,
-                           method = "dm", keep.data = TRUE)
+orthoDr.fit <- orthoDr_surv(dataX, Y, Censor,
+  ndr = 1,
+  method = "dm", keep.data = TRUE
+)
 
-#predict 10 new observations
-predict(orthoDr.fit, matrix(rnorm(10*P), 10, P))
+# predict 10 new observations
+predict(orthoDr.fit, matrix(rnorm(10 * P), 10, P))
 
 # generate some personalized dose scenario
 
-exampleset <- function(size,ncov){
+exampleset <- function(size, ncov) {
+  X <- matrix(runif(size * ncov, -1, 1), ncol = ncov)
+  A <- runif(size, 0, 2)
 
- X = matrix(runif(size*ncov,-1,1),ncol=ncov)
- A = runif(size,0,2)
+  Edr <- as.matrix(c(0.5, -0.5))
 
- Edr =  as.matrix(c(0.5,-0.5))
+  D_opt <- X \%*\% Edr + 1
 
- D_opt = X \%*\% Edr + 1
+  mu <- 2 + 0.5 * (X \%*\% Edr) - 7 * abs(D_opt - A)
 
- mu = 2 + 0.5*(X \%*\% Edr) - 7*abs(D_opt-A)
+  R <- rnorm(length(mu), mu, 1)
 
- R = rnorm(length(mu),mu,1)
+  R <- R - min(R)
 
- R = R - min(R)
-
- datainfo = list(X=X,A=A,R=R,D_opt=D_opt,mu=mu)
- return(datainfo)
+  datainfo <- list(X = X, A = A, R = R, D_opt = D_opt, mu = mu)
+  return(datainfo)
 }
 
 # generate data
 
 set.seed(123)
-n = 150
-p = 2
-ndr =1
-train = exampleset(n,p)
-test = exampleset(500,p)
+n <- 150
+p <- 2
+ndr <- 1
+train <- exampleset(n, p)
+test <- exampleset(500, p)
 
 # the direct learning method
-orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = 0.1,
-                      method = "direct", K = as.integer(sqrt(n)), keep.data = TRUE,
-                      maxitr = 150, verbose = FALSE, ncore = 2)
+orthofit <- orthoDr_pdose(train$X, train$A, train$R,
+  ndr = ndr, lambda = 0.1,
+  method = "direct", K = as.integer(sqrt(n)), keep.data = TRUE,
+  maxitr = 150, verbose = FALSE, ncore = 2
+)
 
-predict(orthofit,test$X)
+predict(orthofit, test$X)
 
 # the pseudo direct learning method
-orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = seq(0.1,0.2,0.01),
-                      method = "pseudo_direct", K = as.integer(sqrt(n)), keep.data = TRUE,
-                      maxitr = 150, verbose = FALSE, ncore = 2)
+orthofit <- orthoDr_pdose(train$X, train$A, train$R,
+  ndr = ndr, lambda = seq(0.1, 0.2, 0.01),
+  method = "pseudo_direct", K = as.integer(sqrt(n)), keep.data = TRUE,
+  maxitr = 150, verbose = FALSE, ncore = 2
+)
 
-predict(orthofit,test$X)
+predict(orthofit, test$X)
 }

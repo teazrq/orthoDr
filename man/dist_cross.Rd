@@ -20,7 +20,7 @@ Cross distance matrix. An extension to the dist() function. Calculate the Gaussi
 \examples{
 # two matrices
 set.seed(1)
-x1 = matrix(rnorm(10), 5, 2)
-x2 = matrix(rnorm(6), 3, 2)
+x1 <- matrix(rnorm(10), 5, 2)
+x2 <- matrix(rnorm(6), 3, 2)
 dist_cross(x1, x2)
 }

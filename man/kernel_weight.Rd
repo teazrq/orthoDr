@@ -24,7 +24,7 @@ Calculate the Gaussian kernel weights between rows of X1 and rows of X2
 \examples{
 # two matrices
 set.seed(1)
-x1 = matrix(rnorm(10), 5, 2)
-x2 = matrix(rnorm(6), 3, 2)
+x1 <- matrix(rnorm(10), 5, 2)
+x2 <- matrix(rnorm(6), 3, 2)
 kernel_weight(x1, x2)
 }
