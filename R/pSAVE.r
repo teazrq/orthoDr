@@ -1,16 +1,26 @@
-#' @title Partial Sliced Averaged Variance Estimation
-#' @name pSAVE
-#' @description The partial-SAVE model. This model is correct only under very strong assumptions, the solution is used as the initial value in the orthoDr optimization.
-#' @param x A matrix for features (continuous only).
-#' @param a A vector of observed dose levels (continuous only).
-#' @param r A vector of reward (outcome).
-#' @param ndr The dimension structure
+#' Partial Sliced Averaged Variance Estimation
+#' 
+#' The partial-SAVE model. This model is correct only under very strong 
+#' assumptions, the solution is used as the initial value in the `orthoDr`
+#' optimization.
+#' 
+#' @param x        A `matrix` for features (continuous only).
+#' @param a        A `vector` of observed dose levels (continuous only).
+#' @param r        A `vector` of reward (outcome).
+#' @param ndr      The dimension structure
 #' @param nslices0 Number of slides used for save
-#' @return A list consisting of
+#' 
+#' @return 
+#' 
+#' A `list` consisting of:
+#' 
 #' \item{vectors}{The basis of central subspace, ordered by eigenvalues}
-#' @references Feng, Z., Wen, M.X, Yu, Z. and Zhu L. "On Partial Sufficient Dimension Reduction With Applications to Partially Linear Multi-Index Models" (2013)
+#' 
+#' @export
+#' 
+#' @references 
+#' Feng, Z., Wen, M.X, Yu, Z. and Zhu L. "On Partial Sufficient Dimension Reduction With Applications to Partially Linear Multi-Index Models" (2013)
 #' <https://arxiv.org/abs/1704.05046> .
-
 pSAVE <- function(x, a, r, ndr = 2, nslices0 = 2) {
   if (!is.matrix(x)) stop("X must be a matrix")
   if (!is.numeric(x)) stop("x must be numerical")
