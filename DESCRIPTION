@@ -2,7 +2,7 @@ Package: orthoDr
 Type: Package
 Title: Semi-Parametric Dimension Reduction Models Using Orthogonality
         Constrained Optimization
-Version: 0.6.4
+Version: 0.6.5
 Authors@R: c(
     person("Ruilin", "Zhao",
            email = "rzhao15@seas.upenn.edu", 
