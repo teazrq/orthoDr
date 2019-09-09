@@ -2,7 +2,8 @@
 # orthoDr
 
 <!-- badges: start -->
-  [![Travis build status](https://travis-ci.org/coatless/orthoDr.svg?branch=master)](https://travis-ci.org/coatless/orthoDr)
+[![Travis build status](https://travis-ci.com/teazrq/orthoDr.svg?branch=master)](https://travis-ci.com/teazrq/orthoDr)
+[![CRAN status](https://www.r-pkg.org/badges/version/orthoDr)](https://CRAN.R-project.org/package=orthoDr)
 <!-- badges: end -->
   
 The goal of `orthoDr` is to use an orthogonality constrained optimization
