@@ -19,4 +19,3 @@ NULL
 #' @references <https://cancergenome.nih.gov/>
 #' @keywords skcm.melgene
 NULL
-

@@ -27,76 +27,78 @@
 #' @examples
 #' # generate some regression data
 #' set.seed(1)
-#' N = 100; P = 4; dataX = matrix(rnorm(N*P), N, P)
-#' Y = -1 + dataX[,1] + rnorm(N)
-
+#' N <- 100
+#' P <- 4
+#' dataX <- matrix(rnorm(N * P), N, P)
+#' Y <- -1 + dataX[, 1] + rnorm(N)
+#'
 #' # fit the semi-sir model
 #' orthoDr_reg(dataX, Y, ndr = 1, method = "sir")
-
+#'
 #' # fit the semi-phd model
-#' Y = -1 + dataX[,1]^2 + rnorm(N)
+#' Y <- -1 + dataX[, 1]^2 + rnorm(N)
 #' orthoDr_reg(dataX, Y, ndr = 1, method = "phd")
-
 orthoDr_reg <- function(x, y, method = "sir", ndr = 2,
                         B.initial = NULL, bw = NULL, keep.data = FALSE,
-                        control = list(), maxitr = 500, verbose = FALSE, ncore = 0)
-{
+                        control = list(), maxitr = 500, verbose = FALSE, ncore = 0) {
   if (!is.matrix(x)) stop("x must be a matrix")
   if (!is.numeric(x)) stop("x must be numerical")
   if (nrow(x) != length(y)) stop("Number of observations do not match")
 
   # check tuning parameters
-  control = control.check(control)
+  control <- control.check(control)
   match.arg(method, c("sir", "save", "phd", "local", "seff"))
   # match.arg(method, c("sir", "phd"))
 
   # this is temporary
-  #if (method %in% c("save"))
+  # if (method %in% c("save"))
   #  stop("save and seff are currently unaviable.")
 
-  ndr = max(1, ndr)
+  ndr <- max(1, ndr)
   if (ndr > 4) warning("ndr > 3 is not recommended")
-  ndr = min(ndr, ncol(x))
+  ndr <- min(ndr, ncol(x))
 
-  N = nrow(x)
-  P = ncol(x)
+  N <- nrow(x)
+  P <- ncol(x)
 
-  if (is.null(bw))
-    bw = silverman(ndr, N)
+  if (is.null(bw)) {
+    bw <- silverman(ndr, N)
+  }
 
   # scale y
-  Y = as.matrix(scale(y) / N^(-1/(ndr+5)) / sqrt(2))
+  Y <- as.matrix(scale(y) / N^(-1 / (ndr + 5)) / sqrt(2))
 
   # scale x
-  X = x
+  X <- x
 
-  if (is.null(B.initial))
-  {
-    B.initial = initB(X, Y, ndr, bw, method, ncore)
-  }else{
+  if (is.null(B.initial)) {
+    B.initial <- initB(X, Y, ndr, bw, method, ncore)
+  } else {
     if (!is.matrix(B.initial)) stop("B.initial must be a matrix")
     if (ncol(x) != nrow(B.initial) | ndr != ncol(B.initial)) stop("Dimension of B.initial is not correct")
-    B.initial = gramSchmidt(B.initial)$Q
+    B.initial <- gramSchmidt(B.initial)$Q
   }
 
   # start to fit the model
-  pre = Sys.time()
+  pre <- Sys.time()
 
-  fit = reg_solver(method, B.initial, X, Y, bw,
-                     control$rho, control$eta, control$gamma, control$tau, control$epsilon,
-                     control$btol, control$ftol, control$gtol, maxitr, verbose, ncore)
+  fit <- reg_solver(
+    method, B.initial, X, Y, bw,
+    control$rho, control$eta, control$gamma, control$tau, control$epsilon,
+    control$btol, control$ftol, control$gtol, maxitr, verbose, ncore
+  )
 
-  if (verbose > 0)
+  if (verbose > 0) {
     cat(paste("Total time: ", round(as.numeric(Sys.time() - pre, units = "secs"), digits = 2), " secs\n", sep = ""))
+  }
 
-  fit$method = method
-  fit$keep.data = keep.data
+  fit$method <- method
+  fit$keep.data <- keep.data
 
-  if (keep.data)
-  {
-    fit[['x']] = x
-    fit[['y']] = y
-    fit[['bw']] = bw
+  if (keep.data) {
+    fit[["x"]] <- x
+    fit[["y"]] <- y
+    fit[["bw"]] <- bw
   }
 
   class(fit) <- c("orthoDr", "fit", "reg")
@@ -113,22 +115,26 @@ orthoDr_reg <- function(x, y, method = "sir", ndr = 2,
 #' @description regression solver switch function
 #' @keywords internal
 #'
-reg_solver <- function(method, ...)
-{
-  if (method == "sir")
-    fit = sir_solver(...)
+reg_solver <- function(method, ...) {
+  if (method == "sir") {
+    fit <- sir_solver(...)
+  }
 
-  if (method == "save")
-    fit = save_solver(...)
+  if (method == "save") {
+    fit <- save_solver(...)
+  }
 
-  if (method == "phd")
-    fit = phd_solver(...)
+  if (method == "phd") {
+    fit <- phd_solver(...)
+  }
 
-  if (method == "seff")
-    fit = seff_solver(...)
+  if (method == "seff") {
+    fit <- seff_solver(...)
+  }
 
-  if (method == "local")
-    fit = local_solver(...)
+  if (method == "local") {
+    fit <- local_solver(...)
+  }
 
   return(fit)
 }
@@ -140,22 +146,26 @@ reg_solver <- function(method, ...)
 #' @description regression initiation function to get better initial value
 #' @keywords internal
 #'
-reg_init <- function(method, ...)
-{
-  if (method == "sir")
-    f = sir_init(...)
+reg_init <- function(method, ...) {
+  if (method == "sir") {
+    f <- sir_init(...)
+  }
 
-  if (method == "save")
-    f = save_init(...)
+  if (method == "save") {
+    f <- save_init(...)
+  }
 
-  if (method == "phd")
-    f = phd_init(...)
+  if (method == "phd") {
+    f <- phd_init(...)
+  }
 
-  if (method == "seff")
-    f = seff_init(...)
+  if (method == "seff") {
+    f <- seff_init(...)
+  }
 
-  if (method == "local")
-    f = local_f(...)
+  if (method == "local") {
+    f <- local_f(...)
+  }
 
   return(f)
 }
@@ -166,33 +176,16 @@ reg_init <- function(method, ...)
 #' @description regression initiation function
 #' @keywords internal
 #'
-initB <- function(x, y, ndr, bw, method, ncore){
+initB <- function(x, y, ndr, bw, method, ncore) {
+  B1 <- gramSchmidt(dr(y ~ x, method = "sir")$evectors[, 1:ndr, drop = FALSE])$Q
+  B2 <- gramSchmidt(dr(y ~ x, method = "save")$evectors[, 1:ndr, drop = FALSE])$Q
+  B3 <- gramSchmidt(dr(y ~ x, method = "phd")$evectors[, 1:ndr, drop = FALSE])$Q
 
-  B1 = gramSchmidt(dr(y ~ x, method = "sir")$evectors[, 1:ndr, drop = FALSE])$Q
-  B2 = gramSchmidt(dr(y ~ x, method = "save")$evectors[, 1:ndr, drop = FALSE])$Q
-  B3 = gramSchmidt(dr(y ~ x, method = "phd")$evectors[, 1:ndr, drop = FALSE])$Q
+  values <- c(
+    reg_init(method, B1, x, y, bw, ncore),
+    reg_init(method, B2, x, y, bw, ncore),
+    reg_init(method, B3, x, y, bw, ncore)
+  )
 
-  values = c(reg_init(method, B1, x, y, bw, ncore),
-             reg_init(method, B2, x, y, bw, ncore),
-             reg_init(method, B3, x, y, bw, ncore))
-
-  return(list(B1,B2,B3)[[which.min(values)]])
+  return(list(B1, B2, B3)[[which.min(values)]])
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
