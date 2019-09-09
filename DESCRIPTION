@@ -17,8 +17,6 @@ Description: Utilize an orthogonality constrained optimization algorithm of
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: TRUE
-RoxygenNote: 6.1.1
-NeedsCompilation: yes
-Repository: CRAN
 Imports: Rcpp (>= 0.12.12), survival, dr, pracma, plot3D, rgl, MASS
 LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 6.1.1
