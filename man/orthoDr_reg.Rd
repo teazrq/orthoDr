@@ -2,45 +2,60 @@
 % Please edit documentation in R/orthoDr_reg.r
 \name{orthoDr_reg}
 \alias{orthoDr_reg}
-\title{orthoDr_reg}
+\title{Semiparametric dimension reduction method from Ma & Zhu (2012).}
 \usage{
 orthoDr_reg(x, y, method = "sir", ndr = 2, B.initial = NULL,
   bw = NULL, keep.data = FALSE, control = list(), maxitr = 500,
   verbose = FALSE, ncore = 0)
 }
 \arguments{
-\item{x}{A matrix or data.frame for features (continous only). The algorithm will not scale the columns to unit variance}
+\item{x}{A \code{matrix} or \code{data.frame} for features (continous only).
+The algorithm will not scale the columns to unit variance}
 
-\item{y}{A vector of continuous outcome}
+\item{y}{A \code{vector} of continuous outcome}
 
-\item{method}{Dimension reduction methods (semi-): \code{sir}, \code{save}, \code{phd}, \code{local} or \code{seff}. Currently only \code{sir} and \code{phd} are available.}
+\item{method}{Dimension reduction methods (semi-): \code{"sir"}, \code{"save"},
+\code{"phd"}, \code{"local"} or \code{"seff"}. Currently only
+\code{"sir"} and \code{"phd"} are available.}
 
 \item{ndr}{The number of directions}
 
-\item{B.initial}{Initial \code{B} values. If specified, must be a matrix with \code{ncol(x)} rows and \code{ndr} columns. Will be processed by Gram-Schmidt if not orthogonal.
-If the initial value is not given, three initial values (\code{sir}, \code{save} and \code{phd}) using the traditional method will be tested. The one with smallest l2 norm of the estimating equation will be used.}
+\item{B.initial}{Initial \code{B} values. If specified, must be a matrix with
+\code{ncol(x)} rows and \code{ndr} columns. Will be processed by
+Gram-Schmidt if not orthogonal. If the initial value is
+not given, three initial values (\code{"sir"}, \code{"save"} and
+\code{"phd"}) using the traditional method will be tested. The
+one with smallest l2 norm of the estimating equation will
+be used.}
 
-\item{bw}{A Kernel bandwidth, assuming each variables have unit variance}
+\item{bw}{A Kernel bandwidth, assuming each variables have unit
+variance}
 
-\item{keep.data}{Should the original data be kept for prediction. Default is \code{FALSE}}
+\item{keep.data}{Should the original data be kept for prediction. Default
+is \code{FALSE}.}
 
-\item{control}{A list of tuning variables for optimization. \code{epsilon} is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).}
+\item{control}{A list of tuning variables for optimization.
+\code{epsilon} is the size for numerically approximating the
+gradient. For others, see Wen and Yin (2013).}
 
 \item{maxitr}{Maximum number of iterations}
 
 \item{verbose}{Should information be displayed}
 
-\item{ncore}{Number of cores for parallel computing. The default is the maximum number of threads.}
+\item{ncore}{Number of cores for parallel computing.
+The default is the maximum number of threads.}
 }
 \value{
-A \code{orthoDr} object; a list consisting of
+A \code{orthoDr} object consisting of \code{list} with named elements:
+
 \item{B}{The optimal \code{B} value}
 \item{fn}{The final functional value}
 \item{itr}{The number of iterations}
 \item{converge}{convergence code}
 }
 \description{
-The semiparametric dimension reduction method from Ma & Zhu (2012).
+Performs the semiparametric dimension reduction method associated with
+Ma & Zhu (2012).
 }
 \examples{
 # generate some regression data

@@ -1,29 +1,54 @@
-#' @title orthoDr_reg
-#' @name orthoDr_reg
-#' @description The semiparametric dimension reduction method from Ma & Zhu (2012).
-#' @param x A matrix or data.frame for features (continous only). The algorithm will not scale the columns to unit variance
-#' @param y A vector of continuous outcome
-#' @param method Dimension reduction methods (semi-): `sir`, `save`, `phd`, `local` or `seff`. Currently only `sir` and `phd` are available.
-#' @param ndr The number of directions
-#' @param B.initial Initial `B` values. If specified, must be a matrix with `ncol(x)` rows and `ndr` columns. Will be processed by Gram-Schmidt if not orthogonal.
-#' If the initial value is not given, three initial values (`sir`, `save` and `phd`) using the traditional method will be tested. The one with smallest l2 norm of the estimating equation will be used.
-#' @param bw A Kernel bandwidth, assuming each variables have unit variance
-#' @param keep.data Should the original data be kept for prediction. Default is `FALSE`
-#' @param control A list of tuning variables for optimization. `epsilon` is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).
-#' @param maxitr Maximum number of iterations
-#' @param verbose Should information be displayed
-#' @param ncore Number of cores for parallel computing. The default is the maximum number of threads.
-#' @return A `orthoDr` object; a list consisting of
+#' Semiparametric dimension reduction method from Ma & Zhu (2012).
+#' 
+#' Performs the semiparametric dimension reduction method associated with
+#' Ma & Zhu (2012).
+#' 
+#' @param x         A `matrix` or `data.frame` for features (continous only). 
+#'                  The algorithm will not scale the columns to unit variance
+#' @param y         A `vector` of continuous outcome
+#' @param method    Dimension reduction methods (semi-): `"sir"`, `"save"`, 
+#'                  `"phd"`, `"local"` or `"seff"`. Currently only 
+#'                  `"sir"` and `"phd"` are available.
+#' @param ndr       The number of directions
+#' @param B.initial Initial `B` values. If specified, must be a matrix with
+#'                  `ncol(x)` rows and `ndr` columns. Will be processed by
+#'                  Gram-Schmidt if not orthogonal. If the initial value is
+#'                  not given, three initial values (`"sir"`, `"save"` and
+#'                  `"phd"`) using the traditional method will be tested. The
+#'                  one with smallest l2 norm of the estimating equation will
+#'                  be used.
+#' @param bw        A Kernel bandwidth, assuming each variables have unit
+#'                  variance
+#' @param keep.data Should the original data be kept for prediction. Default
+#'                  is `FALSE`.
+#' @param control   A list of tuning variables for optimization. 
+#'                  `epsilon` is the size for numerically approximating the
+#'                  gradient. For others, see Wen and Yin (2013).
+#' @param maxitr    Maximum number of iterations
+#' @param verbose   Should information be displayed
+#' @param ncore     Number of cores for parallel computing. 
+#'                  The default is the maximum number of threads.
+#' @return 
+#' 
+#' A `orthoDr` object consisting of `list` with named elements:
+#' 
 #' \item{B}{The optimal `B` value}
 #' \item{fn}{The final functional value}
 #' \item{itr}{The number of iterations}
 #' \item{converge}{convergence code}
-#' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
+#' 
+#' @export
+#' 
+#' @references
+#' Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
 #' DOI: <https://doi.org/10.1080/01621459.2011.646925>.
-#' @references Ma, Y., & Zhu, L. (2013). Efficient estimation in sufficient dimension reduction. Annals of statistics, 41(1), 250.
+#' 
+#' Ma, Y., & Zhu, L. (2013). Efficient estimation in sufficient dimension reduction. Annals of statistics, 41(1), 250.
 #' DOI: 10.1214/12-AOS1072 <https://projecteuclid.org/euclid.aos/1364302742>
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' 
+#' Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
 #' DOI: <https://doi.org/10.1007/s10107-012-0584-1>.
+#' 
 #' @examples
 #' # generate some regression data
 #' set.seed(1)
