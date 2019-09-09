@@ -1,16 +1,29 @@
-#' @title Hazard Mave for Censored Survival Data
-#' @name hMave
-#' @description This is an almost direct R translation of Xia, Zhang & Xu's (2010) hMave Matlab code. We implemented further options for setting a different initial value. The computational algorithm does not utilize the orthogonality constrained optimization.
+#' Hazard Mave for Censored Survival Data
+#' 
+#' This is an almost direct R translation of Xia, Zhang & Xu's (2010) hMave 
+#' `MATLAB` code. We implemented further options for setting a different initial
+#' value. The computational algorithm does not utilize the orthogonality
+#' constrained optimization.
+#' 
 #' @param x A matrix for features.
 #' @param y A vector of observed time.
 #' @param censor A vector of censoring indicator.
 #' @param m0 number of dimensions to use
 #' @param B0 initial value of B. This is a feature we implemented.
-#' @return A list consisting of
+#' 
+#' @return 
+#' 
+#' A `list` consisting of
+#' 
 #' \item{B}{The estimated B matrix}
 #' \item{cv}{Leave one out cross-validation error}
-#' @references Xia, Y., Zhang, D., & Xu, J. (2010). Dimension reduction and semiparametric estimation of survival models. Journal of the American Statistical Association, 105(489), 278-290.
+#' 
+#' @export
+#' 
+#' @references
+#' Xia, Y., Zhang, D., & Xu, J. (2010). Dimension reduction and semiparametric estimation of survival models. Journal of the American Statistical Association, 105(489), 278-290.
 #' <http://dx.doi.org/10.1198/jasa.2009.tm09372>.
+#' 
 #' @examples
 #' # generate some survival data
 #' set.seed(1)

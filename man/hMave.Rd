@@ -18,12 +18,16 @@ hMave(x, y, censor, m0, B0 = NULL)
 \item{B0}{initial value of B. This is a feature we implemented.}
 }
 \value{
-A list consisting of
+A \code{list} consisting of
+
 \item{B}{The estimated B matrix}
 \item{cv}{Leave one out cross-validation error}
 }
 \description{
-This is an almost direct R translation of Xia, Zhang & Xu's (2010) hMave Matlab code. We implemented further options for setting a different initial value. The computational algorithm does not utilize the orthogonality constrained optimization.
+This is an almost direct R translation of Xia, Zhang & Xu's (2010) hMave
+\code{MATLAB} code. We implemented further options for setting a different initial
+value. The computational algorithm does not utilize the orthogonality
+constrained optimization.
 }
 \examples{
 # generate some survival data
