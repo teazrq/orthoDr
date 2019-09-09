@@ -17,6 +17,14 @@ Utilize an orthogonality constrained optimization algorithm of
     Parallel computing for approximating the gradient is enabled
     through 'OpenMP'.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/teazrq/orthoDr}
+  \item Report bugs at \url{https://github.com/teazrq/orthoDr/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Ruoqing Zhu \email{teazrq@gmail.com} [copyright holder]
 
