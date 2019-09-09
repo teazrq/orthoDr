@@ -3,19 +3,19 @@
 \docType{data}
 \name{skcm.melgene}
 \alias{skcm.melgene}
-\title{skcm.melgene}
-\format{Each row contains one subject, subject ID is indicated by row name. Gene names in the columns. The columns are scaled.}
+\title{Genes associated with Melanoma given by the MelGene Database}
+\format{Each row contains one subject, subject ID is indicated by row name.
+Gene names in the columns. The columns are scaled.}
 \usage{
 skcm.melgene
 }
 \description{
-The expression of top 20 genes of cutaneous melanoma literature based on the MelGene Database.
+The expression of top 20 genes of cutaneous melanoma literature based on the
+MelGene Database.
 }
 \references{
 Chatzinasiou, Foteini, Christina M. Lill, Katerina Kypreou, Irene Stefanaki, Vasiliki Nicolaou, George Spyrou, Evangelos Evangelou et al. "Comprehensive field synopsis and systematic meta-analyses of genetic association studies in cutaneous melanoma." Journal of the National Cancer Institute 103, no. 16 (2011): 1227-1235.
-
 \url{http://bioinformatics.cing.ac.cy/MelGene/}
-
 \url{https://cancergenome.nih.gov/}
 }
 \keyword{skcm.melgene}

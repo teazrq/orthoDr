@@ -3,15 +3,25 @@
 \docType{data}
 \name{skcm.clinical}
 \alias{skcm.clinical}
-\title{skcm.clinical}
-\format{Contains 469 subjects with 156 failures. Each row contains one subject, subject ID is indicated by row name. Variables include \code{Time}, \code{Censor}, \code{Gender} and \code{Age}. \code{Age} has 8 missing values.}
+\title{Skin Cutaneous Melanoma Data set}
+\format{Contains 469 subjects with 156 failures. Each row contains one subject,
+subject ID is indicated by row name. Variables include:
+\itemize{
+\item \code{Time}
+\item \code{Censor}
+\item \code{Gender}
+\item \code{Age}
+}
+
+\strong{Note:} \code{Age} has 8 missing values.}
 \usage{
 skcm.clinical
 }
 \description{
-The clinical variables of the SKCM dataset. The original data was obtained from The Cancer Genome Atlas (TCGA).
+The clinical variables of the SKCM dataset.
+The original data was obtained from The Cancer Genome Atlas (TCGA).
 }
 \references{
 \url{https://cancergenome.nih.gov/}
 }
-\keyword{skcm.clinical}
+\keyword{datasets}
