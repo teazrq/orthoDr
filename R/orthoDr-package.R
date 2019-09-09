@@ -1,3 +1,8 @@
+#' @importFrom stats pnorm cancor cov dist weighted.mean sd quantile
+#' @importFrom pracma gramSchmidt repmat
+#' @importFrom survival survfit Surv
+#' @importFrom dr dr
+#' @importFrom MASS ginv mvrnorm
 #' @keywords internal
 "_PACKAGE"
 
