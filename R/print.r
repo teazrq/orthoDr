@@ -1,9 +1,17 @@
-#' @title print.orthoDr
-#' @name print
-#' @description Print a orthoDr object
-#' @keywords internal
-#' @param x A fitted orthoDr object
-#' @param ... ...
+#' Print a `orthoDr` object
+#' 
+#' Provides a custom print wrapper for displaying `orthoDr` fitted models.
+#' 
+#' @param x   A fitted `orthoDr` object
+#' @param ... Additional parameters, not used.
+#' 
+#' @return
+#' 
+#' Sliently returns the `orthoDr` object supplied into the function to 
+#' allow for use with pipes. 
+#' 
+#' @export
+#' 
 #' @examples
 #' # generate some survival data
 #' N <- 100
@@ -34,4 +42,6 @@ print.orthoDr <- function(x, ...) {
       cat(paste("Prediction for orthoDr personalized treatment: best treatment dose and reward prediction"))
     }
   }
+  
+  return(invisible(x))
 }
