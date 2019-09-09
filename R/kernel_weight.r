@@ -1,10 +1,19 @@
-#' @title kernel_weight
-#' @description Calculate the Gaussian kernel weights between rows of X1 and rows of X2
-#' @param x1 first data matrix
-#' @param x2 second data matrix
-#' @param kernel the kernel function, currently only using Gaussian kernel
-#' @param dist the distance metric, currently only using the Euclidean distance
-#' @return A distance matrix, with its (i, j)th element being the kernel weights for the ith row of `X1` jth row of `X2`.
+#' Kernel Weight
+#' 
+#' Calculate the Gaussian kernel weights between rows of `X1` and rows of `X2`.
+#' 
+#' @param x1     First data matrix
+#' @param x2     Second data matrix
+#' @param kernel The kernel function, currently only using Gaussian kernel.
+#' @param dist   The distance metric, currently only using the Euclidean
+#'               distance.
+#'               
+#' @return 
+#' A distance matrix, with its (i, j)th element being the kernel weights for 
+#' the _i_ th row of `X1` jth row of `X2`.
+#' 
+#' @export
+#' 
 #' @examples
 #' # two matrices
 #' set.seed(1)

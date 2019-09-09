@@ -2,24 +2,26 @@
 % Please edit documentation in R/kernel_weight.r
 \name{kernel_weight}
 \alias{kernel_weight}
-\title{kernel_weight}
+\title{Kernel Weight}
 \usage{
 kernel_weight(x1, x2, kernel = "gaussian", dist = "euclidean")
 }
 \arguments{
-\item{x1}{first data matrix}
+\item{x1}{First data matrix}
 
-\item{x2}{second data matrix}
+\item{x2}{Second data matrix}
 
-\item{kernel}{the kernel function, currently only using Gaussian kernel}
+\item{kernel}{The kernel function, currently only using Gaussian kernel.}
 
-\item{dist}{the distance metric, currently only using the Euclidean distance}
+\item{dist}{The distance metric, currently only using the Euclidean
+distance.}
 }
 \value{
-A distance matrix, with its (i, j)th element being the kernel weights for the ith row of \code{X1} jth row of \code{X2}.
+A distance matrix, with its (i, j)th element being the kernel weights for
+the \emph{i} th row of \code{X1} jth row of \code{X2}.
 }
 \description{
-Calculate the Gaussian kernel weights between rows of X1 and rows of X2
+Calculate the Gaussian kernel weights between rows of \code{X1} and rows of \code{X2}.
 }
 \examples{
 # two matrices
