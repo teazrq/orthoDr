@@ -1,15 +1,27 @@
-#' @title Counting process based sliced inverse regression model
-#' @name CP_SIR
-#' @description The CP-SIR model for right-censored survival outcome. This model is correct only under very strong assumptions, however, since it only requires an SVD, the solution is used as the initial value in the orthoDr optimization.
-#' @param x A matrix for features (continuous only).
-#' @param y A vector of observed time.
+#' Counting process based sliced inverse regression model
+#' 
+#' The CP-SIR model for right-censored survival outcome. This model is correct
+#' only under very strong assumptions, however, since it only requires an SVD,
+#' the solution is used as the initial value in the orthoDr optimization.
+#' 
+#' @param x      A matrix for features (continuous only).
+#' @param y      A vector of observed time.
 #' @param censor A vector of censoring indicator.
-#' @param bw Kernel bandwidth for nonparametric estimations (one-dimensional), the default is using Silverman's formula.
-#' @return A list consisting of
+#' @param bw     Kernel bandwidth for nonparametric estimations (one-dimensional), 
+#'               the default is using Silverman's formula.
+#'               
+#' @return 
+#' A `list` consisting of
+#' 
 #' \item{values}{The eigenvalues of the estimation matrix}
 #' \item{vectors}{The estimated directions, ordered by eigenvalues}
-#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-#' <https://arxiv.org/abs/1704.05046> .
+#' 
+#' @export
+#' 
+#' @references 
+#' Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
+#' <https://arxiv.org/abs/1704.05046>.
+#' 
 #' @examples
 #' # This is setting 1 in Sun et. al. (2017) with reduced sample size
 #' library(MASS)

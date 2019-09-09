@@ -13,15 +13,19 @@ CP_SIR(x, y, censor, bw = silverman(1, length(y)))
 
 \item{censor}{A vector of censoring indicator.}
 
-\item{bw}{Kernel bandwidth for nonparametric estimations (one-dimensional), the default is using Silverman's formula.}
+\item{bw}{Kernel bandwidth for nonparametric estimations (one-dimensional),
+the default is using Silverman's formula.}
 }
 \value{
-A list consisting of
+A \code{list} consisting of
+
 \item{values}{The eigenvalues of the estimation matrix}
 \item{vectors}{The estimated directions, ordered by eigenvalues}
 }
 \description{
-The CP-SIR model for right-censored survival outcome. This model is correct only under very strong assumptions, however, since it only requires an SVD, the solution is used as the initial value in the orthoDr optimization.
+The CP-SIR model for right-censored survival outcome. This model is correct
+only under very strong assumptions, however, since it only requires an SVD,
+the solution is used as the initial value in the orthoDr optimization.
 }
 \examples{
 # This is setting 1 in Sun et. al. (2017) with reduced sample size
@@ -45,5 +49,5 @@ distance(failEDR, cpsir.fit$vectors[, 1:ndr, drop = FALSE], "dist")
 }
 \references{
 Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-\url{https://arxiv.org/abs/1704.05046} .
+\url{https://arxiv.org/abs/1704.05046}.
 }
