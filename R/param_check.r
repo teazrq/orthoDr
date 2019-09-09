@@ -1,10 +1,13 @@
-#' @title param_check
-#' @name param_check
-#' @description Check parameters
+#' Check parameters
+#' 
+#' Ensures that the control object parameters are set correctly.
+#' 
 #' @param control control parameters
-#' @keywords internal
-
-
+#' 
+#' @return 
+#' Modified `list` of `control` values.
+#' 
+#' @noRd
 control.check <- function(control) {
   if (!is.list(control)) {
     stop("control must be a list of tuning parameters")
