@@ -8,31 +8,43 @@ ortho_optim(B, fn, grad = NULL, ..., maximize = FALSE,
   control = list(), maxitr = 500, verbose = FALSE)
 }
 \arguments{
-\item{B}{Initial \code{B} values. Must be a matrix, and the columns are subject to the orthogonality constrains. Will be processed by Gram-Schmidt if not orthogonal}
+\item{B}{Initial \code{B} values. Must be a matrix, and the columns are
+subject to the orthogonality constrains. Will be processed
+by Gram-Schmidt if not orthogonal}
 
-\item{fn}{A function that calculate the objective function value. The first argument should be \code{B}. Returns a single value.}
+\item{fn}{A function that calculate the objective function value.
+The first argument should be \code{B}. Returns a single value.}
 
-\item{grad}{A function that calculate the gradient. The first argument should be \code{B}. Returns a matrix with the same dimension as \code{B}. If not specified, then numerical approximation is used.}
+\item{grad}{A function that calculate the gradient. The first argument
+should be \code{B}. Returns a matrix with the same dimension
+as \code{B}. If not specified, then numerical approximation is
+used.}
 
 \item{...}{Arguments passed to \code{fn} and \code{grad}}
 
-\item{maximize}{By default, the solver will try to minimize the objective function unless \code{maximize = TRUE}}
+\item{maximize}{By default, the solver will try to minimize the objective
+function unless \code{maximize = TRUE}}
 
-\item{control}{A list of tuning variables for optimization. \code{epsilon} is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).}
+\item{control}{A list of tuning variables for optimization. \code{epsilon} is
+the size for numerically approximating the gradient.
+For others, see Wen and Yin (2013).}
 
 \item{maxitr}{Maximum number of iterations}
 
 \item{verbose}{Should information be displayed}
 }
 \value{
-A \code{orthoDr} object; a list consisting of
+A \code{orthoDr} object that consists of a \code{list} with named entries of:
+
 \item{B}{The optimal \code{B} value}
 \item{fn}{The final functional value}
 \item{itr}{The number of iterations}
 \item{converge}{convergence code}
 }
 \description{
-A general purpose optimization solver with orthogonality constraint. The orthogonality constrained optimization method is a nearly direct translation from Wen and Yin (2010)'s Matlab code.
+A general purpose optimization solver with orthogonality constraint.
+The orthogonality constrained optimization method is a nearly direct
+translation from Wen and Yin (2010)'s \code{MATLAB} code.
 }
 \examples{
 # an eigen value problem

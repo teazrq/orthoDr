@@ -1,21 +1,43 @@
-#' @title Orthogonality constrained optimization
-#' @name ortho_optim
-#' @description A general purpose optimization solver with orthogonality constraint. The orthogonality constrained optimization method is a nearly direct translation from Wen and Yin (2010)'s Matlab code.
-#' @param B Initial `B` values. Must be a matrix, and the columns are subject to the orthogonality constrains. Will be processed by Gram-Schmidt if not orthogonal
-#' @param fn A function that calculate the objective function value. The first argument should be `B`. Returns a single value.
-#' @param grad A function that calculate the gradient. The first argument should be `B`. Returns a matrix with the same dimension as `B`. If not specified, then numerical approximation is used.
-#' @param ... Arguments passed to `fn` and `grad`
-#' @param maximize By default, the solver will try to minimize the objective function unless `maximize = TRUE`
-#' @param control A list of tuning variables for optimization. `epsilon` is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).
-#' @param maxitr Maximum number of iterations
-#' @param verbose Should information be displayed
-#' @return A `orthoDr` object; a list consisting of
+#' Orthogonality constrained optimization
+#' 
+#' A general purpose optimization solver with orthogonality constraint.
+#' The orthogonality constrained optimization method is a nearly direct
+#' translation from Wen and Yin (2010)'s `MATLAB` code.
+#' 
+#' @param B        Initial `B` values. Must be a matrix, and the columns are 
+#'                 subject to the orthogonality constrains. Will be processed
+#'                 by Gram-Schmidt if not orthogonal
+#' @param fn       A function that calculate the objective function value. 
+#'                 The first argument should be `B`. Returns a single value.
+#' @param grad     A function that calculate the gradient. The first argument
+#'                 should be `B`. Returns a matrix with the same dimension
+#'                 as `B`. If not specified, then numerical approximation is
+#'                 used.
+#' @param ...      Arguments passed to `fn` and `grad`
+#' @param maximize By default, the solver will try to minimize the objective
+#'                 function unless `maximize = TRUE`
+#' @param control  A list of tuning variables for optimization. `epsilon` is
+#'                 the size for numerically approximating the gradient.
+#'                 For others, see Wen and Yin (2013).
+#' @param maxitr   Maximum number of iterations
+#' @param verbose  Should information be displayed
+#' 
+#' @return 
+#' 
+#' A `orthoDr` object that consists of a `list` with named entries of:
+#' 
 #' \item{B}{The optimal `B` value}
 #' \item{fn}{The final functional value}
 #' \item{itr}{The number of iterations}
 #' \item{converge}{convergence code}
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' 
+#' @export
+#' 
+#' @references
+#' 
+#' Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
 #' DOI: <https://doi.org/10.1007/s10107-012-0584-1>
+#'
 #' @examples
 #' # an eigen value problem
 #' library(pracma)
