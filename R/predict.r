@@ -1,10 +1,16 @@
-#' @title predict.orthoDr
-#' @name predict.orthoDr
-#' @description The prediction function for orthoDr fitted models
-#' @param object A fitted orthoDr object
-#' @param testx Testing data
-#' @param ... ...
-#' @return The predicted object
+#' Predictions under `orthoDr` models
+#' 
+#' The prediction function for `orthoDr` fitted models
+#' 
+#' @param object A fitted `orthoDr` object
+#' @param testx  Testing data
+#' @param ...    Additional parameters, not used.
+#' 
+#' @return 
+#' The predicted object
+#' 
+#' @export
+#' 
 #' @examples
 #' # generate some survival data
 #' N <- 100
@@ -104,15 +110,18 @@ predict.orthoDr <- function(object, testx, ...) {
   return(pred)
 }
 
-#' @title predict_orthoDr_surv
-#' @name predict_orthoDr_surv
-#' @description Internal prediction function for survival models
-#' @param object fitted object
-#' @param testx Testing data
-#' @param ... ...
-#' @return The predicted object
-#' @keywords internal
-
+#' Internal prediction function for survival models
+#' 
+#' Provides support for predicting values underneath a survival model.
+#' 
+#' @param object Fitted object
+#' @param testx  Testing data
+#' @param ...    Additional parameters, not used.
+#' 
+#' @return 
+#' The predicted object
+#' 
+#' @noRd
 predict_orthoDr_surv <- function(object, testx, ...) {
   # transform the covariates into the same scale
   x <- object$x
@@ -158,15 +167,18 @@ predict_orthoDr_surv <- function(object, testx, ...) {
   return(list("surv" = surv, "timepoints" = timepoints))
 }
 
-#' @title predict_orthoDr_reg
-#' @name predict_orthoDr_reg
-#' @description Internal prediction function for regression models
-#' @param object fitted object
-#' @param testx Testing data
-#' @param ... ...
-#' @return The predicted object
-#' @keywords internal
-
+#' Internal prediction function for regression models
+#' 
+#' Provides support for predicting values underneath a regression model.
+#' 
+#' @param object Fitted object
+#' @param testx  Testing data
+#' @param ...    Additional parameters, not used.
+#' 
+#' @return 
+#' The predicted object
+#' 
+#' @noRd
 predict_orthoDr_reg <- function(object, testx, ...) {
   # transform the covariates into the same scale
   x <- object$x
@@ -196,15 +208,18 @@ predict_orthoDr_reg <- function(object, testx, ...) {
   return(list("pred" = pred))
 }
 
-#' @title predict_orthoDr_pdose
-#' @name predict_orthoDr_pdose
-#' @description Internal prediction function for personalized dose models
-#' @param object fitted object
-#' @param testx Testing data
-#' @param ... ...
-#' @return The predicted object
-#' @keywords internal
-
+#' Internal prediction function for personalized dose models
+#' 
+#' Provides support for predicting personalized dose values.
+#' 
+#' @param object Fitted object
+#' @param testx  Testing data
+#' @param ...    Additional parameters, not used.
+#' 
+#' @return 
+#' The predicted object
+#' 
+#' @noRd
 predict_orthoDr_pdose <- function(object, testx, ...) {
   # check test data
   if (missing(testx)) stop("testx is missing")

@@ -2,22 +2,22 @@
 % Please edit documentation in R/predict.r
 \name{predict.orthoDr}
 \alias{predict.orthoDr}
-\title{predict.orthoDr}
+\title{Predictions under \code{orthoDr} models}
 \usage{
 \method{predict}{orthoDr}(object, testx, ...)
 }
 \arguments{
-\item{object}{A fitted orthoDr object}
+\item{object}{A fitted \code{orthoDr} object}
 
 \item{testx}{Testing data}
 
-\item{...}{...}
+\item{...}{Additional parameters, not used.}
 }
 \value{
 The predicted object
 }
 \description{
-The prediction function for orthoDr fitted models
+The prediction function for \code{orthoDr} fitted models
 }
 \examples{
 # generate some survival data
