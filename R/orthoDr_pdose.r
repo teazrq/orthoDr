@@ -1,30 +1,45 @@
-#' @title orthoDr_pdose model
-#' @name orthoDr_pdose
-#' @description The "Direct Learning & Pseudo-direct Learning" Method for personalized medicine.
-#' @param x A matrix or data.frame for features (continuous only).
-#' @param a A vector of observed dose
-#' @param r A vector of observed reward
-#' @param ndr A dimension structure
-#' @param B.initial Initial `B` values. Will use the counting process based SIR model [CP_SIR][orthoDr::CP_SIR] as the initial if leaving as `NULL`.
-#' If specified, must be a matrix with `ncol(x)` rows and `ndr` columns. Will be processed by Gram-Schmidt if not orthogonal
-#' @param bw A Kernel bandwidth, assuming each variables have unit variance
-#' @param lambda The penalty level for kernel ridge regression. If a range of values is specified, the GCV will be used to select the best tuning
-#' @param K A number of grids in the range of dose
-#' @param method A method the user will implement
+#' Direct Learning & Pseudo-direct Learning Model
+#' 
+#' Performs the "Direct Learning & Pseudo-direct Learning" Method for
+#' personalized medicine.
+#' 
+#' @param x         A `matrix` or `data.frame` for features (continuous only).
+#' @param a         A `vector` of observed dose
+#' @param r         A `vector` of observed reward
+#' @param ndr       A dimension structure
+#' @param B.initial Initial `B` values. Will use the counting process based 
+#'                  SIR model [CP_SIR][orthoDr::CP_SIR] as the initial if 
+#'                  leaving as `NULL`. If specified, must be a matrix with 
+#'                  `ncol(x)` rows and `ndr` columns. Will be processed by
+#'                   Gram-Schmidt if not orthogonal.
+#' @param bw        A Kernel bandwidth, assuming each variables have unit variance
+#' @param lambda    The penalty level for kernel ridge regression. If a range of values is specified, the GCV will be used to select the best tuning
+#' @param K         A number of grids in the range of dose
+#' @param method    A method the user will implement
 #' @param keep.data Should the original data be kept for prediction
-#' @param control A list of tuning variables for optimization. `epsilon` is the size for numerically appriximating the gradient. For others, see Wen and Yin (2013).
-#' @param maxitr Maximum number of iterations
-#' @param ncore the number of cores for parallel computing
-#' @param verbose Should information be displayed
-#' @return A `orthoDr` object; a list consisting of
+#' @param control   A list of tuning variables for optimization. `epsilon` is the size for numerically appriximating the gradient. For others, see Wen and Yin (2013).
+#' @param maxitr    Maximum number of iterations
+#' @param ncore     the number of cores for parallel computing
+#' @param verbose   Should information be displayed
+#' 
+#' @return 
+#' 
+#' A `orthoDr` object consisting of `list` with named elements: 
+#' 
 #' \item{B}{The optimal `B` value}
 #' \item{fn}{The final functional value}
 #' \item{itr}{The number of iterations}
 #' \item{converge}{convergence code}
-#' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018+)
+#' 
+#' @export
+#' 
+#' @references
+#' 
+#' Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018+)
 #' <https://arxiv.org/abs/1802.06156>.
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
 #' DOI: <https://doi.org/10.1007/s10107-012-0584-1>
+#' 
 #' @examples
 #' # generate some personalized dose scenario
 #'

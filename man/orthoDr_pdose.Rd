@@ -2,7 +2,7 @@
 % Please edit documentation in R/orthoDr_pdose.r
 \name{orthoDr_pdose}
 \alias{orthoDr_pdose}
-\title{orthoDr_pdose model}
+\title{Direct Learning & Pseudo-direct Learning Model}
 \usage{
 orthoDr_pdose(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL,
   lambda = 0.1, K = sqrt(length(r)), method = c("direct",
@@ -10,16 +10,19 @@ orthoDr_pdose(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL,
   maxitr = 500, verbose = FALSE, ncore = 0)
 }
 \arguments{
-\item{x}{A matrix or data.frame for features (continuous only).}
+\item{x}{A \code{matrix} or \code{data.frame} for features (continuous only).}
 
-\item{a}{A vector of observed dose}
+\item{a}{A \code{vector} of observed dose}
 
-\item{r}{A vector of observed reward}
+\item{r}{A \code{vector} of observed reward}
 
 \item{ndr}{A dimension structure}
 
-\item{B.initial}{Initial \code{B} values. Will use the counting process based SIR model \link[orthoDr:CP_SIR]{CP_SIR} as the initial if leaving as \code{NULL}.
-If specified, must be a matrix with \code{ncol(x)} rows and \code{ndr} columns. Will be processed by Gram-Schmidt if not orthogonal}
+\item{B.initial}{Initial \code{B} values. Will use the counting process based
+SIR model \link[orthoDr:CP_SIR]{CP_SIR} as the initial if
+leaving as \code{NULL}. If specified, must be a matrix with
+\code{ncol(x)} rows and \code{ndr} columns. Will be processed by
+Gram-Schmidt if not orthogonal.}
 
 \item{bw}{A Kernel bandwidth, assuming each variables have unit variance}
 
@@ -40,14 +43,16 @@ If specified, must be a matrix with \code{ncol(x)} rows and \code{ndr} columns. 
 \item{ncore}{the number of cores for parallel computing}
 }
 \value{
-A \code{orthoDr} object; a list consisting of
+A \code{orthoDr} object consisting of \code{list} with named elements:
+
 \item{B}{The optimal \code{B} value}
 \item{fn}{The final functional value}
 \item{itr}{The number of iterations}
 \item{converge}{convergence code}
 }
 \description{
-The "Direct Learning & Pseudo-direct Learning" Method for personalized medicine.
+Performs the "Direct Learning & Pseudo-direct Learning" Method for
+personalized medicine.
 }
 \examples{
 # generate some personalized dose scenario
@@ -109,7 +114,6 @@ print(dosedistance)
 \references{
 Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018+)
 \url{https://arxiv.org/abs/1802.06156}.
-
 Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
 DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 }
