@@ -1,28 +1,50 @@
-#' @title IR-CP model
-#' @name orthoDr_surv
-#' @description The counting process based semiparametric dimension reduction (IR-CP) model for right censored survival outcome.
-#' @param x A matrix or data.frame for features. The algorithm will not scale the columns to unit variance
-#' @param y A vector of observed time
-#' @param censor A vector of censoring indicator
-#' @param method Which estimating equation to use: should be  `forward` (1-d model), `dn` (counting process) or `dm` (martingale)
-#' @param ndr The number of directions
-#' @param B.initial Initial `B` values. Will use the counting process based SIR model [CP_SIR][orthoDr::CP_SIR] as the initial if leaving as `NULL`.
-#' If specified, must be a matrix with `ncol(x)` rows and `ndr` columns. Will be processed by Gram-Schmidt if not orthogonal
-#' @param bw A Kernel bandwidth, assuming each variables have unit variance
-#' @param keep.data Should the original data be kept for prediction. Default is `FALSE`
-#' @param control A list of tuning variables for optimization. `epsilon` is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).
-#' @param maxitr Maximum number of iterations
-#' @param verbose Should information be displayed
-#' @param ncore Number of cores for parallel computing. The default is the maximum number of threads.
-#' @return A `orthoDr` object; a list consisting of
+#' Counting Process based semiparametric dimension reduction (IR-CP) model
+#' 
+#' Models the data according to the counting process based semiparametric
+#' dimension reduction (IR-CP) model for right censored survival outcome.
+#' 
+#' @param x         A `matrix` or `data.frame` for features. 
+#'                  The algorithm will not scale the columns to unit variance
+#' @param y         A `vector` of observed time
+#' @param censor    A `vector` of censoring indicator
+#' @param method    Estimation equation to use. Either:
+#'                  `"forward"` (1-d model), `"dn"` (counting process), or
+#'                   `"dm"` (martingale).
+#' @param ndr       The number of directions
+#' @param B.initial Initial `B` values. Will use the counting process based
+#'                  SIR model [CP_SIR][orthoDr::CP_SIR] as the initial if
+#'                  leaving as `NULL`. If specified, must be a matrix with 
+#'                  `ncol(x)` rows and `ndr` columns. Will be processed by
+#'                  Gram-Schmidt if not orthogonal.
+#' @param bw        A Kernel bandwidth, assuming each variables have
+#'                  unit variance.
+#' @param keep.data Should the original data be kept for prediction. 
+#'                  Default is `FALSE`
+#' @param control   A list of tuning variables for optimization. `epsilon` is
+#'                  the size for numerically approximating the gradient. 
+#'                  For others, see Wen and Yin (2013).
+#' @param maxitr    Maximum number of iterations
+#' @param verbose   Should information be displayed
+#' @param ncore     Number of cores for parallel computing.
+#'                  The default is the maximum number of threads.
+#' 
+#' @return 
+#' 
+#' A `orthoDr` object consisting of `list` with named elements:
+#' 
 #' \item{B}{The optimal `B` value}
 #' \item{fn}{The final functional value}
 #' \item{itr}{The number of iterations}
 #' \item{converge}{convergence code}
-#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
+#' 
+#' @export
+#' 
+#' @references 
+#' Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
 #' DOI: <https://arxiv.org/abs/1704.05046>.
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
+#' Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
 #' DOI: <https://doi.org/10.1007/s10107-012-0584-1>
+#' 
 #' @examples
 #' # This is setting 1 in Sun et. al. (2017) with reduced sample size
 #' library(MASS)

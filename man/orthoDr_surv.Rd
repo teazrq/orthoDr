@@ -2,47 +2,60 @@
 % Please edit documentation in R/orthoDr_surv.r
 \name{orthoDr_surv}
 \alias{orthoDr_surv}
-\title{IR-CP model}
+\title{Counting Process based semiparametric dimension reduction (IR-CP) model}
 \usage{
 orthoDr_surv(x, y, censor, method = "dm", ndr = ifelse(method ==
   "forward", 1, 2), B.initial = NULL, bw = NULL, keep.data = FALSE,
   control = list(), maxitr = 500, verbose = FALSE, ncore = 0)
 }
 \arguments{
-\item{x}{A matrix or data.frame for features. The algorithm will not scale the columns to unit variance}
+\item{x}{A \code{matrix} or \code{data.frame} for features.
+The algorithm will not scale the columns to unit variance}
 
-\item{y}{A vector of observed time}
+\item{y}{A \code{vector} of observed time}
 
-\item{censor}{A vector of censoring indicator}
+\item{censor}{A \code{vector} of censoring indicator}
 
-\item{method}{Which estimating equation to use: should be  \code{forward} (1-d model), \code{dn} (counting process) or \code{dm} (martingale)}
+\item{method}{Estimation equation to use. Either:
+\code{"forward"} (1-d model), \code{"dn"} (counting process), or
+\code{"dm"} (martingale).}
 
 \item{ndr}{The number of directions}
 
-\item{B.initial}{Initial \code{B} values. Will use the counting process based SIR model \link[orthoDr:CP_SIR]{CP_SIR} as the initial if leaving as \code{NULL}.
-If specified, must be a matrix with \code{ncol(x)} rows and \code{ndr} columns. Will be processed by Gram-Schmidt if not orthogonal}
+\item{B.initial}{Initial \code{B} values. Will use the counting process based
+SIR model \link[orthoDr:CP_SIR]{CP_SIR} as the initial if
+leaving as \code{NULL}. If specified, must be a matrix with
+\code{ncol(x)} rows and \code{ndr} columns. Will be processed by
+Gram-Schmidt if not orthogonal.}
 
-\item{bw}{A Kernel bandwidth, assuming each variables have unit variance}
+\item{bw}{A Kernel bandwidth, assuming each variables have
+unit variance.}
 
-\item{keep.data}{Should the original data be kept for prediction. Default is \code{FALSE}}
+\item{keep.data}{Should the original data be kept for prediction.
+Default is \code{FALSE}}
 
-\item{control}{A list of tuning variables for optimization. \code{epsilon} is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).}
+\item{control}{A list of tuning variables for optimization. \code{epsilon} is
+the size for numerically approximating the gradient.
+For others, see Wen and Yin (2013).}
 
 \item{maxitr}{Maximum number of iterations}
 
 \item{verbose}{Should information be displayed}
 
-\item{ncore}{Number of cores for parallel computing. The default is the maximum number of threads.}
+\item{ncore}{Number of cores for parallel computing.
+The default is the maximum number of threads.}
 }
 \value{
-A \code{orthoDr} object; a list consisting of
+A \code{orthoDr} object consisting of \code{list} with named elements:
+
 \item{B}{The optimal \code{B} value}
 \item{fn}{The final functional value}
 \item{itr}{The number of iterations}
 \item{converge}{convergence code}
 }
 \description{
-The counting process based semiparametric dimension reduction (IR-CP) model for right censored survival outcome.
+Models the data according to the counting process based semiparametric
+dimension reduction (IR-CP) model for right censored survival outcome.
 }
 \examples{
 # This is setting 1 in Sun et. al. (2017) with reduced sample size
@@ -73,7 +86,6 @@ distance(failEDR, dm.fit$B, "dist")
 \references{
 Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
 DOI: \url{https://arxiv.org/abs/1704.05046}.
-
 Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
 DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 }
