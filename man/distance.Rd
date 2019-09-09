@@ -2,24 +2,25 @@
 % Please edit documentation in R/distance.r
 \name{distance}
 \alias{distance}
-\title{distance correlation}
+\title{Compute Distance Correlation}
 \usage{
 distance(s1, s2, type = "dist", x = NULL)
 }
 \arguments{
-\item{s1}{first space}
+\item{s1}{First space}
 
-\item{s2}{second space}
+\item{s2}{Second space}
 
-\item{type}{type of distance measures: "dist" (default), "trace", "canonical" or "sine"}
+\item{type}{Type of distance measures: \code{"dist"} (default), \code{"trace"},
+\code{"canonical"} or \code{"sine"}}
 
-\item{x}{the covariate values, for canonical correlation only}
+\item{x}{The covariate values, for canonical correlation only.}
 }
 \value{
 The distance between \code{s1} and \code{s2}.
 }
 \description{
-Calculate the distance correlation between two linear spaces
+Calculate the distance correlation between two linear spaces.
 }
 \examples{
 # two spaces

@@ -1,10 +1,18 @@
-#' @title distance correlation
-#' @description Calculate the distance correlation between two linear spaces
-#' @param s1 first space
-#' @param s2 second space
-#' @param type type of distance measures: "dist" (default), "trace", "canonical" or "sine"
-#' @param x the covariate values, for canonical correlation only
-#' @return The distance between `s1` and `s2`.
+#' Compute Distance Correlation
+#'
+#' Calculate the distance correlation between two linear spaces.
+#' 
+#' @param s1   First space
+#' @param s2   Second space
+#' @param type Type of distance measures: `"dist"` (default), `"trace"`,
+#'             `"canonical"` or `"sine"`
+#' @param x    The covariate values, for canonical correlation only.
+#' 
+#' @return 
+#' The distance between `s1` and `s2`.
+#' 
+#' @export 
+#' 
 #' @examples
 #' # two spaces
 #' failEDR <- as.matrix(cbind(
@@ -62,8 +70,6 @@ distance <- function(s1, s2, type = "dist", x = NULL) {
     if (ncol(x) != nrow(s1)) {
       stop("Dimension of x is not correct.")
     }
-
-
 
     return(mean(cancor(x %*% s1, x %*% s2, xcenter = FALSE, ycenter = FALSE)$cor))
   }
