@@ -1,9 +1,15 @@
-#' @title A simple Silverman bandwidth formula
-#' @name silverman
-#' @description Silverman bandwidth
+#' Silverman bandwidth 
+#' 
+#' A simple Silverman bandwidth formula calculation.
+#' 
 #' @param d Number of dimension
 #' @param n Number of observation
-#' @return A simple bandwidth choice
+#' 
+#' @return
+#' A simple bandwidth choice
+#' 
+#' @export
+#' 
 #' @examples
 #' silverman(1, 300)
 silverman <- function(d, n) {

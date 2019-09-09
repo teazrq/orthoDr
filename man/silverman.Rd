@@ -2,7 +2,7 @@
 % Please edit documentation in R/silverman.r
 \name{silverman}
 \alias{silverman}
-\title{A simple Silverman bandwidth formula}
+\title{Silverman bandwidth}
 \usage{
 silverman(d, n)
 }
@@ -15,7 +15,7 @@ silverman(d, n)
 A simple bandwidth choice
 }
 \description{
-Silverman bandwidth
+A simple Silverman bandwidth formula calculation.
 }
 \examples{
 silverman(1, 300)
