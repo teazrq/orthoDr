@@ -24,6 +24,11 @@
 #' 
 #' @export
 #' 
+#' @importFrom grDevices rainbow
+#' @importFrom graphics legend par plot plot.new
+#' @importFrom rgl axis3d mtext3d box3d surface3d
+#' @importFrom plot3D mesh
+#' 
 #' @references 
 #' Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
 #' <https://arxiv.org/abs/1704.05046>.
