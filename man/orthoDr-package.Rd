@@ -26,7 +26,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Ruoqing Zhu \email{teazrq@gmail.com} [copyright holder]
+\strong{Maintainer}: Ruoqing Zhu \email{teazrq@gmail.com} (0000-0002-0753-5716) [copyright holder]
 
 Authors:
 \itemize{
