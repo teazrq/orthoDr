@@ -2,9 +2,28 @@ Package: orthoDr
 Type: Package
 Title: Semi-Parametric Dimension Reduction Models Using Orthogonality
         Constrained Optimization
-Version: 0.6.3
-Author: Ruilin Zhao, Ruoqing Zhu, Jiyang Zhang, Wenzhuo Zhou and Peng Xu
-Maintainer: Ruoqing Zhu <teazrq@gmail.com>
+Version: 0.6.5
+Authors@R: c(
+    person("Ruilin", "Zhao",
+           email = "rzhao15@seas.upenn.edu", 
+           role = c("aut", "cph")),
+    person("Ruoqing", "Zhu",
+           email = "teazrq@gmail.com", 
+           role = c("aut", "cre", "cph")),
+    person("Jiyang", "Zhang",
+           email = "jiyangz2@illinois.edu", 
+           role = c("aut", "cph")),
+    person("Wenzhuo", "Zhou",
+           email = "wenzhuo3@illinois.edu", 
+           role = c("aut", "cph")),
+    person("Peng", "Xu",
+           email = "px2132@columbia.edu", 
+           role = c("aut", "cph")),
+    person("James Joseph", "Balamuta",
+           email = "balamut2@illinois.edu", 
+           role = c("ctb"), 
+           comment = c(ORCID = "0000-0003-2826-8458"))
+    )
 Description: Utilize an orthogonality constrained optimization algorithm of
     Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1> to solve a variety of
     dimension reduction problems in the semiparametric framework, such as
@@ -13,12 +32,13 @@ Description: Utilize an orthogonality constrained optimization algorithm of
     and Zhou & Zhu (2018+) <arXiv:1802.06156>. It also serves as a general
     purpose optimization solver for problems with orthogonality constraints.
     Parallel computing for approximating the gradient is enabled
-    through `OpenMP'.
+    through 'OpenMP'.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: TRUE
-RoxygenNote: 6.1.1
-NeedsCompilation: yes
-Repository: CRAN
 Imports: Rcpp (>= 0.12.12), survival, dr, pracma, plot3D, rgl, MASS
 LinkingTo: Rcpp, RcppArmadillo
+URL: https://github.com/teazrq/orthoDr
+BugReports: https://github.com/teazrq/orthoDr/issues
+RoxygenNote: 6.1.1
+Roxygen: list(markdown = TRUE)
