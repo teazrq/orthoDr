@@ -8,7 +8,7 @@
 <!-- badges: end -->
   
 The goal of `orthoDr` is to use an orthogonality constrained optimization
-algorithm of to solve a variety of dimension reduction problems in the
+algorithm to solve a variety of dimension reduction problems in the
 semiparametric framework.
 
 ## Installation
