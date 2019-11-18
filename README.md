@@ -2,7 +2,6 @@
 # orthoDr
 
 <!-- badges: start -->
-[![Travis build status](https://travis-ci.com/teazrq/orthoDr.svg?branch=master)](https://travis-ci.com/teazrq/orthoDr)
 [![CRAN status](https://www.r-pkg.org/badges/version/orthoDr)](https://CRAN.R-project.org/package=orthoDr)
 [![](https://cranlogs.r-pkg.org/badges/orthoDr)](https://cran.r-project.org/package=orthoDr)
 <!-- badges: end -->
