@@ -78,19 +78,7 @@ ortho_optim <- function(B, fn, grad = NULL, ..., maximize = FALSE,
 
   control <- control.check(control)
 
-  # check objects
-
   env <- environment()
-
-  names <- sapply(substitute(list(...))[-1], deparse)
-
-  if (length(names) > 0) {
-    for (i in 1:length(names)) {
-      if (!exists(names[[i]], envir = env)) {
-        stop(paste(names[[i]], "do not exist"))
-      }
-    }
-  }
 
   # check f and g
 
