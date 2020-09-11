@@ -1,4 +1,4 @@
-Package: orthoDr
+Package: orthoDrLite
 Type: Package
 Title: Semi-Parametric Dimension Reduction Models Using Orthogonality
         Constrained Optimization
@@ -33,7 +33,7 @@ Description: Utilize an orthogonality constrained optimization algorithm of
     and Zhou, Zhu & Zeng (2021) <arXiv:1802.06156>. It also serves as a general
     purpose optimization solver for problems with orthogonality constraints.
     Parallel computing for approximating the gradient is enabled
-    through 'OpenMP'.
+    through 'OpenMP'. Forked from orthoDr and removed the dependencies on rgl.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: TRUE
