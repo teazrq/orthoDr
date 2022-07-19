@@ -7,17 +7,16 @@
 #' @param a         A `vector` of observed dose
 #' @param r         A `vector` of observed reward
 #' @param ndr       A dimension structure
-#' @param B.initial Initial `B` values. Will use the counting process based 
-#'                  SIR model [CP_SIR][orthoDr::CP_SIR] as the initial if 
+#' @param B.initial Initial `B` values. Will use the partial SAVE [pSAVE][orthoDr::pSAVE] as the initial if 
 #'                  leaving as `NULL`. If specified, must be a matrix with 
 #'                  `ncol(x)` rows and `ndr` columns. Will be processed by
 #'                   Gram-Schmidt if not orthogonal.
 #' @param bw        A Kernel bandwidth, assuming each variables have unit variance
 #' @param lambda    The penalty level for kernel ridge regression. If a range of values is specified, the GCV will be used to select the best tuning
 #' @param K         A number of grids in the range of dose
-#' @param method    A method the user will implement
+#' @param method    Either `"direct"` or `"pseudo_direct"` 
 #' @param keep.data Should the original data be kept for prediction
-#' @param control   A list of tuning variables for optimization. `epsilon` is the size for numerically appriximating the gradient. For others, see Wen and Yin (2013).
+#' @param control   A list of tuning variables for optimization. `epsilon` is the size for numerically approximating the gradient. For others, see Wen and Yin (2013).
 #' @param maxitr    Maximum number of iterations
 #' @param ncore     the number of cores for parallel computing
 #' @param verbose   Should information be displayed
