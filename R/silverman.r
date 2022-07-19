@@ -1,6 +1,6 @@
-#' Silverman bandwidth 
+#' Silverman's rule of thumb
 #' 
-#' A simple Silverman bandwidth formula calculation.
+#' A simple Silverman's rule of thumb bandwidth calculation.
 #' 
 #' @param d Number of dimension
 #' @param n Number of observation

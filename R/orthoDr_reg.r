@@ -41,13 +41,10 @@
 #' 
 #' @references
 #' Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
-#' DOI: <https://doi.org/10.1080/01621459.2011.646925>.
+#' DOI: \doi{10.1080/01621459.2011.646925}
 #' 
 #' Ma, Y., & Zhu, L. (2013). Efficient estimation in sufficient dimension reduction. Annals of statistics, 41(1), 250.
-#' DOI: 10.1214/12-AOS1072 <https://projecteuclid.org/euclid.aos/1364302742>
-#' 
-#' Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-#' DOI: <https://doi.org/10.1007/s10107-012-0584-1>.
+#' DOI: \doi{10.1214/12-AOS1072}
 #' 
 #' @examples
 #' # generate some regression data

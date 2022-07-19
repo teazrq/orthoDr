@@ -28,6 +28,7 @@ assumptions, the solution is used as the initial value in the \code{orthoDr}
 optimization.
 }
 \references{
-Feng, Z., Wen, M.X, Yu, Z. and Zhu L. "On Partial Sufficient Dimension Reduction With Applications to Partially Linear Multi-Index Models" (2013)
-\url{https://arxiv.org/abs/1704.05046} .
+Feng, Z., Wen, X. M., Yu, Z., & Zhu, L. (2013). On partial sufficient dimension reduction with applications to partially linear multi-index models.
+Journal of the American Statistical Association, 108(501), 237-246.
+DOI: \doi{10.1080/01621459.2012.746065}
 }

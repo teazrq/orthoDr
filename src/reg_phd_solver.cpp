@@ -182,10 +182,10 @@ double phd_init(const arma::mat& B,
 //' @param gtol (don't change) Gradient tolerance level
 //' @param maxitr Maximum number of iterations
 //' @param verbose Should information be displayed
-//' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
-//' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
-//' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-//' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+//' 
+//' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. 
+//' Journal of the American Statistical Association, 107(497), 168-179.
+//' DOI: \doi{10.1080/01621459.2011.646925}
 //'
 // [[Rcpp::export]]
 

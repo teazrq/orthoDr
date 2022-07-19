@@ -20,8 +20,15 @@
 #' @param gtol (don't change) Gradient tolerance level
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
-#' @references Zhang, H. and Hager, W. W., "A nonmonotone line search technique and its application to unconstrained optimization." SIAM J. Optim. 14 (2004): 1043–1056. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references Wen, Z., & Yin, W. (2013). A feasible method for optimization with orthogonality constraints. 
+#' Mathematical Programming, 142(1), 397-434.
+#' DOI: \doi{10.1007/s10107-012-0584-1}
+#' 
+#' @references Zhang, H., & Hager, W. W. (2004). A nonmonotone line search technique and its application to unconstrained optimization. 
+#' SIAM journal on Optimization, 14(4), 1043-1056.
+#' DOI: \doi{10.1137/S1052623403428208}
+#' 
 #' @examples
 #' # This function should be called internally. When having all objects pre-computed, one can call
 #' # gen_solver(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
@@ -53,8 +60,11 @@ gen_solver <- function(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, 
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
 #' @return The optimizer \code{B} for the esitmating equation.
-#' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references Zhou, W., Zhu, R., & Zeng, D. (2021). A parsimonious personalized dose-finding model via dimension reduction. 
+#' Biometrika, 108(3), 643-659.
+#' DOI: \doi{10.1093/biomet/asaa087}
+#' 
 pdose_direct_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_pdose_direct_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
@@ -96,8 +106,11 @@ dosepred <- function(B, X, X_test, bw, W) {
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
 #' @return The optimizer \code{B} for the esitmating equation.
-#' @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references Zhou, W., Zhu, R., & Zeng, D. (2021). A parsimonious personalized dose-finding model via dimension reduction. 
+#' Biometrika, 108(3), 643-659.
+#' DOI: \doi{10.1093/biomet/asaa087}
+#' 
 pdose_semi_solver <- function(B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_pdose_semi_solver`, B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
@@ -128,10 +141,10 @@ local_f <- function(B, X, Y, bw, ncore) {
 #' @param gtol (don't change) Gradient tolerance level
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
-#' @references Ma, Y., & Zhu, L. (2013). "Efficient estimation in sufficient dimension reduction." Annals of statistics, 41(1), 250.
-#' DOI:10.1214/12-AOS1072 \url{https://projecteuclid.org/euclid.aos/1364302742}
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references Ma, Y., & Zhu, L. (2013). Efficient estimation in sufficient dimension reduction. 
+#' Annals of statistics, 41(1), 250.
+#' DOI: \doi{10.1214/12-AOS1072}
 #'
 local_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_local_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
@@ -163,10 +176,10 @@ phd_init <- function(B, X, Y, bw, ncore) {
 #' @param gtol (don't change) Gradient tolerance level
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
-#' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
-#' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. 
+#' Journal of the American Statistical Association, 107(497), 168-179.
+#' DOI: \doi{10.1080/01621459.2011.646925}
 #'
 phd_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_phd_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
@@ -198,10 +211,10 @@ save_init <- function(B, X, Y, bw, ncore) {
 #' @param gtol (don't change) Gradient tolerance level
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
-#' @references Ma, Y. & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
-#' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
-#' @references Wen, Z. & Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. 
+#' Journal of the American Statistical Association, 107(497), 168-179.
+#' DOI: \doi{10.1080/01621459.2011.646925}
 #'
 save_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_save_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
@@ -233,10 +246,10 @@ seff_init <- function(B, X, Y, bw, ncore) {
 #' @param gtol (don't change) Gradient tolerance level
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
-#' @references Ma, Y., & Zhu, L. (2013). "Efficient estimation in sufficient dimension reduction." Annals of statistics, 41(1), 250.
-#' DOI:10.1214/12-AOS1072 \url{https://projecteuclid.org/euclid.aos/1364302742}
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references Ma, Y., & Zhu, L. (2013). Efficient estimation in sufficient dimension reduction. 
+#' Annals of statistics, 41(1), 250.
+#' DOI: \doi{10.1214/12-AOS1072}
 #'
 seff_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_seff_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
@@ -268,10 +281,10 @@ sir_init <- function(B, X, Y, bw, ncore) {
 #' @param gtol (don't change) Gradient tolerance level
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
-#' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. Journal of the American Statistical Association, 107(497), 168-179.
-#' DOI: \url{https://dx.doi.org/10.1214\%2F12-AOS1072SUPP}.
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-#' DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references Ma, Y., & Zhu, L. (2012). A semiparametric approach to dimension reduction. 
+#' Journal of the American Statistical Association, 107(497), 168-179.
+#' DOI: \doi{10.1080/01621459.2011.646925}
 #'
 sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_sir_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
@@ -298,15 +311,18 @@ sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, g
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
 #' @param ncore The number of cores for parallel computing
-#' @return The optimizer \code{B} for the esitmating equation.
-#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' @return The optimizer \code{B} for the estimating equation.
+#' 
+#' @references Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. 
+#' Biometrika, 106(1), 181-196.
+#' DOI: \doi{10.1093/biomet/asy064}
+#' 
 #' @examples
 #' # This function should be called internally. When having all objects pre-computed, one can call
 #' # surv_solver(B, X, Phit, Fail.Ind,
 #' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 #' # to solve for the parameters B.
-#'
+#' 
 surv_dm_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
     .Call(`_orthoDr_surv_dm_solver`, B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
@@ -331,9 +347,12 @@ surv_dm_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsil
 #' @param maxitr Maximum number of iterations
 #' @param verbose Should information be displayed
 #' @param ncore The number of cores for parallel computing
-#' @return The optimizer \code{B} for the esitmating equation.
-#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' @return The optimizer \code{B} for the estimating equation.
+#' 
+#' @references Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. 
+#' Biometrika, 106(1), 181-196.
+#' DOI: \doi{10.1093/biomet/asy064}
+#' 
 #' @examples
 #' # This function should be called internally. When having all objects pre-computed, one can call
 #' # surv_solver(B, X, Phit, Fail.Ind,
@@ -365,8 +384,12 @@ surv_dn_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsil
 #' @param verbose Should information be displayed
 #' @param ncore The number of cores for parallel computing
 #' @return The optimizer \code{B} for the esitmating equation.
-#' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
-#' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+#' 
+#' @references 
+#' Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. 
+#' Biometrika, 106(1), 181-196.
+#' DOI: \doi{10.1093/biomet/asy064}
+#' 
 #' @examples
 #' # This function should be called internally. When having all objects pre-computed, one can call
 #' # surv_solver(B, X, Phit, Fail.Ind,

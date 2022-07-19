@@ -98,14 +98,20 @@ void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g
 //' @param gtol (don't change) Gradient tolerance level
 //' @param maxitr Maximum number of iterations
 //' @param verbose Should information be displayed
-//' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
-//' @references Zhang, H. and Hager, W. W., "A nonmonotone line search technique and its application to unconstrained optimization." SIAM J. Optim. 14 (2004): 1043–1056. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+//' 
+//' @references Wen, Z., & Yin, W. (2013). A feasible method for optimization with orthogonality constraints. 
+//' Mathematical Programming, 142(1), 397-434.
+//' DOI: \doi{10.1007/s10107-012-0584-1}
+//' 
+//' @references Zhang, H., & Hager, W. W. (2004). A nonmonotone line search technique and its application to unconstrained optimization. 
+//' SIAM journal on Optimization, 14(4), 1043-1056.
+//' DOI: \doi{10.1137/S1052623403428208}
+//' 
 //' @examples
 //' # This function should be called internally. When having all objects pre-computed, one can call
 //' # gen_solver(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 //' # to solve for the parameters B.
 // [[Rcpp::export]]
-
 
 List gen_solver(arma::mat B,
                  Rcpp::Function f,

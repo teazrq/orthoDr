@@ -4,18 +4,9 @@
 \name{orthoDr-package}
 \alias{orthoDr}
 \alias{orthoDr-package}
-\title{orthoDr: Semi-Parametric Dimension Reduction Models Using Orthogonality
-        Constrained Optimization}
+\title{orthoDr: Semi-Parametric Dimension Reduction Models Using Orthogonality Constrained Optimization}
 \description{
-Utilize an orthogonality constrained optimization algorithm of
-    Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1> to solve a variety of
-    dimension reduction problems in the semiparametric framework, such as
-    Ma & Zhu (2012) <DOI:10.1080/01621459.2011.646925>, Ma & Zhu (2013) 
-    <DOI:10.1214/12-AOS1072>, Sun, Zhu, Wang & Zeng (2017) <arXiv:1704.05046>
-    and Zhou & Zhu (2018+) <arXiv:1802.06156>. It also serves as a general
-    purpose optimization solver for problems with orthogonality constraints.
-    Parallel computing for approximating the gradient is enabled
-    through 'OpenMP'.
+Utilize an orthogonality constrained optimization algorithm of Wen & Yin (2013) \doi{10.1007/s10107-012-0584-1} to solve a variety of dimension reduction problems in the semiparametric framework, such as Ma & Zhu (2012) \doi{10.1080/01621459.2011.646925}, Ma & Zhu (2013) \doi{10.1214/12-AOS1072}, Sun, Zhu, Wang & Zeng (2019) \href{https://arxiv.org/abs/1704.05046}{arXiv:1704.05046} and Zhou, Zhu & Zeng (2021) \href{https://arxiv.org/abs/1802.06156}{arXiv:1802.06156}. It also serves as a general purpose optimization solver for problems with orthogonality constraints. Parallel computing for approximating the gradient is enabled through 'OpenMP'.
 }
 \seealso{
 Useful links:
@@ -26,7 +17,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Ruoqing Zhu \email{teazrq@gmail.com} (0000-0002-0753-5716) [copyright holder]
+\strong{Maintainer}: Ruoqing Zhu \email{teazrq@gmail.com} (\href{https://orcid.org/0000-0002-0753-5716}{ORCID}) [copyright holder]
 
 Authors:
 \itemize{
@@ -38,7 +29,7 @@ Authors:
 
 Other contributors:
 \itemize{
-  \item James Joseph Balamuta \email{balamut2@illinois.edu} (0000-0003-2826-8458) [contributor]
+  \item James Joseph Balamuta \email{balamut2@illinois.edu} (\href{https://orcid.org/0000-0003-2826-8458}{ORCID}) [contributor]
 }
 
 }

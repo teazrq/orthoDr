@@ -4,8 +4,27 @@
 \alias{pdose_direct_solver}
 \title{pdose_direct_solver}
 \usage{
-pdose_direct_solver(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma,
-  tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+pdose_direct_solver(
+  B,
+  X,
+  A,
+  a_dist,
+  a_seq,
+  R,
+  lambda,
+  bw,
+  rho,
+  eta,
+  gamma,
+  tau,
+  epsilon,
+  btol,
+  ftol,
+  gtol,
+  maxitr,
+  verbose,
+  ncore
+)
 }
 \arguments{
 \item{B}{A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint}
@@ -51,8 +70,8 @@ The optimizer \code{B} for the esitmating equation.
 The direct learning optimization function for personalized dose finding.
 }
 \references{
-Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
-
-Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+Zhou, W., Zhu, R., & Zeng, D. (2021). A parsimonious personalized dose-finding model via dimension reduction.
+Biometrika, 108(3), 643-659.
+DOI: \doi{10.1093/biomet/asaa087}
 }
 \keyword{internal}

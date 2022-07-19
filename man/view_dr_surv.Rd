@@ -4,9 +4,19 @@
 \alias{view_dr_surv}
 \title{2D or 2D view of survival data on reduced dimension}
 \usage{
-view_dr_surv(x, y, censor, B = NULL, bw = NULL, FUN = "log",
-  type = "2D", legend.add = TRUE, xlab = "Reduced Direction",
-  ylab = "Time", zlab = "Survival")
+view_dr_surv(
+  x,
+  y,
+  censor,
+  B = NULL,
+  bw = NULL,
+  FUN = "log",
+  type = "2D",
+  legend.add = TRUE,
+  xlab = "Reduced Direction",
+  ylab = "Time",
+  zlab = "Survival"
+)
 }
 \arguments{
 \item{x}{A \code{matrix} or \code{data.frame} for features (continuous only).
@@ -24,7 +34,7 @@ survival function, default is the Silverman's formula}
 \item{FUN}{A scaling function applied to the time points \code{y}.
 Default is \code{"log"}.}
 
-\item{type}{\code{2D} or \code{3D} plot}
+\item{type}{\verb{2D} or \verb{3D} plot}
 
 \item{legend.add}{Should legend be added (2D plot only)}
 
@@ -53,6 +63,6 @@ orthoDr.fit <- orthoDr_surv(dataX, Y, Censor, ndr = 1, method = "dm")
 view_dr_surv(dataX, Y, Censor, orthoDr.fit$B)
 }
 \references{
-Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-\url{https://arxiv.org/abs/1704.05046}.
+Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. Biometrika, 106(1), 181-196.
+DOI: \doi{10.1093/biomet/asy064}
 }

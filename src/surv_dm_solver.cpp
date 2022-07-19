@@ -157,15 +157,18 @@ void surv_dm_g(arma::mat& B,
 //' @param maxitr Maximum number of iterations
 //' @param verbose Should information be displayed
 //' @param ncore The number of cores for parallel computing
-//' @return The optimizer \code{B} for the esitmating equation.
-//' @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
-//' @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+//' @return The optimizer \code{B} for the estimating equation.
+//' 
+//' @references Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. 
+//' Biometrika, 106(1), 181-196.
+//' DOI: \doi{10.1093/biomet/asy064}
+//' 
 //' @examples
 //' # This function should be called internally. When having all objects pre-computed, one can call
 //' # surv_solver(B, X, Phit, Fail.Ind,
 //' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 //' # to solve for the parameters B.
-//'
+//' 
 // [[Rcpp::export]]
 
 List surv_dm_solver(arma::mat B,

@@ -48,6 +48,7 @@ cpsir.fit <- CP_SIR(dataX, Y, Censor)
 distance(failEDR, cpsir.fit$vectors[, 1:ndr, drop = FALSE], "dist")
 }
 \references{
-Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-\url{https://arxiv.org/abs/1704.05046}.
+Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2019) "Counting Process Based Dimension Reduction Method for Censored Outcomes."
+Biometrika, 106(1), 181-196.
+DOI: \doi{10.1093/biomet/asy064}
 }

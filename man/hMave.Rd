@@ -45,6 +45,7 @@ Censor <- (T < C)
 hMave.fit <- hMave(dataX, Y, Censor, 1)
 }
 \references{
-Xia, Y., Zhang, D., & Xu, J. (2010). Dimension reduction and semiparametric estimation of survival models. Journal of the American Statistical Association, 105(489), 278-290.
-\url{http://dx.doi.org/10.1198/jasa.2009.tm09372}.
+Xia, Y., Zhang, D., & Xu, J. (2010). Dimension reduction and semiparametric estimation of survival models.
+Journal of the American Statistical Association, 105(489), 278-290.
+DOI: \doi{10.1198/jasa.2009.tm09372}
 }

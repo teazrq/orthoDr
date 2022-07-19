@@ -4,8 +4,23 @@
 \alias{gen_solver}
 \title{General solver \code{C++} function}
 \usage{
-gen_solver(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol,
-  gtol, maxitr, verbose)
+gen_solver(
+  B,
+  f,
+  g,
+  env,
+  useg,
+  rho,
+  eta,
+  gamma,
+  tau,
+  epsilon,
+  btol,
+  ftol,
+  gtol,
+  maxitr,
+  verbose
+)
 }
 \arguments{
 \item{B}{A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint}
@@ -47,8 +62,12 @@ A general purpose optimization solver with orthogonality constraint. For details
 # to solve for the parameters B.
 }
 \references{
-Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+Wen, Z., & Yin, W. (2013). A feasible method for optimization with orthogonality constraints.
+Mathematical Programming, 142(1), 397-434.
+DOI: \doi{10.1007/s10107-012-0584-1}
 
-Zhang, H. and Hager, W. W., "A nonmonotone line search technique and its application to unconstrained optimization." SIAM J. Optim. 14 (2004): 1043–1056. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+Zhang, H., & Hager, W. W. (2004). A nonmonotone line search technique and its application to unconstrained optimization.
+SIAM journal on Optimization, 14(4), 1043-1056.
+DOI: \doi{10.1137/S1052623403428208}
 }
 \keyword{internal}

@@ -4,8 +4,16 @@
 \alias{ortho_optim}
 \title{Orthogonality constrained optimization}
 \usage{
-ortho_optim(B, fn, grad = NULL, ..., maximize = FALSE,
-  control = list(), maxitr = 500, verbose = FALSE)
+ortho_optim(
+  B,
+  fn,
+  grad = NULL,
+  ...,
+  maximize = FALSE,
+  control = list(),
+  maxitr = 500,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{B}{Initial \code{B} values. Must be a matrix, and the columns are
@@ -66,6 +74,6 @@ sol <- eigen(A)$vectors[, 1:k]
 fx(sol, A)
 }
 \references{
-Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+Wen, Z., & Yin, W. (2013). A feasible method for optimization with orthogonality constraints. Mathematical Programming, 142(1), 397-434.
+DOI: \doi{10.1007/s10107-012-0584-1}
 }

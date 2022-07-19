@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // gen_solver
 List gen_solver(arma::mat B, Rcpp::Function f, Rcpp::Function g, Environment env, int useg, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose);
 RcppExport SEXP _orthoDr_gen_solver(SEXP BSEXP, SEXP fSEXP, SEXP gSEXP, SEXP envSEXP, SEXP usegSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP) {

@@ -40,10 +40,8 @@
 #' @export
 #' 
 #' @references 
-#' Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-#' DOI: <https://arxiv.org/abs/1704.05046>.
-#' Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-#' DOI: <https://doi.org/10.1007/s10107-012-0584-1>
+#' Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. Biometrika, 106(1), 181-196.
+#' DOI: \doi{10.1093/biomet/asy064}
 #' 
 #' @examples
 #' # This is setting 1 in Sun et. al. (2017) with reduced sample size

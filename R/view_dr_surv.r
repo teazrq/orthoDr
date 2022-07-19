@@ -30,8 +30,9 @@
 #' @importFrom plot3D mesh
 #' 
 #' @references 
-#' Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017)
-#' <https://arxiv.org/abs/1704.05046>.
+#' Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. Biometrika, 106(1), 181-196.
+#' DOI: \doi{10.1093/biomet/asy064}
+#' 
 #' @examples
 #' # generate some survival data
 #' N <- 100

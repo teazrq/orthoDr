@@ -34,9 +34,8 @@
 #' @export
 #' 
 #' @references
-#' 
-#' Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-#' DOI: <https://doi.org/10.1007/s10107-012-0584-1>
+#' Wen, Z., & Yin, W. (2013). A feasible method for optimization with orthogonality constraints. Mathematical Programming, 142(1), 397-434.
+#' DOI: \doi{10.1007/s10107-012-0584-1}
 #'
 #' @examples
 #' # an eigen value problem

@@ -4,10 +4,22 @@
 \alias{orthoDr_pdose}
 \title{Direct Learning & Pseudo-direct Learning Model}
 \usage{
-orthoDr_pdose(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL,
-  lambda = 0.1, K = sqrt(length(r)), method = c("direct",
-  "pseudo_direct"), keep.data = FALSE, control = list(),
-  maxitr = 500, verbose = FALSE, ncore = 0)
+orthoDr_pdose(
+  x,
+  a,
+  r,
+  ndr = ndr,
+  B.initial = NULL,
+  bw = NULL,
+  lambda = 0.1,
+  K = sqrt(length(r)),
+  method = c("direct", "pseudo_direct"),
+  keep.data = FALSE,
+  control = list(),
+  maxitr = 500,
+  verbose = FALSE,
+  ncore = 0
+)
 }
 \arguments{
 \item{x}{A \code{matrix} or \code{data.frame} for features (continuous only).}
@@ -19,7 +31,7 @@ orthoDr_pdose(x, a, r, ndr = ndr, B.initial = NULL, bw = NULL,
 \item{ndr}{A dimension structure}
 
 \item{B.initial}{Initial \code{B} values. Will use the counting process based
-SIR model \link[orthoDr:CP_SIR]{CP_SIR} as the initial if
+SIR model \link[=CP_SIR]{CP_SIR} as the initial if
 leaving as \code{NULL}. If specified, must be a matrix with
 \code{ncol(x)} rows and \code{ndr} columns. Will be processed by
 Gram-Schmidt if not orthogonal.}
@@ -112,8 +124,7 @@ dosedistance <- mean((test$D_opt - dose$pred)^2)
 print(dosedistance)
 }
 \references{
-Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model vis Dimension Reduction." (2018+)
-\url{https://arxiv.org/abs/1802.06156}.
-Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434.
-DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+Zhou, W., Zhu, R., & Zeng, D. (2021). A parsimonious personalized dose-finding model via dimension reduction.
+Biometrika, 108(3), 643-659.
+DOI: \doi{https://doi.org/10.1093/biomet/asaa087}
 }
