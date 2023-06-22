@@ -34,7 +34,7 @@ The algorithm will not scale the columns to unit variance}
 \item{ndr}{The number of directions}
 
 \item{B.initial}{Initial \code{B} values. Will use the counting process based
-SIR model \link[=CP_SIR]{CP_SIR} as the initial if
+SIR model \link[orthoDr:CP_SIR]{CP_SIR} as the initial if
 leaving as \code{NULL}. If specified, must be a matrix with
 \code{ncol(x)} rows and \code{ndr} columns. Will be processed by
 Gram-Schmidt if not orthogonal.}
