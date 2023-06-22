@@ -5,30 +5,30 @@ Title: Semi-Parametric Dimension Reduction Models Using Orthogonality
 Version: 0.6.6
 Authors@R: c(
     person("Ruilin", "Zhao",
-           email = "rzhao15@seas.upenn.edu", 
+           email = "rzhao15@seas.upenn.edu",
            role = c("aut", "cph")),
     person("Ruoqing", "Zhu",
-           email = "teazrq@gmail.com", 
+           email = "teazrq@gmail.com",
            role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-0753-5716")),
     person("Jiyang", "Zhang",
-           email = "jiyangz2@illinois.edu", 
+           email = "jiyangz2@illinois.edu",
            role = c("aut", "cph")),
     person("Wenzhuo", "Zhou",
-           email = "wenzhuo3@illinois.edu", 
+           email = "wenzhuo3@illinois.edu",
            role = c("aut", "cph")),
     person("Peng", "Xu",
-           email = "px2132@columbia.edu", 
+           email = "px2132@columbia.edu",
            role = c("aut", "cph")),
     person("James Joseph", "Balamuta",
-           email = "balamut2@illinois.edu", 
-           role = c("ctb"), 
+           email = "balamut2@illinois.edu",
+           role = c("ctb"),
            comment = c(ORCID = "0000-0003-2826-8458"))
     )
 Description: Utilize an orthogonality constrained optimization algorithm of
     Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1> to solve a variety of
     dimension reduction problems in the semiparametric framework, such as
-    Ma & Zhu (2012) <DOI:10.1080/01621459.2011.646925>, Ma & Zhu (2013) 
+    Ma & Zhu (2012) <DOI:10.1080/01621459.2011.646925>, Ma & Zhu (2013)
     <DOI:10.1214/12-AOS1072>, Sun, Zhu, Wang & Zeng (2019) <arXiv:1704.05046>
     and Zhou, Zhu & Zeng (2021) <arXiv:1802.06156>. It also serves as a general
     purpose optimization solver for problems with orthogonality constraints.
