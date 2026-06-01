@@ -5,7 +5,7 @@
 //
 //    This program is free software; you can redistribute it and/or
 //    modify it under the terms of the GNU General Public License
-//    as published by the Free Software Foundation; either version 3
+//    as published by the Free Software Foundation; either version 2
 //    of the License, or (at your option) any later version.
 //
 //    This program is distributed in the hope that it will be useful,
@@ -87,7 +87,7 @@ void surv_dn_g(arma::mat& B,
             double epsilon,
             int ncore)
 {
-  // This function computes the gradiant of the estimation equations
+  // This function computes the gradient of the estimation equations
 
   int P = B.n_rows;
   int ndr = B.n_cols;
@@ -108,7 +108,7 @@ void surv_dn_g(arma::mat& B,
       double temp = B(i, j);
       NewB(i, j) = B(i, j) + epsilon;
 
-      // calculate gradiant
+      // calculate gradient
       G(i,j) = (surv_dn_f(NewB, X, Phit, Fail_Ind, bw, 1) - F0) / epsilon;
 
       NewB(i, j) = temp;
@@ -118,38 +118,35 @@ void surv_dn_g(arma::mat& B,
 return;
 }
 
-//' @title surv_dn_solver \code{C++} function
-//' @name surv_dn_solver
-//' @description The main optimization function for survival dimensional reduction, the IR-CP method. This is an internal function and should not be called directly.
-//' @keywords internal
-//' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
-//' @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
-//' @param Phit Phit as defined in Sun et al. (2017)
-//' @param Fail_Ind The locations of the failure subjects
-//' @param bw Kernel bandwidth for X
-//' @param rho (don't change) Parameter for control the linear approximation in line search
-//' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
-//' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
-//' @param tau (don't change) Step size for updating
-//' @param epsilon (don't change) Parameter for approximating numerical gradient
-//' @param btol (don't change) The \code{$B$} parameter tolerance level
-//' @param ftol (don't change) Estimation equation 2-norm tolerance level
-//' @param gtol (don't change) Gradient tolerance level
-//' @param maxitr Maximum number of iterations
-//' @param verbose Should information be displayed
-//' @param ncore The number of cores for parallel computing
-//' @return The optimizer \code{B} for the estimating equation.
-//' 
-//' @references Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. 
-//' Biometrika, 106(1), 181-196.
-//' DOI: \doi{10.1093/biomet/asy064}
-//' 
-//' @examples
-//' # This function should be called internally. When having all objects pre-computed, one can call
-//' # surv_solver(B, X, Phit, Fail.Ind,
-//' #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
-//' # to solve for the parameters B.
-//'
+//  @title surv_dn_solver \code{C++} function
+//  @name surv_dn_solver
+//  @description The main optimization function for survival dimensional reduction, the IR-CP method. This is an internal function and should not be called directly.
+//  @keywords internal
+//  @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+//  @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
+//  @param Phit Phit as defined in Sun et al. (2017)
+//  @param Fail_Ind The locations of the failure subjects
+//  @param bw Kernel bandwidth for X
+//  @param rho (don't change) Parameter for control the linear approximation in line search
+//  @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+//  @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+//  @param tau (don't change) Step size for updating
+//  @param epsilon (don't change) Parameter for approximating numerical gradient
+//  @param btol (don't change) The \code{$B$} parameter tolerance level
+//  @param ftol (don't change) Estimation equation 2-norm tolerance level
+//  @param gtol (don't change) Gradient tolerance level
+//  @param maxitr Maximum number of iterations
+//  @param verbose Should information be displayed
+//  @param ncore The number of cores for parallel computing
+//  @return The optimizer \code{B} for the estimating equation.
+//  @references Sun, Q., Zhu, R., Wang, T. and Zeng, D. "Counting Process Based Dimension Reduction Method for Censored Outcomes." (2017) \url{https://arxiv.org/abs/1704.05046} .
+//  @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+//  @examples
+//  # This function should be called internally. When having all objects pre-computed, one can call
+//  # surv_solver(B, X, Phit, Fail.Ind,
+//  #             rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+//  # to solve for the parameters B.
+// 
 // [[Rcpp::export]]
 
 List surv_dn_solver(arma::mat B,
@@ -202,8 +199,6 @@ List surv_dn_solver(arma::mat B,
   arma::mat G(P, ndr);
   G.fill(0);
   surv_dn_g(B, F, G, X, Phit, Fail_Ind, bw, epsilon, ncore);
-
-  //return G;
 
   arma::mat GX = G.t() * B;
   arma::mat GXT;
@@ -291,7 +286,7 @@ List surv_dn_solver(arma::mat B,
       VX = V.t() * B;
     }
 
-    dtX = G - B * GX; // GX, dtX, nrmG slightly different from those of R code
+    dtX = G - B * GX;
     nrmG = norm(dtX, "fro");
 
     S = B - BP;
@@ -307,7 +302,7 @@ List surv_dn_solver(arma::mat B,
       tau = SY/accu(Y % Y);
     }
 
-    tau = dmax(dmin(tau, 1e10), 1e-20);
+    tau = std::max(std::min(tau, 1e10), 1e-20);
     crit(itr-1,0) = nrmG;
     crit(itr-1,1) = BDiff;
     crit(itr-1,2) = FDiff;
@@ -336,7 +331,7 @@ List surv_dn_solver(arma::mat B,
   }
 
   if(itr>=maxitr){
-    Rcout << "exceed max iteration before convergence ... " << std::endl;
+    if (verbose > 0) Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
   arma::mat diag_P(ndr,ndr);
@@ -358,4 +353,3 @@ List surv_dn_solver(arma::mat B,
   ret["bw"] = bw;
   return (ret);
 }
-

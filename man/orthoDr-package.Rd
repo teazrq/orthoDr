@@ -6,13 +6,15 @@
 \alias{orthoDr-package}
 \title{orthoDr: Semi-Parametric Dimension Reduction Models Using Orthogonality Constrained Optimization}
 \description{
-Utilize an orthogonality constrained optimization algorithm of Wen & Yin (2013) \doi{10.1007/s10107-012-0584-1} to solve a variety of dimension reduction problems in the semiparametric framework, such as Ma & Zhu (2012) \doi{10.1080/01621459.2011.646925}, Ma & Zhu (2013) \doi{10.1214/12-AOS1072}, Sun, Zhu, Wang & Zeng (2019) \href{https://arxiv.org/abs/1704.05046}{arXiv:1704.05046} and Zhou, Zhu & Zeng (2021) \href{https://arxiv.org/abs/1802.06156}{arXiv:1802.06156}. It also serves as a general purpose optimization solver for problems with orthogonality constraints. Parallel computing for approximating the gradient is enabled through 'OpenMP'.
+Provides semi-parametric dimension reduction methods using
+orthogonality constrained optimization. Includes regression, survival,
+and personalized dose models.
 }
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/teazrq/orthoDr}
-  \item Report bugs at \url{https://github.com/teazrq/orthoDr/issues}
+  \item \url{https://github.com/rqzhu-aide/orthoDr}
+  \item Report bugs at \url{https://github.com/rqzhu-aide/orthoDr/issues}
 }
 
 }
@@ -21,15 +23,15 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Ruilin Zhao \email{rzhao15@seas.upenn.edu} [copyright holder]
-  \item Jiyang Zhang \email{jiyangz2@illinois.edu} [copyright holder]
-  \item Wenzhuo Zhou \email{wenzhuo3@illinois.edu} [copyright holder]
-  \item Peng Xu \email{px2132@columbia.edu} [copyright holder]
+  \item Ruoqing Zhu \email{teazrq@gmail.com} (\href{https://orcid.org/0000-0002-0753-5716}{ORCID}) [copyright holder]
+  \item Ruilin Zhao
+  \item Wenzhuo Zhou
 }
 
 Other contributors:
 \itemize{
-  \item James Joseph Balamuta \email{balamut2@illinois.edu} (\href{https://orcid.org/0000-0003-2826-8458}{ORCID}) [contributor]
+  \item Jiyang Zhang [contributor]
+  \item Peng Xu [contributor]
 }
 
 }

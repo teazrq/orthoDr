@@ -5,7 +5,7 @@
 //
 //    This program is free software; you can redistribute it and/or
 //    modify it under the terms of the GNU General Public License
-//    as published by the Free Software Foundation; either version 3
+//    as published by the Free Software Foundation; either version 2
 //    of the License, or (at your option) any later version.
 //
 //    This program is distributed in the hope that it will be useful,
@@ -27,16 +27,16 @@
 using namespace Rcpp;
 //[[Rcpp::depends(RcppArmadillo)]]
 
-//' @title The prediction function for the personalized direct learning dose model
-//' @name dosepred
-//' @description Predict the fitted dose from the direct learning dose model
-//' @keywords internal
-//' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
-//' @param X The covariate matrix
-//' @param X_test The test covariate matrix
-//' @param bw A Kernel bandwidth, assuming each variable have unit variance
-//' @param w The kernel ridge regression coefficient
-//' @return The predicted dose
+//  @title The prediction function for the personalized direct learning dose model
+//  @name dosepred
+//  @description Predict the fitted dose from the direct learning dose model
+//  @keywords internal
+//  @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+//  @param X The covariate matrix
+//  @param X_test The test covariate matrix
+//  @param bw A Kernel bandwidth, assuming each variable have unit variance
+//  @param W The kernel ridge regression coefficient
+//  @return The predicted dose
 // [[Rcpp::export]]
 
 arma::vec dosepred(arma::mat B,

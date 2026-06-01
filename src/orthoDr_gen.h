@@ -5,7 +5,7 @@
 //
 //    This program is free software; you can redistribute it and/or
 //    modify it under the terms of the GNU General Public License
-//    as published by the Free Software Foundation; either version 3
+//    as published by the Free Software Foundation; either version 2
 //    of the License, or (at your option) any later version.
 //
 //    This program is distributed in the hope that it will be useful,
@@ -25,9 +25,9 @@
 #ifndef orthoDr_gen
 #define orthoDr_gen
 
-double gen_f(arma::mat &B, Rcpp::Function f, Rcpp::Environment env);
-void gen_g(arma::mat B, arma::mat &G, Rcpp::Function g, Rcpp::Environment env);
-void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g, Rcpp::Environment env, double epsilon);
+double gen_f(const arma::mat& B, Rcpp::Function f, Rcpp::Environment env);
+void gen_g(const arma::mat& B, arma::mat& G, Rcpp::Function g, Rcpp::Environment env);
+void gen_g_approx(const arma::mat& B, arma::mat& G, Rcpp::Function f, Rcpp::Function g, Rcpp::Environment env, double epsilon);
 
 Rcpp::List gen_solver(arma::mat B,
                  Rcpp::Function f,

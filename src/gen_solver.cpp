@@ -5,7 +5,7 @@
 //
 //    This program is free software; you can redistribute it and/or
 //    modify it under the terms of the GNU General Public License
-//    as published by the Free Software Foundation; either version 3
+//    as published by the Free Software Foundation; either version 2
 //    of the License, or (at your option) any later version.
 //
 //    This program is distributed in the hope that it will be useful,
@@ -28,14 +28,14 @@ using namespace Rcpp;
 
 //[[Rcpp::depends(RcppArmadillo)]]
 
-double gen_f(arma::mat &B, Rcpp::Function f, Environment env)
+double gen_f(const arma::mat& B, Rcpp::Function f, Environment env)
 {
   SEXP x = Rcpp_eval(f(B), env);
   return(REAL(x)[0]);
 }
 
 
-void gen_g(arma::mat B, arma::mat &G, Rcpp::Function g, Environment env)
+void gen_g(const arma::mat& B, arma::mat& G, Rcpp::Function g, Environment env)
 {
   SEXP x = Rcpp_eval(g(B), env);
 
@@ -50,28 +50,27 @@ void gen_g(arma::mat B, arma::mat &G, Rcpp::Function g, Environment env)
 }
 
 
-void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g, Environment env, double epsilon)
+void gen_g_approx(const arma::mat& B, arma::mat& G, Rcpp::Function f, Rcpp::Function g, Environment env, double epsilon)
 {
 
   double F0 = gen_f(B, f, env);
   int P = B.n_rows;
   int ndr = B.n_cols;
-  double temp;
+
+  arma::mat NewB = B;
 
   for (int j = 0; j < ndr; j++)
   {
     for(int i = 0; i < P; i++)
     {
-      // small increment
-      temp = B(i,j);
-      B(i,j) += epsilon;
+      // perturb the local copy
+      NewB(i,j) = B(i,j) + epsilon;
 
       // calculate gradient
-      G(i,j) = (gen_f(B, f, env) - F0) / epsilon;
+      G(i,j) = (gen_f(NewB, f, env) - F0) / epsilon;
 
-      // reset
-      B(i,j) = temp;
-
+      // reset from original
+      NewB(i,j) = B(i,j);
     }
   }
 
@@ -79,39 +78,34 @@ void gen_g_approx(arma::mat &B, arma::mat &G, Rcpp::Function f, Rcpp::Function g
 }
 
 
-//' @title General solver \code{C++} function
-//' @name gen_solver
-//' @description A general purpose optimization solver with orthogonality constraint. For details, please see the original \code{MATLAB} code by Wen and Yin (2013). This is an internal function and should not be called directly.
-//' @keywords internal
-//' @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
-//' @param f A function that calculates the objective function value. The first argument should be \code{B}. Returns a single value.
-//' @param g A function that calculates the gradient. The first argument should be \code{B}. Returns a matrix with the same dimension as \code{B}. If not specified, then the numerical approximation is used.
-//' @param env Environment passed to the Rcpp function for evaluating \code{f} and \code{g}
-//' @param useg If true, the gradient is calculated using \code{g} function, otherwise numerically approximated
-//' @param rho (don't change) Parameter for control the linear approximation in line search
-//' @param eta (don't change) Factor for decreasing the step size in the backtracking line search
-//' @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
-//' @param tau (don't change) Step size for updating
-//' @param epsilon (don't change) Parameter for approximating numerical gradient, if \code{g} is not given.
-//' @param btol (don't change) The \code{$B$} parameter tolerance level
-//' @param ftol (don't change) Functional value tolerance level
-//' @param gtol (don't change) Gradient tolerance level
-//' @param maxitr Maximum number of iterations
-//' @param verbose Should information be displayed
-//' 
-//' @references Wen, Z., & Yin, W. (2013). A feasible method for optimization with orthogonality constraints. 
-//' Mathematical Programming, 142(1), 397-434.
-//' DOI: \doi{10.1007/s10107-012-0584-1}
-//' 
-//' @references Zhang, H., & Hager, W. W. (2004). A nonmonotone line search technique and its application to unconstrained optimization. 
-//' SIAM journal on Optimization, 14(4), 1043-1056.
-//' DOI: \doi{10.1137/S1052623403428208}
-//' 
-//' @examples
-//' # This function should be called internally. When having all objects pre-computed, one can call
-//' # gen_solver(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
-//' # to solve for the parameters B.
+//  @title General solver \code{C++} function
+//  @name gen_solver
+//  @description A general purpose optimization solver with orthogonality constraint. For details, please see the original \code{MATLAB} code by Wen and Yin (2013). This is an internal function and should not be called directly.
+//  @keywords internal
+//  @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
+//  @param f A function that calculates the objective function value. The first argument should be \code{B}. Returns a single value.
+//  @param g A function that calculates the gradient. The first argument should be \code{B}. Returns a matrix with the same dimension as \code{B}. If not specified, then the numerical approximation is used.
+//  @param env Environment passed to the Rcpp function for evaluating \code{f} and \code{g}
+//  @param useg If true, the gradient is calculated using \code{g} function, otherwise numerically approximated
+//  @param rho (don't change) Parameter for control the linear approximation in line search
+//  @param eta (don't change) Factor for decreasing the step size in the backtracking line search
+//  @param gamma (don't change) Parameter for updating C by Zhang and Hager (2004)
+//  @param tau (don't change) Step size for updating
+//  @param epsilon (don't change) Parameter for approximating numerical gradient, if \code{g} is not given.
+//  @param btol (don't change) The \code{$B$} parameter tolerance level
+//  @param ftol (don't change) Functional value tolerance level
+//  @param gtol (don't change) Gradient tolerance level
+//  @param maxitr Maximum number of iterations
+//  @param verbose Should information be displayed
+//  @return A list with components: \code{B} (optimal matrix), \code{fn} (final objective value), \code{fn_Seq} (sequence of objective values), \code{itr} (number of iterations), \code{converge} (convergence indicator).
+//  @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+//  @references Zhang, H. and Hager, W. W., "A nonmonotone line search technique and its application to unconstrained optimization." SIAM J. Optim. 14 (2004): 1043–1056. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
+//  @examples
+//  # This function should be called internally. When having all objects pre-computed, one can call
+//  # gen_solver(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
+//  # to solve for the parameters B.
 // [[Rcpp::export]]
+
 
 List gen_solver(arma::mat B,
                  Rcpp::Function f,
@@ -263,7 +257,7 @@ List gen_solver(arma::mat B,
       tau = SY/accu(Y % Y);
     }
 
-    tau = dmax(dmin(tau, 1e20), 1e-20);
+    tau = std::max(std::min(tau, 1e20), 1e-20);
     crit(itr-1,0) = nrmG;
     crit(itr-1,1) = BDiff;
     crit(itr-1,2) = FDiff;
@@ -293,7 +287,7 @@ List gen_solver(arma::mat B,
   }
 
   if(itr>=maxitr){
-    Rcout << "exceed max iteration before convergence ... " << std::endl;
+    if (verbose > 0) Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
   arma::mat diag_P(ndr,ndr);

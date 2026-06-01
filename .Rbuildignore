@@ -1,3 +1,12 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^\.travis\.yml$
+^cran-comments\.md$
+^CRAN-SUBMISSION$
+^\.RData$
+^\.Rhistory$
+^desktop\.ini$
+^src/.*\.(o|so|dll)$
+^\.git$
+^\.github$
+^orthoDr\.Rproj$
+^\.Renviron$

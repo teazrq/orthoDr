@@ -1,36 +1,32 @@
-
 # orthoDr
 
-<!-- badges: start -->
-[![CRAN status](https://www.r-pkg.org/badges/version/orthoDr)](https://CRAN.R-project.org/package=orthoDr)
-[![](https://cranlogs.r-pkg.org/badges/orthoDr)](https://cran.r-project.org/package=orthoDr)
-<!-- badges: end -->
-  
-The goal of `orthoDr` is to use an orthogonality constrained optimization
-algorithm to solve a variety of dimension reduction problems in the
-semiparametric framework.
+[![CRAN Version](https://www.r-pkg.org/badges/version/orthoDr)](https://CRAN.R-project.org/package=orthoDr)
+[![R-CMD-check](https://github.com/rqzhu-aide/orthoDr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/rqzhu-aide/orthoDr/actions/workflows/R-CMD-check.yaml)
+
+Semi-parametric dimension reduction using orthogonality constrained optimization. Provides methods for regression, survival, and personalized dose finding, as well as a general-purpose solver for problems with orthogonality constraints.
+
+## Features
+
+- **Regression**: SIR, SAVE, pHd, MAVE, and semiparametric efficient estimation (SEff)
+- **Survival**: dimension reduction for censored outcomes
+- **Dose finding**: personalized dose estimation via partial SAVE and direct/pseudo-direct learning
+- **General optimizer**: `ortho_optim()` for any orthogonality-constrained objective
+- **OpenMP** parallel gradient approximation
 
 ## Installation
 
-You can install the released version of `orthoDr` from [CRAN](https://CRAN.R-project.org/package=orthoDr) with:
+```r
+# From CRAN
+install.packages("orthoDr")
 
-``` r
-  install.packages("orthoDr")
+# Development version
+remotes::install_github("rqzhu-aide/orthoDr")
 ```
 
-## Implemented Methods
+## References
 
-This package implements the orthogonality constrained (Stiefel manifold) optimization approach proposed by [Wen & Yin (2013)](https://link.springer.com/article/10.1007/s10107-012-0584-1). A drop-in solver `ortho_optim()` works just the same as the `optim()` function. Relying on this optimization approach, we also implemented a collection of dimension reduction models for survival analysis, regression, and personalized medicine. 
-
-  * CP-SIR, Forward, IR-CP and IR-Semi methods in [Sun, Zhu, Wang & Zeng (2019)](https://arxiv.org/abs/1704.05046)
-  * semi-SIR and semi-PHD in [Ma & Zhu (2012)](https://www.tandfonline.com/doi/full/10.1080/01621459.2011.646925)
-  * Direct and pseudo-Direct methods in [Zhou, Zhu & Zeng (2021)](https://arxiv.org/abs/1802.06156)
-
-We also implemented several methods and functions for comparison, testing and utilization purposes  
-    
-  * `hMave`: This is a direct `R` translation of the hMave `MATLAB` code by [Xia, Zhang & Xu (2010)](https://www.tandfonline.com/doi/abs/10.1198/jasa.2009.tm09372)
-  * `pSAVE`: partial-SAVE in [Feng, Wen, Yu & Zhu (2013)](https://www.tandfonline.com/doi/full/10.1080/01621459.2012.746065)
-  * `dist_cross()`: kernel distances matrix between two sets of data, as an extension of `dist()`
-  * `distance()`: distance correlation between two linear spaces
-  * `silverman()`: Silverman's rule of thumb bandwidth
-  
+- Wen, Z. & Yin, W. (2013). A feasible method for optimization with orthogonality constraints. *Mathematical Programming*, 142(1-2), 397–434.
+- Ma, Y. & Zhu, L. (2012). A semiparametric approach to dimension reduction. *JASA*, 107(497), 168–179.
+- Ma, Y. & Zhu, L. (2013). Efficient estimation in sufficient dimension reduction. *Annals of Statistics*, 41(1), 250–268.
+- Sun, Q., Zhu, R., Wang, T. & Zeng, D. (2017). Counting process based dimension reduction for censored outcomes. arXiv:1704.05046.
+- Zhou, W. & Zhu, R. (2018+). Semiparametric efficient dimension reduction. arXiv:1802.06156.

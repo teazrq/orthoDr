@@ -5,7 +5,7 @@
 //
 //    This program is free software; you can redistribute it and/or
 //    modify it under the terms of the GNU General Public License
-//    as published by the Free Software Foundation; either version 3
+//    as published by the Free Software Foundation; either version 2
 //    of the License, or (at your option) any later version.
 //
 //    This program is distributed in the hope that it will be useful,
@@ -21,21 +21,15 @@
 //    ----------------------------------------------------------------
 
 #include "orthoDr.h"
+#include <algorithm>
 
 #ifndef orthoDr_utility
 #define orthoDr_utility
-
-double dmax(double a, double b);
-double imax(int a, int b);
-double dmin(double a, double b);
-double imin(int a, int b);
 
 void checkCores(int& ncore, int verbose);
 
 arma::mat KernelDist_multi(const arma::mat& X, int ncore, double diag);
 arma::mat KernelDist_single(const arma::mat& X, double diag);
-arma::mat EpanKernelDist_multi(const arma::mat& X, int ncore, double diag);
-arma::mat EpanKernelDist_single(const arma::mat& X, double diag);
 
 Rcpp::NumericMatrix KernelDist_cross(const arma::mat& TestX, const arma::mat& X);
 

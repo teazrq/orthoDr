@@ -5,7 +5,7 @@
 //
 //    This program is free software; you can redistribute it and/or
 //    modify it under the terms of the GNU General Public License
-//    as published by the Free Software Foundation; either version 3
+//    as published by the Free Software Foundation; either version 2
 //    of the License, or (at your option) any later version.
 //
 //    This program is distributed in the hope that it will be useful,
@@ -26,38 +26,6 @@
 using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
-
-double dmax(double a, double b)
-{
-  if (a > b)
-    return a;
-
-  return b;
-}
-
-double imax(int a, int b)
-{
-  if (a > b)
-    return a;
-
-  return b;
-}
-
-double dmin(double a, double b)
-{
-  if (a > b)
-    return b;
-
-  return a;
-}
-
-double imin(int a, int b)
-{
-  if (a > b)
-    return b;
-
-  return a;
-}
 
 // check cores
 
@@ -125,75 +93,12 @@ arma::mat KernelDist_single(const arma::mat& X, double diag)
 }
 
 
-arma::mat EpanKernelDist_single(const arma::mat& X, double diag)
-{
-  int N = X.n_rows;
-  arma::mat kernel_matrix(N, N, arma::fill::zeros);
-  double u;
-
-  for (int i = 0; i < N; i++)
-  {
-    kernel_matrix(i, i) = diag;
-    for (int j = 0; j < i; j ++)
-    {
-      u = sum(pow(X.row(i)-X.row(j),2));
-
-      if (u > -1 && u < 1)
-        kernel_matrix(j,i) = pow((1-u*u), 3);
-
-      kernel_matrix(i,j) = kernel_matrix(j,i);
-    }
-  }
-  return(kernel_matrix);
-}
-
-
-
-arma::mat EpanKernelDist_multi(const arma::mat& X, int ncore, double diag)
-{
-  int N = X.n_rows;
-  arma::mat kernel_matrix(N, N, arma::fill::zeros);
-  
-  int threshold = static_cast<int>(ceil(static_cast<double>(N)/2.0));
-  
-#pragma omp parallel for schedule(static) num_threads(ncore)
-  for (int i = 0; i < threshold; i++)
-  {
-    double u;
-    kernel_matrix(i, i) = diag;
-    for (int j = 0; j < i; j ++)
-    {
-      u = sum(pow(X.row(i)-X.row(j),2));
-
-      if (u > -1 && u < 1)
-        kernel_matrix(j,i) = pow((1-u*u), 3);
-
-      kernel_matrix(i,j) = kernel_matrix(j,i);
-    }
-
-    int m = N - i - 1;
-    kernel_matrix(m, m) = diag;
-    for (int j = 0; j < m; j ++)
-    {
-      u = sum(pow(X.row(i)-X.row(j),2));
-
-      if (u > -1 && u < 1)
-        kernel_matrix(j,i) = pow((1-u*u), 3);
-
-      kernel_matrix(m,j) = kernel_matrix(j,m);
-    }
-  }
-
-  return(kernel_matrix);
-}
-
-
-//' @title KernelDist_cross
-//' @name KernelDist_cross
-//' @description Calculate the kernel distance between testing data and training data
-//' @keywords internal
-//' @param TestX testing data
-//' @param X training data
+//  @title KernelDist_cross
+//  @name KernelDist_cross
+//  @description Calculate the kernel distance between testing data and training data
+//  @keywords internal
+//  @param TestX testing data
+//  @param X training data
 // [[Rcpp::export]]
 NumericMatrix KernelDist_cross(const arma::mat& TestX, const arma::mat& X)
 {
