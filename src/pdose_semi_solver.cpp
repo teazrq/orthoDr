@@ -130,7 +130,7 @@ return;
 //  @param maxitr Maximum number of iterations
 //  @param verbose Should information be displayed
 //  @return The optimizer \code{B} for the estimating equation.
-//  @references Zhou, W., Zhu, R. "A Parsimonious Personalized Dose Model via Dimension Reduction." (2018)  \url{https://arxiv.org/abs/1802.06156}.
+//  @references Zhou, W., Zhu, R., Zeng, D. "A parsimonious personalized dose-finding model via dimension reduction." Biometrika (2021). \doi{10.1093/biomet/asaa087}.
 //  @references Wen, Z. and Yin, W., "A feasible method for optimization with orthogonality constraints." Mathematical Programming 142.1-2 (2013): 397-434. DOI: \url{https://doi.org/10.1007/s10107-012-0584-1}
 // [[Rcpp::export]]
 

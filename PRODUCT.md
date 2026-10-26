@@ -8,10 +8,9 @@ web
 
 ## Product Purpose
 
-Provide the orthoDr R package's GitHub Pages documentation, following the
-existing RLT package site's structure. Users should be able to install the
-package, choose a modeling workflow, reproduce an example, and find function
-arguments and release notes.
+Provide the orthoDr R package's GitHub Pages documentation. Users should be
+able to install the package, choose a modeling workflow, reproduce an example,
+and find function arguments and release notes.
 
 ## Capabilities and Constraints
 
@@ -23,8 +22,7 @@ the CRAN release.
 
 ## Brand Commitments
 
-The user requested a dedicated package site similar to
-https://teazrq.github.io/RLT/index.html. Use pkgdown and preserve that familiar
-documentation structure. The repository is `teazrq/orthoDr`; the publication
+Use pkgdown with the Bootstrap 5 Cosmo theme and familiar package
+documentation navigation. The repository is `teazrq/orthoDr`; the publication
 address is https://teazrq.github.io/orthoDr/. The personal website is outside
 this task.

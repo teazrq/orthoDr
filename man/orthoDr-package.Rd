@@ -13,8 +13,9 @@ and personalized dose models.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/rqzhu-aide/orthoDr}
-  \item Report bugs at \url{https://github.com/rqzhu-aide/orthoDr/issues}
+  \item \url{https://teazrq.github.io/orthoDr/}
+  \item \url{https://github.com/teazrq/orthoDr}
+  \item Report bugs at \url{https://github.com/teazrq/orthoDr/issues}
 }
 
 }

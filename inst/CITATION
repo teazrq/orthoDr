@@ -38,15 +38,20 @@ citHeader("If orthoDr_pdose is used, please also cite:")
 
 bibentry(
   bibtype = "Article",
-  title = "A Parsimonious Personalized Dose Finding Model via Dimension Reduction",
+  title = "A parsimonious personalized dose-finding model via dimension reduction",
   author = c(person("Wenzhuo", "Zhou"),
-             person("Ruoqing", "Zhu")),
-  year = "2018",
-  journal = "arXiv preprint",
-  url = "https://arxiv.org/abs/1802.06156",
-  textVersion = paste0("Zhou, W. & Zhu, R. (2018). ",
-                       "A Parsimonious Personalized Dose Finding Model via Dimension Reduction. ",
-                       "arXiv preprint arXiv:1802.06156")
+             person("Ruoqing", "Zhu"),
+             person("Donglin", "Zeng")),
+  year = "2021",
+  journal = "Biometrika",
+  volume = "108",
+  number = "3",
+  pages = "643--659",
+  doi = "10.1093/biomet/asaa087",
+  url = "https://doi.org/10.1093/biomet/asaa087",
+  textVersion = paste0("Zhou, W., Zhu, R. & Zeng, D. (2021). ",
+                       "A parsimonious personalized dose-finding model via dimension reduction. ",
+                       "Biometrika, 108(3), 643-659. doi:10.1093/biomet/asaa087")
 )
 
 citHeader("If orthoDr_reg is used, please also cite:")

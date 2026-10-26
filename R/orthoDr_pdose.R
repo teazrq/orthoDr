@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Fits a personalized dose model using the direct learning or pseudo-direct
-#' learning method of Zhou & Zhu (2021). The direction matrix \code{B}
+#' learning method of Zhou, Zhu & Zeng (2021). The direction matrix \code{B}
 #' identifies the subspace of covariates that informs optimal dosing.
 #'
 #' @name orthoDr_pdose
@@ -59,9 +59,9 @@
 #' stopping criterion does not certify stationarity of a profiled objective.
 #'
 #' @references
-#' Zhou, W. and Zhu, R. (2021). A parsimonious personalized dose model via
+#' Zhou, W., Zhu, R. and Zeng, D. (2021). A parsimonious personalized dose-finding model via
 #' dimension reduction. \emph{Biometrika}, 108(3), 643--659.
-#' \doi{10.1093/biomet/asaa094}.
+#' \doi{10.1093/biomet/asaa087}.
 #'
 #' @examples
 #' # generate personalized dose data

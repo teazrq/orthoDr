@@ -41,8 +41,7 @@ The downloadable guide is executed by `R CMD check` through `tests/examples.R`.
 
 ## Website maintenance
 
-The package site uses pkgdown with the same Bootstrap 5 Cosmo theme and
-navigation structure as [RLT](https://teazrq.github.io/RLT/). To build it locally,
+The package site uses pkgdown with the Bootstrap 5 Cosmo theme. To build it locally,
 install `pkgdown` in your usual R user library, install the current package
 source, then run `Rscript tools/build-site.R` from the repository root.
 GitHub Actions rebuilds `docs/` and deploys it to GitHub Pages on pushes to
@@ -54,4 +53,4 @@ GitHub Actions rebuilds `docs/` and deploys it to GitHub Pages on pushes to
 - Ma, Y. & Zhu, L. (2012). A semiparametric approach to dimension reduction. *JASA*, 107(497), 168–179.
 - Ma, Y. & Zhu, L. (2013). Efficient estimation in sufficient dimension reduction. *Annals of Statistics*, 41(1), 250–268.
 - Sun, Q., Zhu, R., Wang, T. & Zeng, D. (2017). Counting process based dimension reduction for censored outcomes. arXiv:1704.05046.
-- Zhou, W. & Zhu, R. (2018+). Semiparametric efficient dimension reduction. arXiv:1802.06156.
+- Zhou, W., Zhu, R. & Zeng, D. (2021). A parsimonious personalized dose-finding model via dimension reduction. *Biometrika*, 108(3), 643-659. [doi:10.1093/biomet/asaa087](https://doi.org/10.1093/biomet/asaa087).
