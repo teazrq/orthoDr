@@ -24,5 +24,5 @@ the CRAN release.
 
 Use pkgdown with the Bootstrap 5 Cosmo theme and familiar package
 documentation navigation. The repository is `teazrq/orthoDr`; the publication
-address is https://teazrq.github.io/orthoDr/. The personal website is outside
-this task.
+address is https://teazrq.github.io/orthoDr/. Keep this planning document in
+the tools directory so it is not published as a package documentation page.

@@ -11,8 +11,16 @@ build_guide <- function() {
     stop("Install this package version before building its guide")
 
   previous <- knitr::opts_chunk$get()
+  previous_knit <- knitr::opts_knit$get()
   on.exit(knitr::opts_chunk$restore(previous), add = TRUE)
-  knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = FALSE)
+  on.exit(knitr::opts_knit$restore(previous_knit), add = TRUE)
+  # Save figures once under man/figures, with links relative to the Markdown.
+  knitr::opts_knit$set(base.dir = normalizePath(dirname(output_file), winslash = "/"))
+  knitr::opts_chunk$set(
+    collapse = TRUE, comment = "#>", error = FALSE,
+    dev = "png", dpi = 120, fig.width = 7, fig.height = 4.5,
+    fig.path = "../../man/figures/getting-started-"
+  )
   rmd <- knitr::spin(text = readLines(source_file, warn = FALSE), knit = FALSE)
   body <- knitr::knit(text = rmd, envir = new.env(parent = globalenv()), quiet = TRUE)
   provenance <- c(

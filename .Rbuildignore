@@ -14,5 +14,5 @@
 ^docs$
 ^vignettes$
 ^\.impeccable$
-^PRODUCT\.md$
+^tools/website$
 ^DESIGN\.md$

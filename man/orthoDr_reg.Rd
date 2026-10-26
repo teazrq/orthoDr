@@ -46,17 +46,21 @@ and structural dimension — they are not user-tunable.}
 \item{keep.data}{Logical; if \code{TRUE}, the original data is stored in the
 returned object for use by \code{\link{predict}}. Default \code{FALSE}.}
 
-\item{control}{A named list of optimizer tolerances. Recognised entries and
-their defaults:
+\item{control}{A named list of optimizer tuning parameters. Recognised
+entries and their defaults:
 \describe{
-\item{\code{rho}}{1e-4 — augmented Lagrangian penalty}
-\item{\code{eta}}{0.2 — step-size decay factor}
-\item{\code{gamma}}{0.85 — linesearch contraction}
-\item{\code{tau}}{1e-3 — initial step-size adjustment}
-\item{\code{epsilon}}{1e-6 — finite-difference perturbation}
-\item{\code{btol}}{1e-6 — parameter-change tolerance}
-\item{\code{ftol}}{1e-6 — objective-change tolerance}
-\item{\code{gtol}}{1e-6 — gradient-norm tolerance}
+\item{\code{rho}}{Coefficient in the line-search sufficient-decrease
+condition. Default: \code{1e-4}.}
+\item{\code{eta}}{Factor for decreasing the step size in backtracking
+line search. Default: \code{0.2}.}
+\item{\code{gamma}}{Weight for updating the nonmonotone line-search
+reference value. Default: \code{0.85}.}
+\item{\code{tau}}{Initial step size. Default: \code{1e-3}.}
+\item{\code{epsilon}}{Finite-difference perturbation.
+Default: \code{1e-6}.}
+\item{\code{btol}}{Parameter-change tolerance. Default: \code{1e-6}.}
+\item{\code{ftol}}{Objective-change tolerance. Default: \code{1e-6}.}
+\item{\code{gtol}}{Gradient-norm tolerance. Default: \code{1e-6}.}
 }}
 
 \item{maxitr}{Maximum number of iterations (default 500). Clamped to
@@ -90,11 +94,13 @@ outcomes using the methods of Ma & Zhu (2012, 2013). The direction matrix
 \code{B} is estimated via orthogonality-constrained optimization on the
 Stiefel manifold, ensuring \eqn{B^\top B = I}.
 
-Kernel density estimation operates on the scaled projections \eqn{\beta^\top x},
-so the procedure is robust to the scale of \code{x}. However, raw feature
-values enter the Nadaraya–Watson estimator unscaled — users with features of
-very different variance should standardise \code{x} beforehand. The outcome
-\code{y} is internally scaled.
+Kernel calculations divide each coordinate of \eqn{B^\top x} by its sample
+standard deviation and by \code{bw * sqrt(2)}. Raw predictor values still
+enter the estimating equations in their supplied units, so feature scaling
+can affect the fit. If predictors are standardized before fitting, apply
+the same training transformation to prediction data. The outcome \code{y}
+is centered and scaled internally for estimation; mean predictions use the
+original outcome units.
 }
 \details{
 \subsection{Methods}{
@@ -112,12 +118,9 @@ and PHD starters and selects the result that maximises the
 nonparametric \eqn{R^2} of the Nadaraya–Watson regression of
 \eqn{Y} on \eqn{\beta^\top x}.}
 \item{SEFF}{Semiparametric efficient estimator (Ma & Zhu 2013,
-Section 3.2). Uses a two-step procedure: (1) obtain a root-\eqn{n}
-consistent initial \eqn{\tilde\beta} via SAVE; (2) estimate the
-nonparametric nuisance components (conditional density
-\eqn{\hat\eta_2} and its derivative, plus \eqn{\hat{E}[x \mid
-      \beta^\top x]}) once at \eqn{\tilde\beta}; (3) optimise the
-efficient score with those estimates held fixed.}
+Section 3.2). During optimization, it uses the initial projected
+covariates as a fixed kernel reference and re-evaluates the nuisance
+components at each candidate projection.}
 }
 }
 }
@@ -126,23 +129,24 @@ set.seed(1)
 N <- 100; P <- 4
 X <- matrix(rnorm(N * P), N, P)
 
-# Mean model — SIR
+# Linear mean model (SIR)
 Y <- -1 + X[, 1] + rnorm(N)
 fit_sir <- orthoDr_reg(X, Y, ndr = 1, method = "sir")
 fit_sir$B
 
-# Variance model — PHD
+# Quadratic mean model (PHD)
 Y <- -1 + X[, 1]^2 + rnorm(N)
 fit_phd <- orthoDr_reg(X, Y, ndr = 1, method = "phd")
 fit_phd$B
 
-# Efficient estimator (SEFF) — works on both mean and variance models
+# Efficient estimator (SEFF)
 fit_seff  <- orthoDr_reg(X, Y, ndr = 1, method = "seff")
 fit_seff$B
 
 # Custom initial + prediction
 B0 <- matrix(c(1, 0, 0, 0), 4, 1)
-fit <- orthoDr_reg(X, Y, ndr = 1, B.initial = B0, keep.data = TRUE)
+fit <- orthoDr_reg(X, Y, ndr = 1, method = "phd",
+                   B.initial = B0, keep.data = TRUE)
 predict(fit, X[1:5, ])
 
 }

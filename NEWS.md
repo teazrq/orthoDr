@@ -1,5 +1,10 @@
 # orthoDr (development version)
 
+* Expanded the tutorials with reduced predictors, predicted survival curves,
+  and explanations of the different targets and dimensions in dose finding.
+  Clarified prediction inputs and corrected example and reference descriptions.
+* Corrected the time-axis labels in 3D survival plots to match the transformed
+  time coordinates. The plotted survival probabilities are unchanged.
 * Added a pkgdown GitHub Pages site with installation instructions, four
   workflow tutorials, the function reference, changelog, and checked example
   downloads. Site builds reuse the tested guide and deploy through GitHub Actions.

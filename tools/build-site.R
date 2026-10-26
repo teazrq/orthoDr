@@ -1,7 +1,8 @@
 # Run from the repository root using shared R packages and the installed source.
 options(rgl.useNULL = TRUE)
 source("tools/build-getting-started.R", local = new.env(parent = globalenv()))
-pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+# pkgdown copies the guide's canonical man/figures assets to reference/figures.
+pkgdown::build_site_github_pages(clean = TRUE, new_process = FALSE, install = FALSE)
 
 # Keep downloads identical to the scripts exercised by the package checks.
 destination <- file.path("docs", "examples")

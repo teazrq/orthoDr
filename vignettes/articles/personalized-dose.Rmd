@@ -2,8 +2,8 @@
 title: Personalized Dose Finding
 ---
 
-This tutorial uses the revised development version 2.0.0.
-See [Get Started](get-started.html) for installation and runnable scripts.
+This tutorial uses orthoDr 2.0.0. See [Get Started](get-started.html) for
+installation and the complete R script.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)
@@ -17,5 +17,6 @@ cat(guide_section("Learn a personalized dose and predict"), sep = "\n")
 ## Next steps
 
 See `orthoDr_pdose()` for candidate grids, bandwidths, initialization, and
-regularization. These simulated data illustrate the API; they do not establish
-the effectiveness of a dose rule for a real application.
+regularization, and the numerical stopping criteria. The
+[method paper](https://doi.org/10.1093/biomet/asaa087) explains the distinction
+between direct and pseudo-direct learning and their assumptions.

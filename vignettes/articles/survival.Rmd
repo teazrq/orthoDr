@@ -2,8 +2,8 @@
 title: Survival
 ---
 
-This tutorial uses the revised development version 2.0.0.
-See [Get Started](get-started.html) for installation and runnable scripts.
+This tutorial uses orthoDr 2.0.0. See [Get Started](get-started.html) for
+installation and the complete R script.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)
@@ -18,5 +18,6 @@ cat(guide_section("Fit a survival model and predict curves"), sep = "\n")
 
 See `orthoDr_surv()` for the forward, counting process, and martingale methods,
 and `predict.orthoDr()` for survival prediction. The
-[full survival example](../examples/survival-optimizer.R) includes the bundled
-SKCM data and plotting with `view_dr_surv()`.
+[supplemental survival example](../examples/survival-optimizer.R) uses the bundled
+melanoma data and shows how to plot training outcomes against a reduced predictor
+with `view_dr_surv()`.

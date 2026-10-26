@@ -2,8 +2,8 @@
 title: General Optimizer
 ---
 
-This tutorial uses the revised development version 2.0.0.
-See [Get Started](get-started.html) for installation and runnable scripts.
+This tutorial uses orthoDr 2.0.0. See [Get Started](get-started.html) for
+installation and the complete R script.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)

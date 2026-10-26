@@ -2,15 +2,18 @@
 #'
 #' @description
 #' Fits a personalized dose model using the direct learning or pseudo-direct
-#' learning method of Zhou, Zhu & Zeng (2021). The direction matrix \code{B}
-#' identifies the subspace of covariates that informs optimal dosing.
+#' learning method of Zhou, Zhu & Zeng (2021). Direct learning targets a dose
+#' rule, whereas pseudo-direct learning first targets the conditional mean
+#' reward surface. The direction matrix \code{B} therefore has a different
+#' target under the two methods.
 #'
 #' @name orthoDr_pdose
 #' @export
 #'
 #' @param x A numeric matrix of features (continuous only).
 #' @param a A numeric vector of observed dose levels.
-#' @param r A numeric vector of observed rewards (outcomes).
+#' @param r A numeric vector of observed rewards (outcomes). Larger values
+#'   are preferred.
 #' @param ndr Number of directions to estimate.
 #' @param B.initial Initial \code{B} matrix. If \code{NULL} (default),
 #'   the partial SAVE model (\code{\link{pSAVE}}) is used. If specified,
@@ -21,9 +24,11 @@
 #' @param lambda Penalty level for kernel ridge regression. If a vector of
 #'   values is provided, GCV is used to select the best value.
 #'   Default: \code{0.1}.
-#' @param K Number of grid points for dose levels. Must be a finite scalar
-#'   at least one; fractional values are rounded down once. Default:
-#'   \code{sqrt(length(r))}. A single grid point uses the minimum observed dose.
+#' @param K Number of candidate dose grid points used during fitting. The grid
+#'   spans the observed dose range. Must be a finite scalar at least one;
+#'   fractional values are rounded down once. Default: \code{sqrt(length(r))}.
+#'   A single grid point uses the minimum observed dose. Predictions are
+#'   continuous and are not constrained to the grid or observed dose range.
 #' @param method The method: \code{"direct"} or \code{"pseudo_direct"}.
 #'   Default: \code{"direct"}.
 #' @param keep.data Logical; if \code{TRUE}, the original data is stored in
@@ -52,6 +57,17 @@
 #'   }
 #'
 #' @details
+#' With \code{method = "direct"}, \code{B} is chosen to improve estimated mean
+#' reward under a dose rule based on \eqn{B^\top x}. With
+#' \code{method = "pseudo_direct"}, \code{B} is chosen by fitting the
+#' conditional mean reward as a function of dose and \eqn{B^\top x}, then a
+#' dose rule is constructed. The methods need not estimate the same subspace.
+#'
+#' The dose grid is used to select candidate doses during fitting. Both
+#' methods fit a kernel ridge regression rule to the selected doses.
+#' Prediction evaluates this continuous rule, so predicted doses need not lie
+#' on the grid or within the observed dose range.
+#'
 #' Dose comparisons use the standard deviation of the observed training doses
 #' for both observed and candidate doses. Returned doses remain in their
 #' original units. The direct method updates policy coefficients during line

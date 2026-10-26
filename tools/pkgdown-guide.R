@@ -12,5 +12,9 @@ guide_section <- function(title) {
     stop("Guide section not found: ", title)
   following <- which(grepl("^## ", guide) & seq_along(guide) > start)
   end <- if (length(following)) following[1L] - 1L else length(guide)
-  guide[seq.int(start + 1L, end)]
+  section <- guide[seq.int(start + 1L, end)]
+  # The article supplies its own title, so promote the guide's subsections.
+  section <- sub("^### ", "## ", section)
+  # Article HTML is one directory below docs; pkgdown copies man/figures here.
+  gsub("../../man/figures/", "../reference/figures/", section, fixed = TRUE)
 }

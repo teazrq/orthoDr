@@ -95,8 +95,9 @@ view_dr_surv <- function(x, y, censor, B = NULL, bw = NULL, FUN = "log", type = 
            labels = round(seq(min(bx), max(bx), length.out = 6), 2),
            tick = TRUE, line = 0, nticks = 5, cex = 1.5, adj = c(0, 0.75))
 
-    axis3d(edge = "y+", at =  seq(0, max(y2) - min(y2), length.out = 6)/yscale,
-           labels = round(seq(0, max(y2) - min(y2), length.out = 6), 2),
+    time_ticks = seq(min(timegrid), max(timegrid), length.out = 6)
+    axis3d(edge = "y+", at = time_ticks/yscale*1.5,
+           labels = round(time_ticks, 2),
            tick = TRUE, line = 0, nticks = 6, cex = 1.5, adj = c(0, -0.25))
 
     axis3d(edge = "z+", at = seq(0, 1, 0.2), labels = seq(0, 1, 0.2),

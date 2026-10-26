@@ -34,7 +34,7 @@ print.orthoDr <- function(x, ...)
     }
 
     if (inherits(x, "pdose"))
-      cat(paste("Prediction for orthoDr personalized treatment: best treatment dose and reward prediction"))
+      cat(paste("Prediction for orthoDr personalized dose: predicted doses"))
   }
 }
 

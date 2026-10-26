@@ -2,8 +2,8 @@
 title: Regression
 ---
 
-This tutorial uses the revised development version 2.0.0.
-See [Get Started](get-started.html) for installation and runnable scripts.
+This tutorial uses orthoDr 2.0.0. See [Get Started](get-started.html) for
+installation and the complete R script.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)
@@ -18,5 +18,5 @@ cat(guide_section("Fit a regression model and predict"), sep = "\n")
 
 See `orthoDr_reg()` for the SIR, SAVE, PHD, locally efficient, and efficient
 estimation methods, and `predict.orthoDr()` for the prediction arguments and
-returned values. Predictors with very different variances may benefit from
-standardization; see the fitting function's description.
+returned values. Choose the method and number of directions for your modeling
+problem; the example settings do not provide an automatic selection rule.

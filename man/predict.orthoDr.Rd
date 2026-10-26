@@ -7,27 +7,47 @@
 \method{predict}{orthoDr}(object, testx, ...)
 }
 \arguments{
-\item{object}{A fitted orthoDr object}
+\item{object}{A fitted orthoDr object created with \code{keep.data = TRUE}.}
 
-\item{testx}{Testing data}
+\item{testx}{A numeric matrix with one row per new observation. Columns must
+match the training \code{x} in number, order, units, and preprocessing.}
 
-\item{...}{...}
+\item{...}{Additional arguments passed to the model-specific prediction
+function.}
 }
 \value{
-The predicted object. Survival predictions contain one row per
-observed event. Events tied at the same time have the same post-event
-probability and repeated time labels.
+An orthoDr prediction object containing:
+\describe{
+\item{\code{pred}}{For regression, conditional mean predictions; for
+personalized dose models, dose predictions. There is one prediction
+per row of \code{testx}. Dose models do not return reward predictions.}
+\item{\code{surv}}{For survival models, a matrix with one column per
+row of \code{testx} and one row per observed training event.}
+\item{\code{timepoints}}{For survival models, event times corresponding
+to the rows of \code{surv}. Events tied at the same time have the same
+post-event probability and repeated time labels.}
+}
 }
 \description{
-The prediction function for orthoDr fitted models
+Predicts conditional mean outcomes, survival probabilities, or
+personalized doses from a fitted orthoDr model.
 }
 \details{
-Regression and survival predictions use the fitted directions in
-original feature units and the training projection scales. Legacy forward
-survival objects without a stored bandwidth require the original bandwidth
-to be restored or the model to be refitted. If all Gaussian weights for a
-survival prediction underflow to zero, a warning is issued and that curve
-contains \code{NA}.
+Apply any preprocessing chosen before fitting to \code{testx} using the
+training quantities. For example, if \code{x} was standardized externally,
+use the same training means and standard deviations for \code{testx}.
+The package handles internal method transformations; supply \code{testx}
+in the same representation as \code{x} supplied to fitting.
+
+Regression and survival predictions use the fitted directions in the units
+of the supplied features and the training projection scales. Personalized
+dose predictions evaluate a continuous fitted rule and are not constrained
+to the fitting grid or observed dose range.
+
+Legacy forward survival objects without a stored bandwidth require the
+original bandwidth to be restored or the model to be refitted. If all
+Gaussian weights for a survival prediction underflow to zero, a warning is
+issued and that curve contains \code{NA}.
 }
 \examples{
 # generate some survival data

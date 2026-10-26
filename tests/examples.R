@@ -1,6 +1,8 @@
 # Exercise the public, downloadable guide as part of R CMD check.
 library(orthoDr)
-local({
+check_getting_started <- function() {
+  grDevices::pdf(file = tempfile(fileext = ".pdf"))
+  on.exit(grDevices::dev.off(), add = TRUE)
   e <- new.env(parent = globalenv())
   sys.source(system.file("examples", "getting-started.R", package = "orthoDr"),
              envir = e)
@@ -10,6 +12,8 @@ local({
   stopifnot(
     any(grepl(paste0("Source MD5: ", source_hash), guide, fixed = TRUE)),
     identical(dim(e$reg_fit$B), c(4L, 1L)),
+    identical(dim(e$reduced_x), c(nrow(e$x_reg), 1L)),
+    all(is.finite(e$reduced_x)),
     length(e$reg_prediction$pred) == 5L,
     all(is.finite(e$reg_prediction$pred)),
     ncol(e$surv_prediction$surv) == 5L,
@@ -22,10 +26,12 @@ local({
     all(is.finite(e$dose_prediction$pred)),
     length(e$pseudo_prediction$pred) == 5L,
     all(is.finite(e$pseudo_prediction$pred)),
+    identical(dim(e$pseudo_fit$B), c(3L, 2L)),
     e$pca_distance < 1e-4,
     abs(drop(crossprod(e$optim_fit$B)) - 1) < 1e-8
   )
-})
+}
+check_getting_started()
 
 # Keep the original public survival example runnable, including both 3D calls.
 check_survival_example <- function() {
