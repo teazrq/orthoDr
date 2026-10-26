@@ -31,6 +31,12 @@ correct only under strong assumptions, but since it requires only an SVD,
 its solution is commonly used as the initial value in
 \code{\link{orthoDr_surv}} optimization.
 }
+\details{
+Events at the same observed time share the midpoint of their event ranks
+when selecting a neighborhood. Neighborhood endpoints are bounded by the
+first and last event ranks and truncated to integer indices. Risk sets
+include all observations at or after the event time.
+}
 \examples{
 # This is setting 1 in Sun et. al. (2017) with reduced sample size
 library(MASS)

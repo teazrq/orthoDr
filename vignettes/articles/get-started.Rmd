@@ -1,0 +1,44 @@
+---
+title: Get Started with orthoDr
+---
+
+orthoDr estimates a small set of directions in a feature matrix for regression,
+right censored survival outcomes, and personalized dose finding. It also provides
+a general optimizer for objectives with orthogonality constraints.
+
+```{r setup, include=FALSE}
+source(rprojroot::find_package_root_file("tools", "pkgdown-guide.R"), local = TRUE)
+```
+
+## Install and check your version
+
+```{r installation, echo=FALSE, results='asis'}
+cat(guide_section("Version and installation"), sep = "\n")
+```
+
+## Choose a workflow
+
+| Your task | Start with | Tutorial |
+|:---|:---|:---|
+| Reduce predictors of a continuous outcome | `orthoDr_reg()` | [Regression](regression.html) |
+| Reduce predictors of a censored survival outcome | `orthoDr_surv()` | [Survival](survival.html) |
+| Learn a dose rule from features, doses, and rewards | `orthoDr_pdose()` | [Personalized dose finding](personalized-dose.html) |
+| Optimize your own objective under $B^T B = I$ | `ortho_optim()` | [General optimizer](general-optimizer.html) |
+
+The model tutorials show how to fit and predict. Set `keep.data = TRUE` when
+fitting a model you will use for prediction. Inspect the returned `converge`
+flag before interpreting a fitted result. A direction's sign is arbitrary;
+compare fitted subspaces or predictions when assessing two fits.
+
+## Download and reproduce the examples
+
+- [Complete getting-started R script](../examples/getting-started.R)
+- [Full survival and optimizer R script](../examples/survival-optimizer.R),
+  including the SKCM data and 2D and 3D plots
+- [Function reference](../reference/index.html) and [changelog](../news/index.html)
+
+The four tutorials reuse the output of the complete getting-started script.
+That script and the full survival example run during `R CMD check` through
+`tests/examples.R`. Site builds regenerate the guide from the installed source
+package. For help matching your own installed version, use
+`help(package = "orthoDr")`.

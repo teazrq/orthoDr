@@ -47,7 +47,8 @@ pSAVE <- function(x, a, r, ndr = 2, nslices0 =2){
   a = train$a
   a = sort(a)
 
-  Z = a[(n/2-50):(n/2+50)]
+  # Bound the interval before indexing, retaining odd-size truncation and ties.
+  Z = a[seq.int(max(1L, floor(n/2-50)), min(n, floor(n/2+50)))]
   M_i = list()
   jk = 0
 

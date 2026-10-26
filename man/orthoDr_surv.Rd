@@ -20,8 +20,8 @@ orthoDr_surv(
 )
 }
 \arguments{
-\item{x}{A matrix or data.frame of features. Columns are not automatically
-scaled to unit variance.}
+\item{x}{A numeric matrix of features. Features are standardized
+internally for fitting; the returned directions use the original units.}
 
 \item{y}{A numeric vector of observed survival times.}
 
@@ -62,10 +62,11 @@ the returned object for prediction. Default: \code{FALSE}.}
 An object of class \code{c("orthoDr", "fit", "surv")}, which is a
 list containing:
 \describe{
-\item{\code{B}}{The estimated direction matrix (columns are orthonormal).}
+\item{\code{B}}{The estimated direction matrix in original feature
+units, with columns normalized to unit length.}
 \item{\code{fn}}{The final objective function value.}
 \item{\code{itr}}{Number of iterations performed.}
-\item{\code{converge}}{Convergence code.}
+\item{\code{converge}}{Logical; \code{TRUE} when convergence was reached.}
 \item{\code{method}}{The method used (e.g., \code{"dm"}).}
 \item{\code{keep.data}}{Whether original data was retained.}
 }
@@ -75,6 +76,12 @@ Fits a counting-process-based semiparametric dimension reduction (IR-CP)
 model for right-censored survival outcomes (Sun, Zhu, Wang & Zeng, 2017).
 Three estimating equations are available: \code{"forward"}, \code{"dn"},
 and \code{"dm"}.
+}
+\details{
+Observations with the same time share a complete risk set, including events
+and censored observations at that time. The bandwidth is retained for
+prediction for all three methods. If all observed times are equal, the
+centered time coordinate is set to zero, giving a constant time kernel.
 }
 \examples{
 # Setting 1 from Sun et al. (2017), reduced sample size

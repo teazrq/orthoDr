@@ -1,0 +1,21 @@
+---
+title: General Optimizer
+---
+
+This tutorial uses the revised development version 2.0.0.
+See [Get Started](get-started.html) for installation and runnable scripts.
+
+```{r load-package, eval=FALSE}
+library(orthoDr)
+```
+
+```{r guide, echo=FALSE, results='asis'}
+source(rprojroot::find_package_root_file("tools", "pkgdown-guide.R"), local = TRUE)
+cat(guide_section("Use the general optimizer"), sep = "\n")
+```
+
+## Next steps
+
+See `ortho_optim()` for callback requirements, tolerances, maximization,
+and the return values. `distance()` compares subspaces without depending on
+the signs of individual directions.

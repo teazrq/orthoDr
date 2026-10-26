@@ -42,7 +42,7 @@ distance <- function(s1, s2, type = "dist", x = NULL)
   if (!is.matrix(s1))
     s1 = as.matrix(s1)
 
-  if (!is.vector(s2))
+  if (!is.matrix(s2))
     s2 = as.matrix(s2)
 
   if (nrow(s1) != nrow(s2))
@@ -51,7 +51,7 @@ distance <- function(s1, s2, type = "dist", x = NULL)
   if (ncol(s1) != ncol(s2))
     warning("Dimension d of two spaces do not match.")
 
-  match.arg(type, c("dist", "trace", "canonical", "sine"))
+  type = match.arg(type, c("dist", "trace", "canonical", "sine"))
 
   if (type == "dist")
   {

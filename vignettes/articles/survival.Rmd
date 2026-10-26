@@ -1,0 +1,22 @@
+---
+title: Survival
+---
+
+This tutorial uses the revised development version 2.0.0.
+See [Get Started](get-started.html) for installation and runnable scripts.
+
+```{r load-package, eval=FALSE}
+library(orthoDr)
+```
+
+```{r guide, echo=FALSE, results='asis'}
+source(rprojroot::find_package_root_file("tools", "pkgdown-guide.R"), local = TRUE)
+cat(guide_section("Fit a survival model and predict curves"), sep = "\n")
+```
+
+## Next steps
+
+See `orthoDr_surv()` for the forward, counting process, and martingale methods,
+and `predict.orthoDr()` for survival prediction. The
+[full survival example](../examples/survival-optimizer.R) includes the bundled
+SKCM data and plotting with `view_dr_surv()`.

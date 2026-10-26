@@ -1,0 +1,22 @@
+---
+title: Regression
+---
+
+This tutorial uses the revised development version 2.0.0.
+See [Get Started](get-started.html) for installation and runnable scripts.
+
+```{r load-package, eval=FALSE}
+library(orthoDr)
+```
+
+```{r guide, echo=FALSE, results='asis'}
+source(rprojroot::find_package_root_file("tools", "pkgdown-guide.R"), local = TRUE)
+cat(guide_section("Fit a regression model and predict"), sep = "\n")
+```
+
+## Next steps
+
+See `orthoDr_reg()` for the SIR, SAVE, PHD, locally efficient, and efficient
+estimation methods, and `predict.orthoDr()` for the prediction arguments and
+returned values. Predictors with very different variances may benefit from
+standardization; see the fitting function's description.

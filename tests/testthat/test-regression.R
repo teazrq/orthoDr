@@ -444,8 +444,8 @@ test_that("hMave validates inputs", {
   censor <- as.matrix(rbinom(n, 1, 0.8))
 
   expect_error(hMave(as.data.frame(x), y, censor, 1), "x must be a matrix")
-  expect_error(hMave(x, as.numeric(y), censor, 1), "y must be a matrix")
-  expect_error(hMave(x, y, as.numeric(censor), 1), "censor must be a matrix")
+  expect_error(hMave(x, as.numeric(y)[-1], censor, 1), "y must have one value per observation")
+  expect_error(hMave(x, y, as.numeric(censor)[-1], 1), "censor must have one value per observation")
 
   bad_censor <- as.matrix(c(rep(0, 30), rep(2, 30)))
   expect_error(hMave(x, y, bad_censor, 1), "censor can only have two levels 0/1")

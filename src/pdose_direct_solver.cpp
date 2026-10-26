@@ -23,6 +23,7 @@
 #include <RcppArmadillo.h>
 #include "utilities.h"
 #include "orthoDr_pdose.h"
+#include "solver_numerics.h"
 
 
 using namespace Rcpp;
@@ -59,10 +60,11 @@ double pdose_direct_f(const arma::mat& B,
   Dose = kernel_matrix_X.t() * W;
   arma::mat D_dist(N,N);
 
-  double Dose_scale = stddev(a_seq)*bw;
   double A_scale = stddev(A)*bw;
+  if (!std::isfinite(A_scale) || A_scale <= 0)
+    Rcpp::stop("Observed doses must have a positive finite standard deviation");
 
-  Dose /= Dose_scale;
+  Dose /= A_scale;
   arma::colvec A_vec = A;
   A_vec /= A_scale;
 
@@ -305,6 +307,7 @@ List pdose_direct_solver(arma::mat B,
   arma::mat G(P, ndr);
   G.fill(0);
   pdose_direct_g(B, F, G, X, A, a_seq, R, bw, W, lambda0, epsilon, ncore);
+  orthoDr::check_state(F, G);
 
   arma::mat GX = G.t() * B;
   arma::mat GXT;
@@ -328,6 +331,11 @@ List pdose_direct_solver(arma::mat B,
 
   arma::mat dtX = G - B * GX;
   double nrmG = norm(dtX, "fro");
+  if (!std::isfinite(nrmG)) Rcpp::stop("Constrained gradient norm must be finite");
+  bool converged = false;
+  int completed = 0;
+  int clean_updates = 0;
+  double previous_tau = tau;
 
   double Q = 1;
   double Cval = F;
@@ -370,10 +378,12 @@ List pdose_direct_solver(arma::mat B,
         B = BP - U * (tau * aa);
       }
 
+      if (!B.is_finite()) Rcpp::stop("Optimizer update must be finite");
       pdose_direct_w(B, X, A,a_seq,a_dist,R, bw, W, lambda, ncore);
 
       F = pdose_direct_f( B, X, A, a_seq, R, bw, W, ncore);
       pdose_direct_g(B, F, G,  X, A, a_seq, R,bw,W,lambda0, epsilon, ncore);
+      orthoDr::check_state(F, G);
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
@@ -382,6 +392,7 @@ List pdose_direct_solver(arma::mat B,
       nls = nls + 1;
     }
 
+    completed = itr;
     GX = G.t() * B;
 
     if(invH){
@@ -397,6 +408,7 @@ List pdose_direct_solver(arma::mat B,
 
     dtX = G - B * GX;
     nrmG = norm(dtX, "fro");
+    if (!std::isfinite(nrmG)) Rcpp::stop("Constrained gradient norm must be finite");
 
     S = B - BP;
     BDiff = norm(S, "fro")/sqrt((double) P);
@@ -405,13 +417,16 @@ List pdose_direct_solver(arma::mat B,
     Y = dtX - dtXP;
     SY = std::abs(accu(S % Y));
 
-    if(itr%2 == 0){
-      tau = accu(S % S)/SY;
-    }else{
-      tau = SY/accu(Y % Y);
+    // This is the existing gradient conditional on W. Keep its stopping
+    // check after at least five updates; W is recomputed at every trial.
+    bool valid_bb = false;
+    const double SS = accu(S % S);
+    if (nrmG >= gtol) {
+      tau = orthoDr::bb_step(SS, SY, accu(Y % Y), itr%2 == 0,
+                            previous_tau, 1e10, valid_bb);
+      previous_tau = tau;
     }
-
-    tau = std::max(std::min(tau, 1e10), 1e-20);
+    clean_updates = valid_bb && std::isfinite(SS) && SS > 0 ? clean_updates + 1 : 0;
     crit(itr-1,0) = nrmG;
     crit(itr-1,1) = BDiff;
     crit(itr-1,2) = FDiff;
@@ -429,8 +444,10 @@ List pdose_direct_solver(arma::mat B,
         mcrit.row(i) = crit.row(itr-i-1);
       }
 
-      if ( (BDiff < btol && FDiff < ftol) || (nrmG < gtol) || ((mean(mcrit.col(1)) < btol) && (mean(mcrit.col(2)) < ftol)) )
+      if ( (clean_updates > 0 && BDiff < btol && FDiff < ftol) || (nrmG < gtol) ||
+           (clean_updates >= 5 && mean(mcrit.col(1)) < btol && mean(mcrit.col(2)) < ftol) )
       {
+        converged = true;
         if (verbose > 0) Rcout << "converge" << std::endl;
         break;
       }
@@ -442,7 +459,7 @@ List pdose_direct_solver(arma::mat B,
 
   }
 
-  if(itr>=maxitr){
+  if(!converged){
     if (verbose > 0) Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
@@ -451,7 +468,7 @@ List pdose_direct_solver(arma::mat B,
   double feasi = norm(B.t() * B - diag_P, "fro");
 
   if (verbose > 0){
-    Rcout << "number of iterations: " << itr << std::endl;
+    Rcout << "number of iterations: " << completed << std::endl;
     Rcout << "functional value: " << F << std::endl;
     Rcout << "norm of gradient: " << nrmG << std::endl;
     Rcout << "norm of feasibility: " << feasi << std::endl;
@@ -461,8 +478,8 @@ List pdose_direct_solver(arma::mat B,
   ret["B"] = B;
   ret["W"] = W;
   ret["fn"] = F;
-  ret["itr"] = itr;
-  ret["converge"] = (itr<maxitr);
+  ret["itr"] = completed;
+  ret["converge"] = converged;
   return (ret);
 }
 

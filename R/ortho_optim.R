@@ -34,9 +34,9 @@
 #'     \item{\code{epsilon}}{Step size for finite-difference gradient
 #'       approximation (only used when \code{grad = NULL}).
 #'       Default: \code{1e-6}.}
-#'     \item{\code{btol}}{Tolerance for orthogonality deviation of \code{B}.
-#'       Convergence is reached when \eqn{\|B^\top B - I\|_F < \code{btol}}.
-#'       Default: \code{1e-6}.}
+#'     \item{\code{btol}}{Tolerance for the change in \code{B}, measured by
+#'       its Frobenius norm divided by the square root of the number of rows.
+#'       Used together with \code{ftol}. Default: \code{1e-6}.}
 #'     \item{\code{ftol}}{Tolerance for relative change in the objective value.
 #'       Default: \code{1e-6}.}
 #'     \item{\code{gtol}}{Tolerance for the gradient (projected onto the
@@ -52,8 +52,10 @@
 #'     \item{\code{fn}}{The final objective function value.}
 #'     \item{\code{fn_Seq}}{Numeric vector of objective values at each iteration
 #'       (length \code{maxitr}, padded with zeros after convergence).}
-#'     \item{\code{itr}}{Number of iterations performed.}
-#'     \item{\code{converge}}{Convergence code.}
+#'     \item{\code{itr}}{Number of completed updates; zero if the initial
+#'       constrained gradient already satisfies \code{gtol}.}
+#'     \item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
+#'       was reached, and \code{FALSE} when the iteration limit was exhausted.}
 #'     \item{\code{method}}{\code{"true gradient"} or \code{"approx. gradient"}.}
 #'   }
 #'
@@ -117,15 +119,6 @@ ortho_optim <- function(B, fn, grad = NULL, ..., maximize = FALSE,
 
   env = environment()
 
-  names = sapply(substitute(list(...))[-1], deparse)
-
-  if (length(names) > 0)
-  {
-    for (i in 1:length(names))
-      if (!exists(names[[i]], envir = env))
-        stop(paste(names[[i]], "do not exist"))
-  }
-
   # check f and g
 
   if (is.null(fn))
@@ -165,8 +158,10 @@ ortho_optim <- function(B, fn, grad = NULL, ..., maximize = FALSE,
   if (verbose > 0)
     cat(paste("Total time: ", round(as.numeric(Sys.time() - pre, units = "secs"), digits = 2), " secs\n", sep = ""))
 
-  if (maximize)
+  if (maximize) {
     fit$fn = -fit$fn
+    fit$fn_Seq = -fit$fn_Seq
+  }
 
   fit$method = ifelse(useg, "true gradient", "approx. gradient")
 

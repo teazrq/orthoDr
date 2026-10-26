@@ -9,8 +9,8 @@
 #' @name orthoDr_surv
 #' @export
 #'
-#' @param x A matrix or data.frame of features. Columns are not automatically
-#'   scaled to unit variance.
+#' @param x A numeric matrix of features. Features are standardized
+#'   internally for fitting; the returned directions use the original units.
 #' @param y A numeric vector of observed survival times.
 #' @param censor A numeric vector of censoring indicators (1 = event,
 #'   0 = censored).
@@ -39,13 +39,20 @@
 #' @return An object of class \code{c("orthoDr", "fit", "surv")}, which is a
 #'   list containing:
 #'   \describe{
-#'     \item{\code{B}}{The estimated direction matrix (columns are orthonormal).}
+#'     \item{\code{B}}{The estimated direction matrix in original feature
+#'       units, with columns normalized to unit length.}
 #'     \item{\code{fn}}{The final objective function value.}
 #'     \item{\code{itr}}{Number of iterations performed.}
-#'     \item{\code{converge}}{Convergence code.}
+#'     \item{\code{converge}}{Logical; \code{TRUE} when convergence was reached.}
 #'     \item{\code{method}}{The method used (e.g., \code{"dm"}).}
 #'     \item{\code{keep.data}}{Whether original data was retained.}
 #'   }
+#'
+#' @details
+#' Observations with the same time share a complete risk set, including events
+#' and censored observations at that time. The bandwidth is retained for
+#' prediction for all three methods. If all observed times are equal, the
+#' centered time coordinate is set to zero, giving a constant time kernel.
 #'
 #' @references
 #' Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2017). Counting process based
@@ -110,6 +117,7 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
 
   N = nrow(x)
   P = ncol(x)
+  if (!any(censor == 1)) stop("orthoDr_surv requires at least one event")
 
   if (is.null(bw))
     bw = silverman(ndr, N)
@@ -117,7 +125,9 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
   # scale X and Y for stability
   # Y = scale(log(y)) / sqrt(2) / silverman(1, N)
 
-  Y = scale(rank(y, ties.method = "average") / (N + 1)) / sqrt(2) / silverman(1, N)
+  time.rank = rank(y, ties.method = "average") / (N + 1)
+  Y = if (sd(time.rank) == 0) rep(0, N) else
+    drop(scale(time.rank)) / sqrt(2) / silverman(1, N)
 
   xscale = apply(x, 2, sd)
   X = scale(x)
@@ -137,10 +147,13 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
   # pre-process
 
   Yorder = order(Y)
-  X = X[Yorder, ]
+  X = X[Yorder, , drop = FALSE]
   Y = Y[Yorder]
   C = censor[Yorder]
   Fail.Ind = which(C==1)
+  # Each event keeps its own row, but its risk set begins at the first row
+  # at that observed time, including censored subjects tied with the event.
+  Risk.Start = match(Y[Fail.Ind], Y)
 
   # calculate some useful stuff
 
@@ -149,29 +162,29 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
   # E[X | dN(t) = 1, Y(t) = 1] - E[X | dN(t) = 0, Y(t) = 1] at all failure times
 
   kernel.y = exp(-(as.matrix(dist(Y, method = "euclidean"))))
-  kernel.y[upper.tri(kernel.y)] = 0
+  kernel.y[outer(Y, Y, "<")] = 0
 
   Phit = matrix(0, P, nFail)
 
   for (j in 1:nFail)
-    Phit[,j] = as.matrix(apply(X, 2, weighted.mean, w = C*kernel.y[, Fail.Ind[j]]) - colMeans(X[Fail.Ind[j]:N, ,drop = FALSE]))
+    Phit[,j] = as.matrix(apply(X, 2, weighted.mean, w = C*kernel.y[, Fail.Ind[j]]) - colMeans(X[Risk.Start[j]:N, ,drop = FALSE]))
 
   # start to fit the model
 
   pre = Sys.time()
 
   if (method == "forward")
-    fit = surv_forward_solver(B.initial, X, Fail.Ind, bw,
+    fit = surv_forward_solver(B.initial, X, Fail.Ind, Risk.Start, bw,
                          control$rho, control$eta, control$gamma, control$tau, control$epsilon,
                          control$btol, control$ftol, control$gtol, maxitr, verbose, ncore)
 
   if (method == "dn")
-    fit = surv_dn_solver(B.initial, X, Phit, Fail.Ind, bw,
+    fit = surv_dn_solver(B.initial, X, Phit, Fail.Ind, Risk.Start, bw,
                     control$rho, control$eta, control$gamma, control$tau, control$epsilon,
                     control$btol, control$ftol, control$gtol, maxitr, verbose, ncore)
 
   if (method == "dm")
-    fit = surv_dm_solver(B.initial, X, Phit, Fail.Ind, bw,
+    fit = surv_dm_solver(B.initial, X, Phit, Fail.Ind, Risk.Start, bw,
                          control$rho, control$eta, control$gamma, control$tau, control$epsilon,
                          control$btol, control$ftol, control$gtol, maxitr, verbose, ncore)
 
@@ -181,7 +194,8 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
   # rescale B back to the original scale
 
   fit$B = sweep(fit$B, 1, xscale, FUN = "/")
-  fit$B = apply(fit$B, 2, function(x) x / sqrt(sum(x^2)))
+  fit$B = sweep(fit$B, 2, sqrt(colSums(fit$B^2)), FUN = "/")
+  fit$bw = bw
   fit$method = method
   fit$keep.data = keep.data
 

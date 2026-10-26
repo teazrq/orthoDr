@@ -23,6 +23,7 @@
 #include <RcppArmadillo.h>
 #include "utilities.h"
 #include "orthoDr_pdose.h"
+#include "solver_numerics.h"
 
 using namespace Rcpp;
 
@@ -183,6 +184,7 @@ List pdose_semi_solver(arma::mat& B,
   arma::mat G(P, ndr);
   G.fill(0);
   pdose_semi_g(B, F, G, X, R, A, bw, epsilon, ncore);
+  orthoDr::check_state(F, G);
 
   arma::mat GX = G.t() * B;
   arma::mat GXT;
@@ -206,6 +208,11 @@ List pdose_semi_solver(arma::mat& B,
 
   arma::mat dtX = G - B * GX;
   double nrmG = norm(dtX, "fro");
+  if (!std::isfinite(nrmG)) Rcpp::stop("Constrained gradient norm must be finite");
+  bool converged = nrmG < gtol;
+  int completed = 0;
+  int clean_updates = 0;
+  double previous_tau = tau;
 
   double Q = 1;
   double Cval = F;
@@ -227,7 +234,7 @@ List pdose_semi_solver(arma::mat& B,
   if (verbose > 1)
     Rcout << "Initial value,   F = " << F << std::endl;
 
-  for(itr = 1; itr < maxitr + 1; itr++){
+  for(itr = 1; !converged && itr < maxitr + 1; itr++){
     BP = B;
     FP = F;
     GP = G;
@@ -245,8 +252,10 @@ List pdose_semi_solver(arma::mat& B,
         B = BP - U * (tau * aa);
       }
 
+      if (!B.is_finite()) Rcpp::stop("Optimizer update must be finite");
       F = pdose_semi_f(B, X, R, A, bw, ncore);
       pdose_semi_g(B, F, G, X, R, A, bw, epsilon, ncore);
+      orthoDr::check_state(F, G);
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
@@ -255,6 +264,7 @@ List pdose_semi_solver(arma::mat& B,
       nls = nls + 1;
     }
 
+    completed = itr;
     GX = G.t() * B;
 
     if(invH){
@@ -270,6 +280,11 @@ List pdose_semi_solver(arma::mat& B,
 
     dtX = G - B * GX;
     nrmG = norm(dtX, "fro");
+    if (!std::isfinite(nrmG)) Rcpp::stop("Constrained gradient norm must be finite");
+    if (nrmG < gtol) {
+      converged = true;
+      break;
+    }
 
     S = B - BP;
     BDiff = norm(S, "fro")/sqrt((double) P);
@@ -278,13 +293,12 @@ List pdose_semi_solver(arma::mat& B,
     Y = dtX - dtXP;
     SY = std::abs(accu(S % Y));
 
-    if(itr%2 == 0){
-      tau = accu(S % S)/SY;
-    }else{
-      tau = SY/accu(Y % Y);
-    }
-
-    tau = std::max(std::min(tau, 1e10), 1e-20);
+    const double SS = accu(S % S);
+    bool valid_bb;
+    tau = orthoDr::bb_step(SS, SY, accu(Y % Y), itr%2 == 0,
+                          previous_tau, 1e10, valid_bb);
+    previous_tau = tau;
+    clean_updates = valid_bb && std::isfinite(SS) && SS > 0 ? clean_updates + 1 : 0;
     crit(itr-1,0) = nrmG;
     crit(itr-1,1) = BDiff;
     crit(itr-1,2) = FDiff;
@@ -300,8 +314,10 @@ List pdose_semi_solver(arma::mat& B,
         mcrit.row(i) = crit.row(itr-i-1);
       }
 
-      if ( (BDiff < btol && FDiff < ftol) || (nrmG < gtol) || ((mean(mcrit.col(1)) < btol) && (mean(mcrit.col(2)) < ftol)) )
+      if ( (clean_updates > 0 && BDiff < btol && FDiff < ftol) ||
+           (clean_updates >= 5 && mean(mcrit.col(1)) < btol && mean(mcrit.col(2)) < ftol) )
       {
+        converged = true;
         if (verbose > 0) Rcout << "converge" << std::endl;
         break;
       }
@@ -313,7 +329,7 @@ List pdose_semi_solver(arma::mat& B,
 
   }
 
-  if(itr >= maxitr){
+  if(!converged){
     if (verbose > 0) Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
@@ -322,7 +338,7 @@ List pdose_semi_solver(arma::mat& B,
   double feasi = norm(B.t() * B - diag_P, "fro");
 
   if (verbose > 0){
-    Rcout << "number of iterations: " << itr << std::endl;
+    Rcout << "number of iterations: " << completed << std::endl;
     Rcout << "functional value: " << std::setprecision(6) << F << std::endl;
     Rcout << "norm of gradient: " << nrmG << std::endl;
     Rcout << "norm of feasibility: " << feasi << std::endl;
@@ -396,7 +412,7 @@ List pdose_semi_solver(arma::mat& B,
   ret["B"] = B;
   ret["W"] = W;
   ret["fn"] = F;
-  ret["itr"] = itr;
-  ret["converge"] = (itr<maxitr);
+  ret["itr"] = completed;
+  ret["converge"] = converged;
   return (ret);
 }

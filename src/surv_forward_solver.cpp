@@ -22,6 +22,7 @@
 
 #include <RcppArmadillo.h>
 #include "utilities.h"
+#include "solver_numerics.h"
 #include "orthoDr_surv.h"
 
 using namespace Rcpp;
@@ -31,6 +32,7 @@ using namespace Rcpp;
 double surv_forward_f(const arma::mat& B,
                 const arma::mat& X,
                 const arma::vec& Fail_Ind,
+                const arma::vec& Risk_Start,
                 double bw,
                 int ncore)
 {
@@ -66,7 +68,7 @@ double surv_forward_f(const arma::mat& B,
     TheCond.fill(0);
     double weights = 0;
 
-    for(int k=fail_j_ind; k<N; k++)
+    for(int k=Risk_Start[j]-1; k<N; k++)
     {
       TheCond += X.row(k) * kernel_matrix(k, fail_j_ind);
       weights += kernel_matrix(k, fail_j_ind);
@@ -83,6 +85,7 @@ void surv_forward_g(arma::mat& B,
             arma::mat& G,
             const arma::mat& X,
             const arma::vec& Fail_Ind,
+            const arma::vec& Risk_Start,
             double bw,
             double epsilon,
             int ncore)
@@ -109,7 +112,7 @@ void surv_forward_g(arma::mat& B,
       NewB(i, j) = B(i, j) + epsilon;
 
       // calculate gradient
-      G(i,j) = (surv_forward_f(NewB, X, Fail_Ind, bw, 1) - F0) / epsilon;
+      G(i,j) = (surv_forward_f(NewB, X, Fail_Ind, Risk_Start, bw, 1) - F0) / epsilon;
 
       NewB(i, j) = temp;
     }
@@ -125,6 +128,7 @@ return;
 //  @param B A matrix of the parameters \code{B}, the columns are subject to the orthogonality constraint
 //  @param X The covariate matrix (This matrix is ordered by the order of Y for faster computation)
 //  @param Fail_Ind The locations of the failure subjects
+//  @param Risk_Start First row of the observed-time block for each failure subject
 //  @param bw Kernel bandwidth for X
 //  @param rho (don't change) Parameter for control the linear approximation in line search
 //  @param eta (don't change) Factor for decreasing the step size in the backtracking line search
@@ -151,6 +155,7 @@ return;
 List surv_forward_solver(arma::mat B,
                  const arma::mat& X,
                  const arma::vec& Fail_Ind,
+                 const arma::vec& Risk_Start,
                  double bw,
                  double rho,
                  double eta,
@@ -189,11 +194,12 @@ List surv_forward_solver(arma::mat B,
 
   // Initial function value and gradient, prepare for iterations
 
-  double F = surv_forward_f(B, X, Fail_Ind, bw, ncore);
+  double F = surv_forward_f(B, X, Fail_Ind, Risk_Start, bw, ncore);
 
   arma::mat G(P, ndr);
   G.fill(0);
-  surv_forward_g(B, F, G, X, Fail_Ind, bw, epsilon, ncore);
+  surv_forward_g(B, F, G, X, Fail_Ind, Risk_Start, bw, epsilon, ncore);
+  orthoDr::check_state(F, G);
 
   arma::mat GX = G.t() * B;
   arma::mat GXT;
@@ -223,6 +229,9 @@ List surv_forward_solver(arma::mat B,
 
   // main iteration
   int itr;
+  int completed = 0;
+  int clean_updates = 0;
+  bool converged = nrmG < gtol;
   arma::mat BP;
   double FP;
   arma::mat GP;
@@ -238,7 +247,7 @@ List surv_forward_solver(arma::mat B,
   if (verbose > 1)
     Rcout << "Initial value,   F = " << F << std::endl;
 
-  for(itr = 1; itr < maxitr + 1; itr++){
+  for(itr = 1; !converged && itr <= maxitr; itr++){
     BP = B;
     FP = F;
     GP = G;
@@ -256,8 +265,9 @@ List surv_forward_solver(arma::mat B,
         B = BP - U * (tau * aa);
       }
 
-      F = surv_forward_f(B, X, Fail_Ind, bw, ncore);
-      surv_forward_g(B, F, G, X, Fail_Ind, bw, epsilon, ncore);
+      F = surv_forward_f(B, X, Fail_Ind, Risk_Start, bw, ncore);
+      surv_forward_g(B, F, G, X, Fail_Ind, Risk_Start, bw, epsilon, ncore);
+      orthoDr::check_state(F, G);
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
@@ -266,6 +276,7 @@ List surv_forward_solver(arma::mat B,
       nls = nls + 1;
     }
 
+    completed = itr;
     GX = G.t() * B;
 
     if(invH){
@@ -286,16 +297,22 @@ List surv_forward_solver(arma::mat B,
     BDiff = norm(S, "fro")/sqrt((double) P);
     FDiff = std::abs(FP - F)/(std::abs(FP)+1);
 
+    // Check stationarity before forming a potentially degenerate BB quotient.
+    if (nrmG < gtol) {
+      converged = true;
+      break;
+    }
+
     Y = dtX - dtXP;
     SY = std::abs(accu(S % Y));
 
-    if(itr%2 == 0){
-      tau = accu(S % S)/SY;
-    }else{
-      tau = SY/accu(Y % Y);
-    }
-
-    tau = std::max(std::min(tau, 1e10), 1e-20);
+    double SS = accu(S % S);
+    bool bb_valid;
+    tau = orthoDr::bb_step(SS, SY, accu(Y % Y), itr % 2 == 0,
+                           tau, 1e10, bb_valid);
+    // Degenerate nonstationary updates cannot satisfy movement criteria,
+    // including any five-update window that contains one.
+    clean_updates = (bb_valid && SS > 0 && std::isfinite(SS)) ? clean_updates + 1 : 0;
     crit(itr-1,0) = nrmG;
     crit(itr-1,1) = BDiff;
     crit(itr-1,2) = FDiff;
@@ -311,8 +328,10 @@ List surv_forward_solver(arma::mat B,
         mcrit.row(i) = crit.row(itr-i-1);
       }
 
-      if ( (BDiff < btol && FDiff < ftol) || (nrmG < gtol) || ((mean(mcrit.col(1)) < btol) && (mean(mcrit.col(2)) < ftol)) )
+      if ((clean_updates > 0 && BDiff < btol && FDiff < ftol) ||
+          (clean_updates >= 5 && mean(mcrit.col(1)) < btol && mean(mcrit.col(2)) < ftol))
       {
+        converged = true;
         if (verbose > 0) Rcout << "converge" << std::endl;
         break;
       }
@@ -324,7 +343,7 @@ List surv_forward_solver(arma::mat B,
 
   }
 
-  if(itr>=maxitr){
+  if(!converged){
     if (verbose > 0) Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
@@ -333,7 +352,7 @@ List surv_forward_solver(arma::mat B,
   double feasi = norm(B.t() * B - diag_P, "fro");
 
   if (verbose > 0){
-    Rcout << "number of iterations: " << itr << std::endl;
+    Rcout << "number of iterations: " << completed << std::endl;
     Rcout << "functional value: " << std::setprecision(6) << F << std::endl;
     Rcout << "norm of gradient: " << nrmG << std::endl;
     Rcout << "norm of feasibility: " << feasi << std::endl;
@@ -342,7 +361,7 @@ List surv_forward_solver(arma::mat B,
   List ret;
   ret["B"] = B;
   ret["fn"] = F;
-  ret["itr"] = itr;
-  ret["converge"] = (itr<maxitr);
+  ret["itr"] = completed;
+  ret["converge"] = converged;
   return (ret);
 }

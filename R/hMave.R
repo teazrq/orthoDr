@@ -9,9 +9,9 @@
 #' optimization framework of \code{\link{ortho_optim}}.
 #'
 #' @param x A matrix (n x p) of features (continuous only).
-#' @param y A numeric vector of observed survival times.
-#' @param censor A numeric vector of censoring indicators (1 = event,
-#'   0 = censored).
+#' @param y A numeric vector or one-column matrix of observed survival times.
+#' @param censor A logical or numeric vector or one-column matrix of censoring
+#'   indicators (1 = event, 0 = censored).
 #' @param m0 Integer; number of structural dimensions to estimate.
 #' @param B0 An optional initial \code{B} matrix (p x m0). If \code{NULL}
 #'   (default), the algorithm initializes from the eigenstructure of \code{x}.
@@ -51,15 +51,21 @@ hMave <- function(x, y, censor, m0, B0 = NULL)
   # m0: dimension e.g. it is 1 for single-index model
 
   if (!is.matrix(x)) stop("x must be a matrix")
-  if (!is.matrix(y)) stop("y must be a matrix")
-  if (!is.matrix(censor)) stop("censor must be a matrix")
+  n = nrow(x)
+  p = ncol(x)
+  if (!is.numeric(y) ||
+      !(is.null(dim(y)) || (is.matrix(y) && ncol(y) == 1L)))
+    stop("y must be a numeric vector or a one-column matrix")
+  if (length(y) != n) stop("y must have one value per observation")
+  if (!(is.numeric(censor) || is.logical(censor)) ||
+      !(is.null(dim(censor)) || (is.matrix(censor) && ncol(censor) == 1L)))
+    stop("censor must be a numeric or logical vector or a one-column matrix")
+  if (length(censor) != n) stop("censor must have one value per observation")
 
+  y = as.matrix(y)
   censor = as.matrix(as.numeric(censor))
   if (!all(censor %in% c(0,1)))
     stop("censor can only have two levels 0/1")
-
-  n = nrow(x)
-  p = ncol(x)
 
   onen = matrix(1, n, 1)
   x = scale(x, scale = FALSE)

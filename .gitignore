@@ -24,6 +24,8 @@ Thumbs.db
 # Build
 *.tgz
 inst/doc
+docs/
+.impeccable/
 
 # Simulation output
 sim_*_output.txt

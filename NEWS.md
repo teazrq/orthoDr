@@ -1,4 +1,32 @@
-# orthoDr (development)
+# orthoDr (development version)
+
+* Added a pkgdown GitHub Pages site with installation instructions, four
+  workflow tutorials, the function reference, changelog, and checked example
+  downloads. Site builds reuse the tested guide and deploy through GitHub Actions.
+* Added a versioned getting-started guide with runnable regression, survival,
+  dose, prediction, and optimizer examples, exercised during package checks.
+  Corrected the four legacy plotting calls to use `FUN` and retained their
+  script in the repository.
+* Corrected regression and survival prediction coordinates. New forward
+  survival fits retain bandwidths; older forward fits require the original
+  bandwidth or refitting before prediction.
+* Corrected survival product-limit risk denominators and time labels, and
+  made tied-time risk sets consistent across initialization and all three
+  estimating equations. Gaussian weight underflow now produces a warning
+  and an undefined curve instead of an all-one curve.
+* Used a common observed-dose scale for dose kernels, resolved the default
+  method, and made fractional and single-point dose grids consistent.
+* Protected optimizer step calculations at stationary and degenerate updates,
+  prevented numerical stagnation from reporting movement-based convergence,
+  and corrected completed iteration counts and maximization histories.
+  Direct-dose gradient stopping retains its conditional-policy interpretation.
+* Validated general optimizer callback values on every evaluation and accepted
+  integer as well as double numeric callbacks.
+* Preserved requested regression initializer dimensions, repaired CP-SIR and
+  survival matrix shapes for one feature or event, and fixed pSAVE indexing,
+  documented hMAVE vector inputs, and distance argument handling.
+* These numerical corrections can change fitted results and predictions.
+  Analyses affected by these issues should be rerun.
 
 * Added `testthat` test suite for the general optimizer (`ortho_optim`)
 * Fixed CRLF line endings in source files for cross-platform compatibility

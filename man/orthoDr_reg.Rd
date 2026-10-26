@@ -76,7 +76,8 @@ components:
 orthonormal columns.}
 \item{\code{fn}}{Final objective value.}
 \item{\code{itr}}{Number of iterations performed.}
-\item{\code{converge}}{Convergence code (0 = success).}
+\item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
+was reached.}
 \item{\code{method}}{Method used (e.g., \code{"sir"}).}
 \item{\code{keep.data}}{Whether original data was stored.}
 }

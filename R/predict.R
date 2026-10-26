@@ -5,7 +5,15 @@
 #' @param object A fitted orthoDr object
 #' @param testx Testing data
 #' @param ... ...
-#' @return The predicted object
+#' @return The predicted object. Survival predictions contain one row per
+#'   observed event. Events tied at the same time have the same post-event
+#'   probability and repeated time labels.
+#' @details Regression and survival predictions use the fitted directions in
+#'   original feature units and the training projection scales. Legacy forward
+#'   survival objects without a stored bandwidth require the original bandwidth
+#'   to be restored or the model to be refitted. If all Gaussian weights for a
+#'   survival prediction underflow to zero, a warning is issued and that curve
+#'   contains \code{NA}.
 #' @examples
 #' # generate some survival data
 #' N = 100; P = 4; dataX = matrix(rnorm(N*P), N, P)
@@ -104,46 +112,42 @@ predict.orthoDr <- function(object, testx, ...)
 #' @noRd
 predict_orthoDr_surv <- function(object, testx, ...)
 {
-  # transform the covariates into the same scale
-  x = object$x
-  xscale = apply(x, 2, sd)
-  xmean = apply(x, 2, mean)
-  X = scale(x)
+  testKernel = prediction_kernel(object, testx)
+  ord = order(object$y)
+  times = object$y[ord]
+  Censor = (object$censor[ord] == 1)
+  testKernel = testKernel[, ord, drop = FALSE]
 
-  testX = sweep(testx, 2, xmean, FUN = "-")
-  testX = sweep(testX, 2, xscale, FUN = "/")
+  # Complete risk sets include every observation at the current time.
+  blocks = cumsum(c(TRUE, diff(times) != 0))
+  blockWeights = rowsum(t(testKernel), blocks, reorder = FALSE)
+  deaths = rowsum(t(sweep(testKernel, 2, Censor, FUN = "*")),
+                  blocks, reorder = FALSE)
+  S = matrix(NA_real_, nrow(blockWeights), ncol(blockWeights))
+  underflow = colSums(blockWeights) == 0
+  if (any(underflow))
+    warning("Gaussian prediction weights underflowed to zero; returning NA survival probabilities for affected test observations.")
 
-  XB = X %*% object$B
-  testXB = testX %*% object$B
+  for (j in which(!underflow)) {
+    # Reverse sums retain representable small risk masses late in follow-up.
+    risk = rev(cumsum(rev(blockWeights[, j])))
+    d = deaths[, j]
+    if (any(!is.finite(risk) | !is.finite(d) | risk < 0 | d < 0))
+      stop("Invalid weighted survival risk or death mass")
+    excess = d - risk
+    # Independently summed masses may differ by at most 64 eps relatively.
+    tolerance = 64 * .Machine$double.eps * pmax(abs(d), abs(risk))
+    if (any(excess > tolerance))
+      stop("Weighted survival death mass exceeds its risk mass")
+    d = pmin(d, risk)
+    factors = rep(1, length(risk))
+    positive = d > 0
+    factors[positive] = 1 - d[positive] / risk[positive]
+    S[, j] = cumprod(factors)
+  }
 
-  XBscale = apply(XB, 2, sd)
-  testXB = sweep(testXB, 2, XBscale, FUN = "/")
-
-  XB = scale(XB)/object$bw/sqrt(2)
-  testXB = testXB/object$bw/sqrt(2)
-
-  # kernel matrix between x and testx
-  testKernel = KernelDist_cross(testXB, XB)
-
-  # this method does not deal with ties. I need to fix this later on
-
-  testKernel = testKernel[, order(object$y), drop = FALSE]
-  Censor = (object$censor[order(object$y)] == 1)
-
-  inrisk = apply(testKernel, 1, cumsum)
-  totalweights = inrisk[nrow(X), , drop = FALSE]
-  inrisk = sweep(-inrisk, 2, totalweights, FUN = "+")
-
-  testKernel = sweep(testKernel, 2, Censor, FUN = "*" )
-  testKernel = t(testKernel)
-
-  lambda = 1 - testKernel / inrisk
-  lambda[is.na(lambda)] = 1
-  lambda[lambda > 1 | lambda < 0] = 1
-
-  S = apply(lambda, 2, cumprod)
-  surv = S[Censor, , drop = FALSE]
-  timepoints = sort(object$y[object$censor])
+  surv = S[blocks[Censor], , drop = FALSE]
+  timepoints = times[Censor]
 
   return(list("surv" = surv, "timepoints" = timepoints))
 }
@@ -157,32 +161,37 @@ predict_orthoDr_surv <- function(object, testx, ...)
 #' @noRd
 predict_orthoDr_reg <- function(object, testx, ...)
 {
-  # transform the covariates into the same scale
-  x = object$x
-  xscale = apply(x, 2, sd)
-  xmean = apply(x, 2, mean)
-  X = scale(x)
-
-  testX = sweep(testx, 2, xmean, FUN = "-")
-  testX = sweep(testX, 2, xscale, FUN = "/")
-
-  XB = X %*% object$B
-  testXB = testX %*% object$B
-
-  XBscale = apply(XB, 2, sd)
-  testXB = sweep(testXB, 2, XBscale, FUN = "/")
-
-  XB = scale(XB)/object$bw/sqrt(2)
-  testXB = testXB/object$bw/sqrt(2)
-
-  # kernel matrix between x and testx
-  testKernel = KernelDist_cross(testXB, XB)
-
-  # this method does not deal with ties. I need to fix this later on
+  testKernel = prediction_kernel(object, testx)
 
   pred = apply(testKernel, 1, function(w, x) weighted.mean(x, w), object$y)
 
   return(list("pred" = pred))
+}
+
+#' Gaussian prediction kernel in the returned raw-feature basis
+#' @keywords internal
+#' @noRd
+prediction_kernel <- function(object, testx)
+{
+  if (is.null(object$bw))
+    stop("This fitted object has no bandwidth. Supply the original bandwidth as object$bw or refit the model.")
+  if (length(object$bw) != 1L || !is.finite(object$bw) || object$bw <= 0)
+    stop("The fitted bandwidth must be a positive finite scalar")
+
+  XB = object$x %*% object$B
+  testXB = testx %*% object$B
+  XBmean = colMeans(XB)
+  XBscale = apply(XB, 2, sd)
+  if (any(!is.finite(XBscale) | XBscale <= 0))
+    stop("Training projection scales must be positive and finite for prediction")
+
+  denominator = XBscale * object$bw * sqrt(2)
+  XB = sweep(sweep(XB, 2, XBmean, FUN = "-"), 2, denominator, FUN = "/")
+  testXB = sweep(sweep(testXB, 2, XBmean, FUN = "-"), 2, denominator, FUN = "/")
+  weights = KernelDist_cross(testXB, XB)
+  if (any(!is.finite(weights) | weights < 0))
+    stop("Prediction kernel weights must be finite and nonnegative")
+  weights
 }
 
 #' Internal prediction function for personalized dose models

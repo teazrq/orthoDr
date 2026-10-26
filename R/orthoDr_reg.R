@@ -86,7 +86,8 @@
 #'       orthonormal columns.}
 #'     \item{\code{fn}}{Final objective value.}
 #'     \item{\code{itr}}{Number of iterations performed.}
-#'     \item{\code{converge}}{Convergence code (0 = success).}
+#'     \item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
+#'       was reached.}
 #'     \item{\code{method}}{Method used (e.g., \code{"sir"}).}
 #'     \item{\code{keep.data}}{Whether original data was stored.}
 #'   }
@@ -329,7 +330,7 @@ reg_init <- function(method, ...) {
 #' methods except \code{method = "local"} with \code{ndr = 1}, which has
 #' its own multi-start strategy with NW-\eqn{R^2} selection.
 #'
-#' For multi-index models (\code{ndr > 1}), a sequential candidate
+#' For two-index models (\code{ndr = 2}), a sequential candidate
 #' combining the leading direction from SIR and SAVE is added to help span
 #' the joint subspace.
 #'
@@ -343,16 +344,17 @@ initB <- function(x, y, ndr, bw, method, ncore) {
 
   candidates <- list(B1, B2, B3)
 
-  # For multi-index models (ndr > 1), add a sequential candidate
+  # For two-index models, add a sequential candidate
   # combining the leading direction from SIR and SAVE.  Each sliced
   # method captures different structure (mean vs. variance), so the
   # joint subspace is often better spanned by mixed directions.
-  if (ndr > 1) {
-    B_seq <- gramSchmidt(cbind(
+  if (ndr == 2L) {
+    B_seq <- cbind(
       dr(y ~ x, method = "sir")$evectors[, 1],
       dr(y ~ x, method = "save")$evectors[, 1]
-    ))$Q
-    candidates[[4]] <- B_seq
+    )
+    if (all(is.finite(B_seq)) && qr(B_seq)$rank == ndr)
+      candidates[[4]] <- gramSchmidt(B_seq)$Q
   }
 
   values <- vapply(candidates, function(Bc) {

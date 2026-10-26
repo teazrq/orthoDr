@@ -8,7 +8,7 @@
 #' @name orthoDr_pdose
 #' @export
 #'
-#' @param x A matrix or data.frame of features (continuous only).
+#' @param x A numeric matrix of features (continuous only).
 #' @param a A numeric vector of observed dose levels.
 #' @param r A numeric vector of observed rewards (outcomes).
 #' @param ndr Number of directions to estimate.
@@ -21,8 +21,9 @@
 #' @param lambda Penalty level for kernel ridge regression. If a vector of
 #'   values is provided, GCV is used to select the best value.
 #'   Default: \code{0.1}.
-#' @param K Number of grid points for dose levels. Default:
-#'   \code{sqrt(length(r))}.
+#' @param K Number of grid points for dose levels. Must be a finite scalar
+#'   at least one; fractional values are rounded down once. Default:
+#'   \code{sqrt(length(r))}. A single grid point uses the minimum observed dose.
 #' @param method The method: \code{"direct"} or \code{"pseudo_direct"}.
 #'   Default: \code{"direct"}.
 #' @param keep.data Logical; if \code{TRUE}, the original data is stored in
@@ -42,11 +43,20 @@
 #'     \item{\code{B}}{The estimated direction matrix (columns are orthonormal).}
 #'     \item{\code{fn}}{The final objective function value.}
 #'     \item{\code{itr}}{Number of iterations performed.}
-#'     \item{\code{converge}}{Convergence code.}
+#'     \item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
+#'       was reached. For the direct method, the gradient criterion is
+#'       conditional on the current policy coefficients.}
 #'     \item{\code{method}}{The method used (\code{"direct"} or
 #'       \code{"pseudo_direct"}).}
 #'     \item{\code{keep.data}}{Whether original data was retained.}
 #'   }
+#'
+#' @details
+#' Dose comparisons use the standard deviation of the observed training doses
+#' for both observed and candidate doses. Returned doses remain in their
+#' original units. The direct method updates policy coefficients during line
+#' search but computes its gradient with those coefficients held fixed; its
+#' stopping criterion does not certify stationarity of a profiled objective.
 #'
 #' @references
 #' Zhou, W. and Zhu, R. (2021). A parsimonious personalized dose model via
@@ -97,6 +107,14 @@ orthoDr_pdose <- function(x, a, r, ndr = 2, B.initial = NULL, bw = NULL, lambda 
   if (!is.numeric(x)) stop("x must be numerical")
   if (nrow(x) != length(r) || nrow(x) != length(a)) stop("Number of observations do not match")
 
+  method <- match.arg(method)
+  if (!is.numeric(K) || length(K) != 1L || !is.finite(K) || K < 1)
+    stop("K must be a finite number greater than or equal to 1")
+  K <- floor(K)
+  a_scale <- sd(a)
+  if (!is.finite(a_scale) || a_scale <= 0)
+    stop("Observed doses must have a positive finite standard deviation")
+
   if (is.null(bw))
     bw = silverman(ndr, nrow(x))
   if (is.null(B.initial))
@@ -119,17 +137,15 @@ orthoDr_pdose <- function(x, a, r, ndr = 2, B.initial = NULL, bw = NULL, lambda 
   X = x
 
   # standardize
-  a_center = mean(a)
-  a_scale = sd(a)
   a_scale_bw = a/a_scale/bw
 
 
   cdose= seq(min(a), max(a), length.out = K)
 
-  cdose_scale = cdose/sd(cdose)/bw
+  cdose_scale = cdose/a_scale/bw
 
   A.dist <- matrix(NA, nrow(x), K)
-  for (k in 1:K)
+  for (k in seq_len(K))
   {
     A.dist[, k] = exp(-((a_scale_bw - cdose_scale[k]))^2)
   }

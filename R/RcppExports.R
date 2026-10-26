@@ -57,16 +57,16 @@ sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, g
     .Call(`_orthoDr_sir_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
 
-surv_dm_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_surv_dm_solver`, B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+surv_dm_solver <- function(B, X, Phit, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_surv_dm_solver`, B, X, Phit, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
 
-surv_dn_solver <- function(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_surv_dn_solver`, B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+surv_dn_solver <- function(B, X, Phit, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_surv_dn_solver`, B, X, Phit, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
 
-surv_forward_solver <- function(B, X, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_surv_forward_solver`, B, X, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+surv_forward_solver <- function(B, X, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
+    .Call(`_orthoDr_surv_forward_solver`, B, X, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
 
 KernelDist_cross <- function(TestX, X) {

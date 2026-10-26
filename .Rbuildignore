@@ -10,3 +10,9 @@
 ^\.github$
 ^orthoDr\.Rproj$
 ^\.Renviron$
+^_pkgdown\.yml$
+^docs$
+^vignettes$
+^\.impeccable$
+^PRODUCT\.md$
+^DESIGN\.md$

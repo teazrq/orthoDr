@@ -310,8 +310,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // surv_dm_solver
-List surv_dm_solver(arma::mat B, const arma::mat& X, const arma::mat& Phit, const arma::vec& Fail_Ind, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
-RcppExport SEXP _orthoDr_surv_dm_solver(SEXP BSEXP, SEXP XSEXP, SEXP PhitSEXP, SEXP Fail_IndSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
+List surv_dm_solver(arma::mat B, const arma::mat& X, const arma::mat& Phit, const arma::vec& Fail_Ind, const arma::vec& Risk_Start, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
+RcppExport SEXP _orthoDr_surv_dm_solver(SEXP BSEXP, SEXP XSEXP, SEXP PhitSEXP, SEXP Fail_IndSEXP, SEXP Risk_StartSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -319,6 +319,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type Phit(PhitSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type Fail_Ind(Fail_IndSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type Risk_Start(Risk_StartSEXP);
     Rcpp::traits::input_parameter< double >::type bw(bwSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
@@ -331,13 +332,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(surv_dm_solver(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
+    rcpp_result_gen = Rcpp::wrap(surv_dm_solver(B, X, Phit, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
     return rcpp_result_gen;
 END_RCPP
 }
 // surv_dn_solver
-List surv_dn_solver(arma::mat B, const arma::mat& X, const arma::mat& Phit, const arma::vec& Fail_Ind, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
-RcppExport SEXP _orthoDr_surv_dn_solver(SEXP BSEXP, SEXP XSEXP, SEXP PhitSEXP, SEXP Fail_IndSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
+List surv_dn_solver(arma::mat B, const arma::mat& X, const arma::mat& Phit, const arma::vec& Fail_Ind, const arma::vec& Risk_Start, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
+RcppExport SEXP _orthoDr_surv_dn_solver(SEXP BSEXP, SEXP XSEXP, SEXP PhitSEXP, SEXP Fail_IndSEXP, SEXP Risk_StartSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -345,6 +346,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type Phit(PhitSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type Fail_Ind(Fail_IndSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type Risk_Start(Risk_StartSEXP);
     Rcpp::traits::input_parameter< double >::type bw(bwSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
@@ -357,19 +359,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(surv_dn_solver(B, X, Phit, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
+    rcpp_result_gen = Rcpp::wrap(surv_dn_solver(B, X, Phit, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
     return rcpp_result_gen;
 END_RCPP
 }
 // surv_forward_solver
-List surv_forward_solver(arma::mat B, const arma::mat& X, const arma::vec& Fail_Ind, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
-RcppExport SEXP _orthoDr_surv_forward_solver(SEXP BSEXP, SEXP XSEXP, SEXP Fail_IndSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
+List surv_forward_solver(arma::mat B, const arma::mat& X, const arma::vec& Fail_Ind, const arma::vec& Risk_Start, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
+RcppExport SEXP _orthoDr_surv_forward_solver(SEXP BSEXP, SEXP XSEXP, SEXP Fail_IndSEXP, SEXP Risk_StartSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type B(BSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type Fail_Ind(Fail_IndSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type Risk_Start(Risk_StartSEXP);
     Rcpp::traits::input_parameter< double >::type bw(bwSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
@@ -382,7 +385,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(surv_forward_solver(B, X, Fail_Ind, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
+    rcpp_result_gen = Rcpp::wrap(surv_forward_solver(B, X, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -414,9 +417,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_orthoDr_seff_solver", (DL_FUNC) &_orthoDr_seff_solver, 15},
     {"_orthoDr_sir_init", (DL_FUNC) &_orthoDr_sir_init, 5},
     {"_orthoDr_sir_solver", (DL_FUNC) &_orthoDr_sir_solver, 15},
-    {"_orthoDr_surv_dm_solver", (DL_FUNC) &_orthoDr_surv_dm_solver, 16},
-    {"_orthoDr_surv_dn_solver", (DL_FUNC) &_orthoDr_surv_dn_solver, 16},
-    {"_orthoDr_surv_forward_solver", (DL_FUNC) &_orthoDr_surv_forward_solver, 15},
+    {"_orthoDr_surv_dm_solver", (DL_FUNC) &_orthoDr_surv_dm_solver, 17},
+    {"_orthoDr_surv_dn_solver", (DL_FUNC) &_orthoDr_surv_dn_solver, 17},
+    {"_orthoDr_surv_forward_solver", (DL_FUNC) &_orthoDr_surv_forward_solver, 16},
     {"_orthoDr_KernelDist_cross", (DL_FUNC) &_orthoDr_KernelDist_cross, 2},
     {NULL, NULL, 0}
 };

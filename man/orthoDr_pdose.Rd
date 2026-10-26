@@ -22,7 +22,7 @@ orthoDr_pdose(
 )
 }
 \arguments{
-\item{x}{A matrix or data.frame of features (continuous only).}
+\item{x}{A numeric matrix of features (continuous only).}
 
 \item{a}{A numeric vector of observed dose levels.}
 
@@ -42,8 +42,9 @@ If \code{NULL} (default), Silverman's rule is used.}
 values is provided, GCV is used to select the best value.
 Default: \code{0.1}.}
 
-\item{K}{Number of grid points for dose levels. Default:
-\code{sqrt(length(r))}.}
+\item{K}{Number of grid points for dose levels. Must be a finite scalar
+at least one; fractional values are rounded down once. Default:
+\code{sqrt(length(r))}. A single grid point uses the minimum observed dose.}
 
 \item{method}{The method: \code{"direct"} or \code{"pseudo_direct"}.
 Default: \code{"direct"}.}
@@ -70,7 +71,9 @@ list containing:
 \item{\code{B}}{The estimated direction matrix (columns are orthonormal).}
 \item{\code{fn}}{The final objective function value.}
 \item{\code{itr}}{Number of iterations performed.}
-\item{\code{converge}}{Convergence code.}
+\item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
+was reached. For the direct method, the gradient criterion is
+conditional on the current policy coefficients.}
 \item{\code{method}}{The method used (\code{"direct"} or
 \code{"pseudo_direct"}).}
 \item{\code{keep.data}}{Whether original data was retained.}
@@ -80,6 +83,13 @@ list containing:
 Fits a personalized dose model using the direct learning or pseudo-direct
 learning method of Zhou & Zhu (2021). The direction matrix \code{B}
 identifies the subspace of covariates that informs optimal dosing.
+}
+\details{
+Dose comparisons use the standard deviation of the observed training doses
+for both observed and candidate doses. Returned doses remain in their
+original units. The direct method updates policy coefficients during line
+search but computes its gradient with those coefficients held fixed; its
+stopping criterion does not certify stationarity of a profiled objective.
 }
 \examples{
 # generate personalized dose data

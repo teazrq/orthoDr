@@ -9,10 +9,10 @@ hMave(x, y, censor, m0, B0 = NULL)
 \arguments{
 \item{x}{A matrix (n x p) of features (continuous only).}
 
-\item{y}{A numeric vector of observed survival times.}
+\item{y}{A numeric vector or one-column matrix of observed survival times.}
 
-\item{censor}{A numeric vector of censoring indicators (1 = event,
-0 = censored).}
+\item{censor}{A logical or numeric vector or one-column matrix of censoring
+indicators (1 = event, 0 = censored).}
 
 \item{m0}{Integer; number of structural dimensions to estimate.}
 

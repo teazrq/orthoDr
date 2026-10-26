@@ -22,6 +22,12 @@
 #'     eigenvalues.}
 #' }
 #'
+#' @details
+#' Events at the same observed time share the midpoint of their event ranks
+#' when selecting a neighborhood. Neighborhood endpoints are bounded by the
+#' first and last event ranks and truncated to integer indices. Risk sets
+#' include all observations at or after the event time.
+#'
 #' @references
 #' Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2017). Counting process based
 #' dimension reduction method for censored outcomes.
@@ -54,16 +60,20 @@ CP_SIR <- function(x, y, censor, bw = silverman(1, length(y)))
 
   N = nrow(x)
   P = ncol(x)
+  nFail = sum(censor == 1)
+  if (nFail == 0) stop("CP_SIR requires at least one event")
 
   X_cov = cov(x)
 
   ee = eigen(X_cov)
-  X_cov_RI = ee$vectors %*% diag(1/sqrt(ee$values)) %*% t(ee$vectors)
+  if (any(!is.finite(ee$values)) || any(ee$values <= 0))
+    stop("CP_SIR requires a positive definite feature covariance for whitening")
+  X_cov_RI = ee$vectors %*% diag(1/sqrt(ee$values), nrow = P, ncol = P) %*% t(ee$vectors)
 
   X_sd = scale(x, scale = FALSE) %*% X_cov_RI
 
   FailInd = cbind(y, censor, "obs" = 1:N)
-  FailInd = FailInd[FailInd[, 2] == 1, ]
+  FailInd = FailInd[FailInd[, 2] == 1, , drop = FALSE]
   OrderedFailObs = FailInd[order(FailInd[,1]), 3]
 
   timepoints = sort(y[censor == 1])
@@ -76,10 +86,15 @@ CP_SIR <- function(x, y, censor, bw = silverman(1, length(y)))
 
   Failure = matrix(NA, N, nFail)
   width = sum(censor)*bw/2
+  # Tied event times share their midpoint rank. Clamp before positive-index
+  # truncation to retain the original neighborhood rule for untied times.
+  event.rank = rank(timepoints, ties.method = "average")
 
   for (i in 1:nFail)
   {
-    Failure[, i] = (y >= timepoints[max(1, i-width)]) & (y <= timepoints[min(i+width, nFail)]) & (censor == 1)
+    lower = as.integer(max(1, event.rank[i] - width))
+    upper = as.integer(min(nFail, event.rank[i] + width))
+    Failure[, i] = (y >= timepoints[lower]) & (y <= timepoints[upper]) & (censor == 1)
   }
 
   # get Gu
@@ -98,8 +113,10 @@ CP_SIR <- function(x, y, censor, bw = silverman(1, length(y)))
     Gu_risk[i, ] = colMeans(X_sd[inRisk[, i], , drop = FALSE ])
   }
 
-  Meigen = svd(t(X_sd[OrderedFailObs, ] - Gu_risk) %*% (Gu - Gu_risk))
+  Meigen = svd(t(X_sd[OrderedFailObs, , drop = FALSE] - Gu_risk) %*% (Gu - Gu_risk))
+  vectors = X_cov_RI %*% Meigen$v
+  vectors = sweep(vectors, 2, sqrt(colSums(vectors^2)), FUN = "/")
 
   return(list("values" = Meigen$d,
-              "vectors" = apply(X_cov_RI %*% Meigen$v, 2, function(x) {x/sqrt(sum(x^2))})))
+              "vectors" = vectors))
 }

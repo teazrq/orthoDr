@@ -14,10 +14,20 @@
 \item{...}{...}
 }
 \value{
-The predicted object
+The predicted object. Survival predictions contain one row per
+observed event. Events tied at the same time have the same post-event
+probability and repeated time labels.
 }
 \description{
 The prediction function for orthoDr fitted models
+}
+\details{
+Regression and survival predictions use the fitted directions in
+original feature units and the training projection scales. Legacy forward
+survival objects without a stored bandwidth require the original bandwidth
+to be restored or the model to be refitted. If all Gaussian weights for a
+survival prediction underflow to zero, a warning is issued and that curve
+contains \code{NA}.
 }
 \examples{
 # generate some survival data

@@ -1,0 +1,74 @@
+url: https://teazrq.github.io/orthoDr/
+
+template:
+  bootstrap: 5
+  bslib:
+    preset: cosmo
+    primary: "#1c5fa8"
+    navbar-dark-color: "#ffffff"
+    navbar-dark-hover-color: "#ffffff"
+
+navbar:
+  type: dark
+  left:
+    - text: Get Started
+      href: articles/get-started.html
+    - text: Tutorials
+      menu:
+        - text: Regression
+          href: articles/regression.html
+        - text: Survival
+          href: articles/survival.html
+        - text: Personalized Dose Finding
+          href: articles/personalized-dose.html
+        - text: General Optimizer
+          href: articles/general-optimizer.html
+    - text: Reference
+      href: reference/index.html
+    - text: Changelog
+      href: news/index.html
+  right:
+    - icon: fa-github fa-lg
+      href: https://github.com/teazrq/orthoDr
+      aria-label: GitHub
+
+articles:
+  - title: Start Here
+    contents:
+      - articles/get-started
+  - title: Tutorials
+    contents:
+      - articles/regression
+      - articles/survival
+      - articles/personalized-dose
+      - articles/general-optimizer
+
+reference:
+  - title: Fit and Predict
+    desc: Dimension reduction for regression, survival, and personalized dose finding.
+    contents:
+      - orthoDr_reg
+      - orthoDr_surv
+      - orthoDr_pdose
+      - predict.orthoDr
+      - print.orthoDr
+  - title: Orthogonality Constrained Optimization
+    contents:
+      - ortho_optim
+  - title: Initialization and Utilities
+    contents:
+      - CP_SIR
+      - hMave
+      - pSAVE
+      - distance
+      - dist_cross
+      - kernel_weight
+      - silverman
+      - view_dr_surv
+  - title: Example Data
+    contents:
+      - skcm.clinical
+      - skcm.melgene
+  - title: Package
+    contents:
+      - orthoDr-package

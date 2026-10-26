@@ -23,6 +23,7 @@
 #include <RcppArmadillo.h>
 #include "utilities.h"
 #include "orthoDr_gen.h"
+#include "solver_numerics.h"
 
 using namespace Rcpp;
 
@@ -30,21 +31,29 @@ using namespace Rcpp;
 
 double gen_f(const arma::mat& B, Rcpp::Function f, Environment env)
 {
-  SEXP x = Rcpp_eval(f(B), env);
-  return(REAL(x)[0]);
+  Rcpp::RObject x = Rcpp_eval(f(B), env);
+  if ((TYPEOF(x) != REALSXP && TYPEOF(x) != INTSXP) || Rf_xlength(x) != 1)
+    Rcpp::stop("fn must return a single number at every evaluation");
+  double value = Rcpp::as<double>(x);
+  if (!std::isfinite(value)) Rcpp::stop("fn must return a finite number at every evaluation");
+  return value;
 }
 
 
 void gen_g(const arma::mat& B, arma::mat& G, Rcpp::Function g, Environment env)
 {
-  SEXP x = Rcpp_eval(g(B), env);
+  Rcpp::RObject x = Rcpp_eval(g(B), env);
 
   int P = B.n_rows;
   int ndr = B.n_cols;
 
-  for (int k=0; k<ndr; k++)
-    for (int j=0; j<P; j++)
-      G(j, k) = REAL(x)[j + k*P];
+  if (TYPEOF(x) != REALSXP && TYPEOF(x) != INTSXP)
+    Rcpp::stop("grad must return a numeric matrix at every evaluation");
+  SEXP dims = Rf_getAttrib(x, R_DimSymbol);
+  if (Rf_length(dims) != 2 || INTEGER(dims)[0] != P || INTEGER(dims)[1] != ndr)
+    Rcpp::stop("grad must return a matrix with the same dimension as B at every evaluation");
+  G = Rcpp::as<arma::mat>(x);
+  if (!G.is_finite()) Rcpp::stop("grad must return a finite matrix at every evaluation");
 
   return;
 }
@@ -149,6 +158,7 @@ List gen_solver(arma::mat B,
     gen_g(B, G, g, env);
   else
     gen_g_approx(B, G, f, g, env, epsilon);
+  orthoDr::check_state(F, G);
 
   arma::mat GX = G.t() * B;
   arma::mat GXT;
@@ -172,6 +182,11 @@ List gen_solver(arma::mat B,
 
   arma::mat dtX = G - B * GX;
   double nrmG = norm(dtX, "fro");
+  if (!std::isfinite(nrmG)) Rcpp::stop("Constrained gradient norm must be finite");
+  bool converged = nrmG < gtol;
+  int completed = 0;
+  int clean_updates = 0;
+  double previous_tau = tau;
 
   double Q = 1;
   double Cval = F;
@@ -193,7 +208,7 @@ List gen_solver(arma::mat B,
   if (verbose > 1)
     Rcout << "Initial value,   F = " << F << std::endl;
 
-  for(itr = 1; itr < maxitr + 1; itr++){
+  for(itr = 1; !converged && itr < maxitr + 1; itr++){
 
     BP = B;
     FP = F;
@@ -213,12 +228,14 @@ List gen_solver(arma::mat B,
         B = BP - U * (tau * aa);
       }
 
+      if (!B.is_finite()) Rcpp::stop("Optimizer update must be finite");
       F = gen_f(B, f, env);
 
       if (useg)
         gen_g(B, G, g, env);
       else
         gen_g_approx(B, G, f, g, env, epsilon);
+      orthoDr::check_state(F, G);
 
       if((F <= (Cval - tau*deriv)) || (nls >= 5)){
         break;
@@ -227,6 +244,7 @@ List gen_solver(arma::mat B,
       nls = nls + 1;
     }
 
+    completed = itr;
     F_seq[itr-1] = F;
     GX = G.t() * B;
 
@@ -243,6 +261,11 @@ List gen_solver(arma::mat B,
 
     dtX = G - B * GX;
     nrmG = norm(dtX, "fro");
+    if (!std::isfinite(nrmG)) Rcpp::stop("Constrained gradient norm must be finite");
+    if (nrmG < gtol) {
+      converged = true;
+      break;
+    }
 
     S = B - BP;
     BDiff = norm(S, "fro")/sqrt((double) P);
@@ -251,13 +274,12 @@ List gen_solver(arma::mat B,
     Y = dtX - dtXP;
     SY = std::abs(accu(S % Y));
 
-    if(itr%2 == 0){
-      tau = accu(S % S)/SY;
-    }else{
-      tau = SY/accu(Y % Y);
-    }
-
-    tau = std::max(std::min(tau, 1e20), 1e-20);
+    const double SS = accu(S % S);
+    bool valid_bb;
+    tau = orthoDr::bb_step(SS, SY, accu(Y % Y), itr%2 == 0,
+                          previous_tau, 1e20, valid_bb);
+    previous_tau = tau;
+    clean_updates = valid_bb && std::isfinite(SS) && SS > 0 ? clean_updates + 1 : 0;
     crit(itr-1,0) = nrmG;
     crit(itr-1,1) = BDiff;
     crit(itr-1,2) = FDiff;
@@ -273,8 +295,10 @@ List gen_solver(arma::mat B,
         mcrit.row(i) = crit.row(itr-i-1);
       }
 
-      if ( (BDiff < btol && FDiff < ftol) || (nrmG < gtol) || ((mean(mcrit.col(1)) < btol) && (mean(mcrit.col(2)) < ftol)) )
+      if ( (clean_updates > 0 && BDiff < btol && FDiff < ftol) ||
+           (clean_updates >= 5 && mean(mcrit.col(1)) < btol && mean(mcrit.col(2)) < ftol) )
       {
+        converged = true;
         if (verbose > 0) Rcout << "converge" << std::endl;
         break;
       }
@@ -286,7 +310,7 @@ List gen_solver(arma::mat B,
 
   }
 
-  if(itr>=maxitr){
+  if(!converged){
     if (verbose > 0) Rcout << "exceed max iteration before convergence ... " << std::endl;
   }
 
@@ -295,7 +319,7 @@ List gen_solver(arma::mat B,
   double feasi = norm(B.t() * B - diag_P, "fro");
 
   if (verbose > 0){
-    Rcout << "number of iterations: " << itr << std::endl;
+    Rcout << "number of iterations: " << completed << std::endl;
     Rcout << "norm of functional value: " << F << std::endl;
     Rcout << "norm of gradient: " << nrmG << std::endl;
     Rcout << "norm of feasibility: " << feasi << std::endl;
@@ -305,7 +329,7 @@ List gen_solver(arma::mat B,
   ret["B"] = B;
   ret["fn"] = F;
   ret["fn_Seq"] = F_seq;
-  ret["itr"] = itr;
-  ret["converge"] = (itr<maxitr);
+  ret["itr"] = completed;
+  ret["converge"] = converged;
   return (ret);
 }
