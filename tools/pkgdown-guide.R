@@ -2,9 +2,10 @@
 guide_section <- function(title) {
   root <- rprojroot::find_package_root_file()
   source_file <- file.path(root, "inst", "examples", "getting-started.R")
+  source(file.path(root, "inst", "examples", "source-md5.R"), local = TRUE)
   guide <- readLines(file.path(root, "inst", "examples", "getting-started.md"),
                      warn = FALSE)
-  signature <- paste0("<!-- Source MD5: ", unname(tools::md5sum(source_file)), " -->")
+  signature <- paste0("<!-- Source MD5: ", canonical_source_md5(source_file), " -->")
   if (!signature %in% guide)
     stop("Rebuild the guide with Rscript tools/build-getting-started.R")
   start <- which(guide == paste0("## ", title))
