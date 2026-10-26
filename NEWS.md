@@ -1,5 +1,14 @@
 # orthoDr (development version)
 
+* Revised direct dose learning to optimize one penalized reward objective over
+  both dose-rule coefficients and directions. `lambda` now controls its ridge
+  initialization only; the new `lambda.reward` controls the squared coefficient
+  penalty. Kernel centres and projected scales follow the fitted directions.
+  Direct fits now report the estimated reward, penalty, both gradient norms,
+  and stopping reason. Failed line searches preserve the last completed sweep,
+  and small steps no longer imply convergence. The direct `fn` field includes
+  the reward penalty, so it cannot be compared directly with older values.
+  Existing fitted objects retain their prediction behavior.
 * Expanded the tutorials with reduced predictors, predicted survival curves,
   and explanations of the different targets and dimensions in dose finding.
   Clarified prediction inputs and corrected example and reference descriptions.
@@ -24,7 +33,7 @@
 * Protected optimizer step calculations at stationary and degenerate updates,
   prevented numerical stagnation from reporting movement-based convergence,
   and corrected completed iteration counts and maximization histories.
-  Direct-dose gradient stopping retains its conditional-policy interpretation.
+  Direct-dose convergence now requires stationarity in both parameter blocks.
 * Validated general optimizer callback values on every evaluation and accepted
   integer as well as double numeric callbacks.
 * Preserved requested regression initializer dimensions, repaired CP-SIR and

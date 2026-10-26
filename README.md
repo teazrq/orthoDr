@@ -44,6 +44,12 @@ Numerical results can differ between versions.
 
 For documentation matching your installed version, use `help(package = "orthoDr")`.
 
+For direct dose learning, `lambda` controls ridge initialization and
+`lambda.reward` controls the squared coefficient penalty when optimizing
+estimated reward. Inspect `converge`, `gradient.norm`, and `stop.reason`
+before using a fitted rule. The nominal reward penalty depends on dose units
+and reward scale; it is not selected by the initialization's GCV procedure.
+
 ## References
 
 - Wen, Z. & Yin, W. (2013). A feasible method for optimization with orthogonality constraints. *Mathematical Programming*, 142(1-2), 397–434.

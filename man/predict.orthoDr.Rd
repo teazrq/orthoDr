@@ -95,7 +95,9 @@ test = exampleset(500,p)
 # the direct learning method
 orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = 0.1,
                       method = "direct", K = as.integer(sqrt(n)), keep.data = TRUE,
-                      maxitr = 150, verbose = FALSE, ncore = 2)
+                      maxitr = 500, verbose = FALSE, ncore = 2, lambda.reward = 0.1)
+orthofit$converge
+orthofit$gradient.norm
 
 predict(orthofit,test$X)
 

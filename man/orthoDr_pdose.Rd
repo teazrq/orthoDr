@@ -18,7 +18,8 @@ orthoDr_pdose(
   control = list(),
   maxitr = 500,
   verbose = 0,
-  ncore = 0
+  ncore = 0,
+  lambda.reward = 0.1
 )
 }
 \arguments{
@@ -39,12 +40,14 @@ must have \code{nrow(B.initial) == ncol(x)} and
 \item{bw}{Kernel bandwidth, assuming each variable has unit variance.
 If \code{NULL} (default), Silverman's rule is used.}
 
-\item{lambda}{Penalty level for kernel ridge regression. If a vector of
-values is provided, GCV is used to select the best value.
-Default: \code{0.1}.}
+\item{lambda}{Positive finite penalty for kernel ridge regression. For the
+direct method this controls initialization only; a vector of candidates
+invokes GCV once at the initial direction matrix. For pseudo-direct
+learning it controls the final ridge dose rule. Default: \code{0.1}.}
 
 \item{K}{Number of candidate dose grid points used during fitting. The grid
-spans the observed dose range. Must be a finite scalar at least one;
+spans the observed dose range. For direct learning, it is used only for
+initialization. Must be a finite scalar at least one;
 fractional values are rounded down once. Default: \code{sqrt(length(r))}.
 A single grid point uses the minimum observed dose. Predictions are
 continuous and are not constrained to the grid or observed dose range.}
@@ -58,33 +61,60 @@ the returned object for prediction. Default: \code{FALSE}.}
 \item{control}{A list of optimizer tuning parameters (see
 \code{\link{ortho_optim}} for details): \code{rho}, \code{eta},
 \code{gamma}, \code{tau}, \code{epsilon}, \code{btol}, \code{ftol},
-\code{gtol}.}
+\code{gtol}. Direct learning uses analytic gradients and monotone line
+searches, so \code{gamma} and \code{epsilon} are unused. Its \code{gtol}
+is an absolute tolerance for both gradient norms; \code{btol} and
+\code{ftol} detect unsuccessful stagnation, not convergence.}
 
-\item{maxitr}{Maximum number of iterations. Default: \code{500}.}
+\item{maxitr}{Maximum number of iterations. Default: \code{500}. For direct
+learning, an iteration is a completed coefficient and direction sweep;
+zero returns the initialized model without optimization. Supply a finite
+nonnegative number within the integer range; fractional values are floored.}
 
 \item{verbose}{Integer; if > 0, prints iteration progress. Default: 0.}
 
 \item{ncore}{Integer; number of cores for parallel computation via OpenMP.
-0 = auto-detect. Default: \code{0}.}
+0 = auto-detect. Default: \code{0}. The direct method's analytic solver
+runs serially; this argument is retained for calling compatibility.}
+
+\item{lambda.reward}{Direct learning only: one finite nonnegative coefficient
+for the squared coefficient penalty in the reward objective. Default:
+\code{0.1}, a nominal choice to assess for your data. Zero removes this
+penalty. It is separate from \code{lambda} and is not selected by GCV.
+Omit this argument for \code{method = "pseudo_direct"}.}
 }
 \value{
 An object of class \code{c("orthoDr", "fit", "pdose")}, which is a
 list containing:
 \describe{
 \item{\code{B}}{The estimated direction matrix (columns are orthonormal).}
-\item{\code{fn}}{The final objective function value.}
-\item{\code{itr}}{Number of iterations performed.}
+\item{\code{W}}{Coefficients of the continuous kernel dose rule.}
+\item{\code{fn}}{The final objective function value. For direct learning,
+this is negative estimated mean reward plus the coefficient penalty.}
+\item{\code{itr}}{Number of completed iterations.}
 \item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
-was reached. For the direct method, the gradient criterion is
-conditional on the current policy coefficients.}
+was reached. Direct learning requires both coefficient and constrained
+direction gradient norms to be at most \code{control$gtol}.}
+\item{\code{value}, \code{penalty}}{Direct learning: estimated mean reward
+and penalty contribution, with \code{fn = -value + penalty}.}
+\item{\code{lambda.init}, \code{lambda.reward}}{Direct learning: selected
+ridge initialization value and the supplied reward-penalty value.}
+\item{\code{gradient.norm}}{Direct learning: gradient norms named
+\code{B} and \code{W}, evaluated at the returned model. The direction
+norm uses the full Euclidean Stiefel tangent projection.}
+\item{\code{stop.reason}}{Direct learning: whether gradient tolerance,
+the iteration limit, a failed line search, stagnation, or a numerical
+failure stopped fitting. Only gradient tolerance indicates convergence.}
+\item{\code{objective.version}}{Direct learning: \code{"direct_joint_v1"},
+identifying the penalized joint objective.}
 \item{\code{method}}{The method used (\code{"direct"} or
 \code{"pseudo_direct"}).}
 \item{\code{keep.data}}{Whether original data was retained.}
 }
 }
 \description{
-Fits a personalized dose model using the direct learning or pseudo-direct
-learning method of Zhou, Zhu & Zeng (2021). Direct learning targets a dose
+Fits a personalized dose model using direct or pseudo-direct learning,
+based on Zhou, Zhu & Zeng (2021). Direct learning targets a dose
 rule, whereas pseudo-direct learning first targets the conditional mean
 reward surface. The direction matrix \code{B} therefore has a different
 target under the two methods.
@@ -96,16 +126,44 @@ reward under a dose rule based on \eqn{B^\top x}. With
 conditional mean reward as a function of dose and \eqn{B^\top x}, then a
 dose rule is constructed. The methods need not estimate the same subspace.
 
-The dose grid is used to select candidate doses during fitting. Both
-methods fit a kernel ridge regression rule to the selected doses.
-Prediction evaluates this continuous rule, so predicted doses need not lie
-on the grid or within the observed dose range.
+Direct learning initializes a kernel dose rule using grid-selected doses
+and ridge regression. It then alternates updates of the coefficients
+\eqn{w} and directions \eqn{B} to minimize
+\deqn{Q(B,w) = -\widehat V(B,w) + \lambda_{\mathrm{reward}} w^\top w,}
+subject to \eqn{B^\top B = I}. Here \eqn{\widehat V} is the estimated mean
+reward, with no extra division of the penalty by sample size. The penalty
+is a squared coefficient norm, not the RKHS norm \eqn{w^\top K_B w}.
+The ridge parameter \code{lambda} is the amount added to the kernel matrix
+during initialization and is not reused as the reward penalty.
+
+The dose rule uses a finite Gaussian kernel expansion centred at the
+projected training observations. During a direction update, the coefficients
+remain fixed while the centres and projected standard deviations change
+with \eqn{B}. This joint finite-dimensional formulation differs from the
+paper's literal fixed-function direction update. Ridge coefficients are not
+refitted during optimization or after stopping.
+
+Pseudo-direct learning constructs a ridge dose rule after fitting the reward
+surface. Both methods predict continuous doses, which need not lie on the
+grid or within the observed dose range.
 
 Dose comparisons use the standard deviation of the observed training doses
 for both observed and candidate doses. Returned doses remain in their
-original units. The direct method updates policy coefficients during line
-search but computes its gradient with those coefficients held fixed; its
-stopping criterion does not certify stationarity of a profiled objective.
+original units. A positive \code{lambda.reward} shrinks the dose rule toward
+zero, so its choice depends on dose units and origin as well as reward scale.
+Multiplying rewards by \eqn{c > 0} requires multiplying this penalty by
+\eqn{c} to preserve the objective's tradeoff. Multiplying dose units by
+\eqn{s > 0} requires dividing the penalty by \eqn{s^2}. There is no general
+invariance to shifting the dose origin. The nominal default is not a
+universally optimal choice. Assess several settings using policy evaluation
+appropriate to your data and study design. Do not select this parameter by
+comparing \code{fn} across settings: each uses a different penalized objective.
+
+Inspect \code{converge}, \code{gradient.norm}, and \code{stop.reason} before
+using a direct fit. Failed searches preserve the last completed sweep;
+small changes alone do not certify convergence. Convergence describes
+numerical stationarity, not global optimality or performance on new data.
+The returned \code{value} is an in-sample reward estimate.
 }
 \examples{
 # generate personalized dose data
@@ -127,9 +185,11 @@ test <- exampleset(500, p)
 
 # direct learning method
 orthofit <- orthoDr_pdose(train$X, train$A, train$R,
-  ndr = ndr, lambda = 0.1, method = "direct",
+  ndr = ndr, lambda = 0.1, lambda.reward = 0.1, method = "direct",
   K = sqrt(n), keep.data = TRUE,
-  maxitr = 150, verbose = 0, ncore = 2)
+  maxitr = 500, verbose = 0, ncore = 2)
+orthofit$converge
+orthofit$gradient.norm
 
 dose <- predict(orthofit, test$X)
 mean((test$D_opt - dose$pred)^2)

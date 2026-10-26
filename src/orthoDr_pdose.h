@@ -25,39 +25,14 @@
 #ifndef orthoDr_pdose
 #define orthoDr_pdose
 
-double pdose_direct_f(const arma::mat& B,
-                   const arma::mat& X,
-                   const arma::colvec& A,
-                   const arma::colvec& a_seq,
-                   const arma::colvec& R,
-                   const double bw,
-                   const arma::colvec& W,
-                   int ncore);
-				   
-				   
-void pdose_direct_w(const arma::mat& B,
-                 const arma::mat& X,
-                 const arma::colvec& A,
-                 const arma::colvec& a_seq,
-                 const arma::mat& a_dist,
-                 const arma::colvec& R,
-                 const double bw,
-                 arma::colvec& W,
-                 const arma::colvec& lambda,
-                 int ncore);
-				 
-void pdose_direct_g(arma::mat& B,
-                 const double F0,
-                 arma::mat& G,
-                 const arma::mat& X,
-                 const arma::colvec& A,
-                 const arma::colvec& a_seq,
-                 const arma::colvec& R,
-                 const double bw,
-                 const arma::colvec& W,
-                 const double lambda0,
-                 const double epsilon,
-                 int ncore);
+Rcpp::List pdose_direct_evaluate(const arma::mat B,
+                                const arma::mat X,
+                                const arma::colvec A,
+                                const arma::colvec R,
+                                double bw,
+                                const arma::colvec W,
+                                double lambda_reward,
+                                double cayley_step);
 
 Rcpp::List pdose_direct_solver(arma::mat B,
                       const arma::mat X,
@@ -77,7 +52,32 @@ Rcpp::List pdose_direct_solver(arma::mat B,
                       double gtol,
                       int maxitr,
                       int verbose,
-                      int ncore);
+                      int ncore,
+                      double lambda_reward);
+
+Rcpp::List pdose_direct_audit_solver(arma::mat B,
+                                    const arma::mat X,
+                                    const arma::colvec A,
+                                    const arma::mat a_dist,
+                                    const arma::colvec a_seq,
+                                    const arma::colvec R,
+                                    const arma::colvec lambda,
+                                    double bw,
+                                    double rho,
+                                    double eta,
+                                    double gamma,
+                                    double tau,
+                                    double epsilon,
+                                    double btol,
+                                    double ftol,
+                                    double gtol,
+                                    int maxitr,
+                                    int verbose,
+                                    int ncore,
+                                    double lambda_reward,
+                                    bool trace,
+                                    int B_trial_budget,
+                                    Rcpp::Nullable<Rcpp::NumericVector> W_initial);
 
 arma::vec dosepred(arma::mat B,
                    arma::mat X,

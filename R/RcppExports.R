@@ -5,8 +5,16 @@ gen_solver <- function(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, 
     .Call(`_orthoDr_gen_solver`, B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 }
 
-pdose_direct_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_pdose_direct_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+pdose_direct_evaluate <- function(B, X, A, R, bw, W, lambda_reward, cayley_step = 0) {
+    .Call(`_orthoDr_pdose_direct_evaluate`, B, X, A, R, bw, W, lambda_reward, cayley_step)
+}
+
+pdose_direct_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward = 0.1) {
+    .Call(`_orthoDr_pdose_direct_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward)
+}
+
+pdose_direct_audit_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward = 0.1, trace = TRUE, B_trial_budget = 30L, W_initial = NULL) {
+    .Call(`_orthoDr_pdose_direct_audit_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, trace, B_trial_budget, W_initial)
 }
 
 dosepred <- function(B, X, X_test, bw, W) {
