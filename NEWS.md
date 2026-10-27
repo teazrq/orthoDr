@@ -1,5 +1,16 @@
 # orthoDr (development version)
 
+* Added optional `intercept = TRUE` for direct dose learning. It learns an
+  unpenalized average training dose and penalizes centered kernel coefficients.
+  `intercept.bounds` constrains that average, not individual predictions.
+  Intercept fits require a positive `lambda.reward` and report their joint
+  policy residual. The default remains `intercept = FALSE`; older fitted
+  objects retain their prediction behavior.
+* Repaired automatic pSAVE initialization for small samples by excluding dose
+  groups without a usable predictor covariance and handling the dependency's
+  one-breakpoint slicing case. Structurally uninformative slice configurations
+  now give a specific error suggesting `B.initial`. Valid historical thresholds,
+  including ties, retain their contributions for both dose-learning methods.
 * Revised direct dose learning to optimize one penalized reward objective over
   both dose-rule coefficients and directions. `lambda` now controls its ridge
   initialization only; the new `lambda.reward` controls the squared coefficient

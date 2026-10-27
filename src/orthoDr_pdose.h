@@ -32,7 +32,15 @@ Rcpp::List pdose_direct_evaluate(const arma::mat B,
                                 double bw,
                                 const arma::colvec W,
                                 double lambda_reward,
-                                double cayley_step);
+                                double cayley_step,
+                                bool intercept,
+                                Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds,
+                                double alpha);
+
+Rcpp::List pdose_direct_policy_direction(const arma::vec gradient,
+                                        const arma::mat hessian,
+                                        double alpha,
+                                        const Rcpp::NumericVector intercept_bounds);
 
 Rcpp::List pdose_direct_solver(arma::mat B,
                       const arma::mat X,
@@ -53,7 +61,9 @@ Rcpp::List pdose_direct_solver(arma::mat B,
                       int maxitr,
                       int verbose,
                       int ncore,
-                      double lambda_reward);
+                      double lambda_reward,
+                      bool intercept,
+                      Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds);
 
 Rcpp::List pdose_direct_audit_solver(arma::mat B,
                                     const arma::mat X,
@@ -77,7 +87,10 @@ Rcpp::List pdose_direct_audit_solver(arma::mat B,
                                     double lambda_reward,
                                     bool trace,
                                     int B_trial_budget,
-                                    Rcpp::Nullable<Rcpp::NumericVector> W_initial);
+                                    Rcpp::Nullable<Rcpp::NumericVector> W_initial,
+                                    bool intercept,
+                                    Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds,
+                                    Rcpp::Nullable<Rcpp::NumericVector> alpha_initial);
 
 arma::vec dosepred(arma::mat B,
                    arma::mat X,

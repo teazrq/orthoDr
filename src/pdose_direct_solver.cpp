@@ -39,7 +39,44 @@ struct DirectKernel {
   arma::rowvec scales;
   arma::mat log_kernel;
   arma::mat kernel;
+  arma::rowvec mean;
 };
+
+struct DirectPolicy {
+  bool intercept;
+  double lower, upper;
+
+  DirectPolicy() : intercept(false), lower(0), upper(0) {}
+  double project(const double alpha) const {
+    return std::max(lower, std::min(upper, alpha));
+  }
+};
+
+DirectPolicy direct_policy(const bool intercept,
+                            const Rcpp::Nullable<Rcpp::NumericVector>& bounds,
+                            const arma::vec& A) {
+  DirectPolicy out;
+  out.intercept = intercept;
+  if (!intercept) {
+    if (bounds.isNotNull()) Rcpp::stop("intercept.bounds requires intercept = TRUE");
+    return out;
+  }
+  if (bounds.isNotNull()) {
+    const Rcpp::NumericVector limits(bounds.get());
+    if (limits.size() != 2 || !std::isfinite(limits[0]) ||
+        !std::isfinite(limits[1]) || limits[0] >= limits[1])
+      Rcpp::stop("intercept.bounds must contain two finite, strictly ordered values");
+    out.lower = limits[0];
+    out.upper = limits[1];
+  } else {
+    if (A.n_elem == 0 || !A.is_finite()) Rcpp::stop("Observed doses must be finite");
+    out.lower = A.min();
+    out.upper = A.max();
+    if (out.lower >= out.upper)
+      Rcpp::stop("Default intercept.bounds requires varying observed doses");
+  }
+  return out;
+}
 
 struct DirectEvaluation {
   bool valid;
@@ -49,14 +86,18 @@ struct DirectEvaluation {
   double penalty;
   double norm_B;
   double norm_W;
+  bool intercept;
+  double alpha, gradient_alpha, residual_alpha, norm_policy;
   arma::vec dose;
+  arma::mat features;
   arma::mat gradient_B;
   arma::vec gradient_W;
   arma::vec curvature_dose;
   DirectKernel geometry;
 
   DirectEvaluation() : valid(false), objective(NA_REAL), value(NA_REAL),
-    penalty(NA_REAL), norm_B(NA_REAL), norm_W(NA_REAL) {}
+    penalty(NA_REAL), norm_B(NA_REAL), norm_W(NA_REAL), intercept(false),
+    alpha(0), gradient_alpha(NA_REAL), residual_alpha(NA_REAL), norm_policy(NA_REAL) {}
 };
 
 bool direct_kernel(const arma::mat& B, const arma::mat& X,
@@ -97,6 +138,7 @@ bool direct_kernel(const arma::mat& B, const arma::mat& X,
     }
   }
   out.kernel = arma::exp(out.log_kernel);
+  out.mean = arma::mean(out.kernel, 0);
   return out.kernel.is_finite();
 }
 
@@ -104,13 +146,22 @@ DirectEvaluation direct_evaluate(const arma::mat& B, const arma::mat& X,
                                  const arma::vec& A, const arma::vec& R,
                                  const double bw, const arma::vec& W,
                                  const double lambda_reward,
-                                 const bool gradients = true) {
+                                 const bool gradients = true,
+                                 const DirectPolicy& policy = DirectPolicy(),
+                                 const double alpha = 0) {
   DirectEvaluation out;
+  out.intercept = policy.intercept;
+  out.alpha = alpha;
   const arma::uword n = X.n_rows;
   if (A.n_elem != n || R.n_elem != n || W.n_elem != n ||
       !A.is_finite() || !R.is_finite() || !W.is_finite() ||
       !std::isfinite(lambda_reward) || lambda_reward < 0) {
     out.message = "Direct-dose outcomes and coefficients must be finite with matching lengths, and lambda.reward must be nonnegative";
+    return out;
+  }
+  if (policy.intercept && (lambda_reward <= 0 || !std::isfinite(alpha) ||
+      alpha < policy.lower || alpha > policy.upper)) {
+    out.message = "Intercept mode requires lambda.reward > 0 and a finite intercept within its bounds";
     return out;
   }
   if (!direct_kernel(B, X, bw, out.geometry, out.message)) return out;
@@ -119,7 +170,10 @@ DirectEvaluation direct_evaluate(const arma::mat& B, const arma::mat& X,
     out.message = "Observed doses must have a positive finite bandwidth scale";
     return out;
   }
-  out.dose = out.geometry.kernel * W;
+  out.features = out.geometry.kernel;
+  if (policy.intercept) out.features.each_row() -= out.geometry.mean;
+  out.dose = out.features * W;
+  if (policy.intercept) out.dose += alpha;
   if (!out.dose.is_finite()) {
     out.message = "Policy doses are nonfinite";
     return out;
@@ -171,12 +225,17 @@ DirectEvaluation direct_evaluate(const arma::mat& B, const arma::mat& X,
     return out;
   }
   if (gradients) {
-    out.gradient_W = out.geometry.kernel.t() * gradient_dose +
+    out.gradient_W = out.features.t() * gradient_dose +
       2.0 * (lambda_reward * W);
+    out.gradient_alpha = policy.intercept ? arma::accu(gradient_dose) : 0;
+    out.residual_alpha = policy.intercept ?
+      alpha - policy.project(alpha - out.gradient_alpha) : 0;
+    arma::vec policy_gradient = gradient_dose;
+    if (policy.intercept) policy_gradient -= arma::mean(gradient_dose);
     // Each column i has dose d_i = sum_j K(j,i) W_j. Both kernel
     // endpoints and the sample standard deviation move with B.
     const arma::mat sensitivity = log_sensitivity +
-      out.geometry.kernel % (W * gradient_dose.t());
+      out.geometry.kernel % (W * policy_gradient.t());
     const arma::mat symmetric_sensitivity = sensitivity + sensitivity.t();
     arma::mat gradient_projected(n, B.n_cols);
     for (arma::uword k = 0; k < B.n_cols; ++k) {
@@ -195,8 +254,10 @@ DirectEvaluation direct_evaluate(const arma::mat& B, const arma::mat& X,
     const arma::mat projected_gradient = out.gradient_B - B * (0.5 * (BtG + BtG.t()));
     out.norm_B = arma::norm(projected_gradient, "fro");
     out.norm_W = arma::norm(out.gradient_W, 2);
+    out.norm_policy = std::hypot(out.norm_W, out.residual_alpha);
     if (!out.gradient_B.is_finite() || !out.gradient_W.is_finite() ||
-        !std::isfinite(out.norm_B) || !std::isfinite(out.norm_W)) {
+        !std::isfinite(out.norm_B) || !std::isfinite(out.norm_policy) ||
+        !std::isfinite(out.gradient_alpha)) {
       out.message = "Direct-dose derivatives are nonfinite";
       return out;
     }
@@ -212,9 +273,9 @@ bool direct_hessian_W(const DirectEvaluation& state, const double lambda_reward,
     hessian.set_size(0, 0);
     return false;
   }
-  arma::mat weighted_kernel = state.geometry.kernel;
+  arma::mat weighted_kernel = state.features;
   weighted_kernel.each_col() %= state.curvature_dose;
-  hessian = state.geometry.kernel.t() * weighted_kernel;
+  hessian = state.features.t() * weighted_kernel;
   hessian.diag() += 2.0 * lambda_reward;
   // The exact expression is symmetric. Copy one triangle rather than
   // introducing rounding asymmetry into the Cholesky factorization.
@@ -244,6 +305,72 @@ arma::vec direct_direction_W(const DirectEvaluation& state,
   return direction;
 }
 
+bool direct_hessian_policy(const DirectEvaluation& state,
+                            const double lambda_reward, arma::mat& hessian) {
+  arma::mat coefficient;
+  if (!direct_hessian_W(state, lambda_reward, coefficient)) {
+    hessian.set_size(0, 0);
+    return false;
+  }
+  const arma::uword n = state.gradient_W.n_elem;
+  hessian.zeros(n + 1, n + 1);
+  hessian(0, 0) = arma::accu(state.curvature_dose);
+  const arma::vec cross = state.features.t() * state.curvature_dose;
+  hessian.submat(1, 0, n, 0) = cross;
+  hessian.submat(0, 1, 0, n) = cross.t();
+  hessian.submat(1, 1, n, n) = coefficient;
+  return hessian.is_finite();
+}
+
+// The same bounded policy proposal is exposed privately for audit fixtures.
+// Its feasible slope must be checked after clipping the Newton displacement.
+arma::vec direct_feasible_direction(const arma::vec& gradient,
+                                    const arma::mat& hessian,
+                                    const double alpha,
+                                    const DirectPolicy& policy,
+                                    std::string& type) {
+  arma::vec direction = -gradient;
+  direction(0) = policy.project(alpha - gradient(0)) - alpha;
+  type = "gradient";
+  const bool active = (alpha <= policy.lower && gradient(0) > 0) ||
+    (alpha >= policy.upper && gradient(0) < 0);
+  const arma::uword first = active ? 1 : 0;
+  if (gradient.n_elem <= first || hessian.n_rows != gradient.n_elem ||
+      hessian.n_cols != gradient.n_elem || !hessian.is_finite()) return direction;
+  arma::mat factor;
+  arma::vec intermediate, solution;
+  const arma::mat block = hessian.submat(first, first, gradient.n_elem - 1,
+                                         gradient.n_elem - 1);
+  if (arma::chol(factor, block) &&
+      arma::solve(intermediate, arma::trimatl(factor.t()), gradient.tail(gradient.n_elem - first),
+                   arma::solve_opts::no_approx) &&
+      arma::solve(solution, arma::trimatu(factor), intermediate,
+                   arma::solve_opts::no_approx) && solution.is_finite()) {
+    arma::vec candidate(gradient.n_elem, arma::fill::zeros);
+    candidate.tail(gradient.n_elem - first) = -solution;
+    candidate(0) = std::max(policy.lower - alpha,
+                            std::min(policy.upper - alpha, candidate(0)));
+    const double slope = arma::dot(gradient, candidate);
+    if (candidate.is_finite() && std::isfinite(slope) && slope < 0) {
+      direction = candidate;
+      type = active ? "newton.fixed.intercept" : "newton";
+    }
+  }
+  return direction;
+}
+
+arma::vec direct_direction_policy(const DirectEvaluation& state,
+                                  const double lambda_reward,
+                                  const DirectPolicy& policy,
+                                  std::string& type) {
+  arma::mat hessian;
+  direct_hessian_policy(state, lambda_reward, hessian);
+  arma::vec gradient(state.gradient_W.n_elem + 1);
+  gradient(0) = state.gradient_alpha;
+  gradient.tail(state.gradient_W.n_elem) = state.gradient_W;
+  return direct_feasible_direction(gradient, hessian, state.alpha, policy, type);
+}
+
 bool direct_cayley(const arma::mat& B, const arma::mat& G,
                     const double step, arma::mat& trial) {
   if (!std::isfinite(step) || step < 0 || !G.is_finite()) return false;
@@ -267,6 +394,11 @@ bool direct_cayley(const arma::mat& B, const arma::mat& G,
 }
 
 Rcpp::NumericVector direct_norms(const DirectEvaluation& state) {
+  if (state.intercept)
+    return Rcpp::NumericVector::create(Rcpp::Named("B") = state.norm_B,
+                                       Rcpp::Named("W") = state.norm_W,
+                                       Rcpp::Named("intercept") = std::abs(state.residual_alpha),
+                                       Rcpp::Named("policy") = state.norm_policy);
   return Rcpp::NumericVector::create(Rcpp::Named("B") = state.norm_B,
                                      Rcpp::Named("W") = state.norm_W);
 }
@@ -279,8 +411,13 @@ Rcpp::NumericVector direct_norms(const DirectEvaluation& state) {
 Rcpp::List pdose_direct_evaluate(const arma::mat B, const arma::mat X,
                                 const arma::colvec A, const arma::colvec R,
                                 double bw, const arma::colvec W,
-                                double lambda_reward, double cayley_step = 0) {
-  const DirectEvaluation state = direct_evaluate(B, X, A, R, bw, W, lambda_reward);
+                                double lambda_reward, double cayley_step = 0,
+                                bool intercept = false,
+                                Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds = R_NilValue,
+                                double alpha = 0) {
+  const DirectPolicy policy = direct_policy(intercept, intercept_bounds, A);
+  const DirectEvaluation state = direct_evaluate(B, X, A, R, bw, W, lambda_reward,
+                                                true, policy, alpha);
   Rcpp::List out = Rcpp::List::create(
     Rcpp::Named("valid") = state.valid,
     Rcpp::Named("message") = state.message,
@@ -303,8 +440,46 @@ Rcpp::List pdose_direct_evaluate(const arma::mat B, const arma::mat X,
     out["cayley.B"] = trial;
     out["cayley.velocity"] = velocity;
     out["cayley.slope"] = arma::accu(state.gradient_B % velocity);
+    if (intercept) {
+      arma::mat policy_hessian;
+      out["hessian.policy.valid"] = direct_hessian_policy(state, lambda_reward, policy_hessian);
+      out["hessian.policy"] = policy_hessian;
+      out["intercept"] = alpha;
+      out["intercept.bounds"] = Rcpp::NumericVector::create(policy.lower, policy.upper);
+      out["kernel.mean"] = state.geometry.mean.t();
+      out["features"] = state.features;
+      out["g.intercept"] = state.gradient_alpha;
+      out["gradient.intercept"] = state.gradient_alpha;
+      std::string type;
+      const arma::vec direction = direct_direction_policy(state, lambda_reward, policy, type);
+      out["direction.policy"] = direction;
+      out["direction.type"] = type;
+      out["policy.slope"] = state.gradient_alpha * direction(0) +
+        arma::dot(state.gradient_W, direction.tail(W.n_elem));
+    }
   }
   return out;
+}
+
+// Private regression access to the production projected-Newton proposal.
+// [[Rcpp::export]]
+Rcpp::List pdose_direct_policy_direction(const arma::vec gradient,
+                                        const arma::mat hessian,
+                                        double alpha,
+                                        const Rcpp::NumericVector intercept_bounds) {
+  if (gradient.n_elem < 2 || !gradient.is_finite())
+    Rcpp::stop("Policy gradient must be finite with an intercept and coefficients");
+  const DirectPolicy policy = direct_policy(true,
+    Rcpp::Nullable<Rcpp::NumericVector>(intercept_bounds), arma::vec());
+  if (!std::isfinite(alpha) || alpha < policy.lower || alpha > policy.upper)
+    Rcpp::stop("Intercept must be finite and within its bounds");
+  std::string type;
+  const arma::vec direction = direct_feasible_direction(gradient, hessian, alpha, policy, type);
+  const double residual = alpha - policy.project(alpha - gradient(0));
+  return Rcpp::List::create(Rcpp::Named("direction") = direction,
+                            Rcpp::Named("direction.type") = type,
+                            Rcpp::Named("slope") = arma::dot(gradient, direction),
+                            Rcpp::Named("residual.intercept") = residual);
 }
 
 namespace {
@@ -314,6 +489,7 @@ struct DirectInitialization {
   arma::vec targets;
   arma::vec gcv;
   double lambda;
+  double alpha;
   int count;
 };
 
@@ -322,10 +498,12 @@ DirectInitialization direct_initialize(const DirectKernel& geometry,
                                        const arma::vec& grid,
                                        const arma::vec& R,
                                        const arma::vec& lambda,
-                                       const double bw) {
+                                       const double bw,
+                                       const DirectPolicy& policy) {
   DirectInitialization out;
   const arma::uword n = A.n_elem;
   out.count = 1;
+  out.alpha = 0;
   out.targets.set_size(n);
   out.gcv.set_size(lambda.n_elem > 1 ? lambda.n_elem : 0);
   const double dose_scale = arma::stddev(A) * bw;
@@ -355,6 +533,59 @@ DirectInitialization direct_initialize(const DirectKernel& geometry,
       }
     }
     out.targets(i) = grid(selected);
+  }
+  if (policy.intercept) {
+    const double target_mean = arma::mean(out.targets);
+    out.alpha = policy.project(target_mean);
+    out.lambda = lambda(0);
+    const bool constant = arma::all(out.targets == out.targets(0));
+    if (constant && out.targets(0) >= policy.lower && out.targets(0) <= policy.upper) {
+      out.alpha = out.targets(0);
+      out.W.zeros(n);
+      out.gcv.zeros();
+      return out;
+    }
+    if (lambda.n_elem > 1 && (target_mean <= policy.lower || target_mean >= policy.upper))
+      Rcpp::stop("Active intercept.bounds requires a scalar lambda unless the grid targets are an attainable constant");
+    // Orthonormal Helmert contrasts remove the intercept null direction.
+    // Solving on this space is ordinary intercept KRR, and its trace gives
+    // stable residual degrees of freedom without subtracting 1 / lambda.
+    arma::mat contrasts(n, n - 1, arma::fill::zeros);
+    for (arma::uword j = 0; j + 1 < n; ++j) {
+      const double scale = std::sqrt(static_cast<double>((j + 1) * (j + 2)));
+      for (arma::uword i = 0; i <= j; ++i) contrasts(i, j) = 1.0 / scale;
+      contrasts(j + 1, j) = -static_cast<double>(j + 1) / scale;
+    }
+    const arma::mat contrast_kernel = arma::symmatu(contrasts.t() * geometry.kernel * contrasts);
+    const arma::vec contrast_target = contrasts.t() * (out.targets - target_mean);
+    const arma::mat identity = arma::eye(n - 1, n - 1);
+    double best_gcv = std::numeric_limits<double>::infinity();
+    arma::uword selected = 0;
+    if (lambda.n_elem > 1) for (arma::uword k = 0; k < lambda.n_elem; ++k) {
+      Rcpp::checkUserInterrupt();
+      arma::mat inverse;
+      if (!arma::solve(inverse, contrast_kernel + lambda(k) * identity, identity,
+                       arma::solve_opts::likely_sympd + arma::solve_opts::no_approx) ||
+          !inverse.is_finite())
+        Rcpp::stop("Initial intercept kernel ridge system could not be solved");
+      const double denominator = arma::trace(inverse);
+      const double ratio = arma::norm(inverse * contrast_target, 2) / denominator;
+      out.gcv(k) = static_cast<double>(n) * ratio * ratio;
+      if (!std::isfinite(out.gcv(k)) || denominator <= 0)
+        Rcpp::stop("Initial intercept kernel ridge GCV score must be finite");
+      if (out.gcv(k) < best_gcv) {
+        best_gcv = out.gcv(k);
+        selected = k;
+      }
+    }
+    out.lambda = lambda(selected);
+    arma::vec solution;
+    if (!arma::solve(solution, contrast_kernel + out.lambda * identity, contrast_target,
+                     arma::solve_opts::likely_sympd + arma::solve_opts::no_approx) ||
+        !solution.is_finite())
+      Rcpp::stop("Initial intercept kernel ridge coefficients could not be solved");
+    out.W = contrasts * solution;
+    return out;
   }
   const arma::mat identity = arma::eye(n, n);
   if (lambda.n_elem == 1) {
@@ -441,9 +672,11 @@ void direct_trace(Rcpp::List& trace, const bool collect,
                   const double step, const bool accepted,
                   const std::string& reason = "",
                   const std::string& direction_type = "",
-                  const arma::vec& direction_W = arma::vec()) {
+                  const arma::vec& direction_W = arma::vec(),
+                  const double alpha_start = NA_REAL,
+                  const double direction_alpha = NA_REAL) {
   if (!collect) return;
-  trace.push_back(Rcpp::List::create(
+  Rcpp::List entry = Rcpp::List::create(
     Rcpp::Named("event") = event, Rcpp::Named("block") = block,
     Rcpp::Named("sweep") = sweep,
     Rcpp::Named("B.start") = B_start, Rcpp::Named("W.start") = W_start,
@@ -454,7 +687,16 @@ void direct_trace(Rcpp::List& trace, const bool collect,
     Rcpp::Named("accepted") = accepted, Rcpp::Named("finite") = state.valid,
     Rcpp::Named("reason") = reason, Rcpp::Named("message") = state.message,
     Rcpp::Named("direction.type") = direction_type,
-    Rcpp::Named("direction.W") = direction_W));
+    Rcpp::Named("direction.W") = direction_W);
+  if (state.intercept) {
+    entry["intercept.start"] = alpha_start;
+    entry["intercept"] = state.alpha;
+    entry["direction.intercept"] = direction_alpha;
+    entry["kernel.mean"] = state.geometry.mean.t();
+    entry["gradient.intercept"] = state.gradient_alpha;
+    entry["gradient.norm"] = direct_norms(state);
+  }
+  trace.push_back(entry);
 }
 
 double direct_next_step(const double accepted, const double eta,
@@ -467,8 +709,14 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
                       const arma::vec& R, const arma::vec& lambda,
                       const double bw, const double lambda_reward,
                       const DirectControls& control, const bool collect,
-                      const Rcpp::Nullable<Rcpp::NumericVector>& W_initial) {
+                      const Rcpp::Nullable<Rcpp::NumericVector>& W_initial,
+                      const DirectPolicy& policy,
+                      const Rcpp::Nullable<Rcpp::NumericVector>& alpha_initial) {
   direct_validate(B, X, A, R, a_dist, grid, lambda, bw, lambda_reward, control);
+  if (policy.intercept && lambda_reward <= 0)
+    Rcpp::stop("lambda.reward must be positive when intercept = TRUE");
+  if (!policy.intercept && alpha_initial.isNotNull())
+    Rcpp::stop("alpha_initial requires intercept = TRUE");
   DirectKernel initial_geometry;
   std::string message;
   if (!direct_kernel(B, X, bw, initial_geometry, message)) Rcpp::stop(message);
@@ -477,16 +725,25 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
     initialization.W = Rcpp::as<arma::vec>(W_initial.get());
     initialization.lambda = lambda(0);
     initialization.count = 0;
+    initialization.alpha = policy.intercept ? policy.project(arma::mean(A)) : 0;
   } else {
-    initialization = direct_initialize(initial_geometry, A, grid, R, lambda, bw);
+    initialization = direct_initialize(initial_geometry, A, grid, R, lambda, bw, policy);
+  }
+  if (alpha_initial.isNotNull()) {
+    const Rcpp::NumericVector initial(alpha_initial.get());
+    if (initial.size() != 1 || !std::isfinite(initial[0]) ||
+        initial[0] < policy.lower || initial[0] > policy.upper)
+      Rcpp::stop("alpha_initial must be a finite scalar within intercept.bounds");
+    initialization.alpha = initial[0];
   }
   arma::vec W = initialization.W;
-  DirectEvaluation state = direct_evaluate(B, X, A, R, bw, W, lambda_reward);
+  double alpha = initialization.alpha;
+  DirectEvaluation state = direct_evaluate(B, X, A, R, bw, W, lambda_reward, true, policy, alpha);
   if (!state.valid) Rcpp::stop("Initial direct-dose evaluation failed: " + state.message);
   Rcpp::List trace;
   if (collect) {
     direct_trace(trace, true, "initialize", "", 0, B, W, B, W,
-                  state.objective, state, NA_REAL, 0, true);
+                  state.objective, state, NA_REAL, 0, true, "", "", arma::vec(), alpha);
     Rcpp::List entry = trace[0];
     entry["initialization.count"] = initialization.count;
     entry["lambda.init"] = initialization.lambda;
@@ -504,25 +761,35 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
 
   while (completed < control.maxitr) {
     Rcpp::checkUserInterrupt();
-    if (state.norm_B <= control.gtol && state.norm_W <= control.gtol) {
+    if (state.norm_B <= control.gtol && state.norm_policy <= control.gtol) {
       reason = "gradient_tolerance";
       break;
     }
     const arma::mat previous_B = B;
     const arma::vec previous_W = W;
+    const double previous_alpha = alpha;
     const double previous_objective = state.objective;
     arma::mat proposed_B = B;
     arma::vec proposed_W = W;
+    double proposed_alpha = alpha;
     DirectEvaluation proposed = state;
     bool failed = false;
     std::string failed_block;
 
-    if (proposed.norm_W > control.gtol) {
-      failed_block = "W";
+    const std::string policy_block = policy.intercept ? "policy" : "W";
+    if (proposed.norm_policy > control.gtol) {
+      failed_block = policy_block;
       const arma::vec gradient = proposed.gradient_W;
       std::string direction_type;
-      const arma::vec direction = direct_direction_W(proposed, lambda_reward, direction_type);
-      const double slope = arma::dot(gradient, direction);
+      arma::vec direction;
+      double direction_alpha = 0;
+      if (policy.intercept) {
+        const arma::vec joint = direct_direction_policy(proposed, lambda_reward, policy, direction_type);
+        direction_alpha = joint(0);
+        direction = joint.tail(W.n_elem);
+      } else direction = direct_direction_W(proposed, lambda_reward, direction_type);
+      const double slope = arma::dot(gradient, direction) +
+        (policy.intercept ? proposed.gradient_alpha * direction_alpha : 0);
       if (!std::isfinite(slope) || slope >= 0) {
         reason = std::isfinite(slope) ? "stagnation" : "numerical_failure";
         failed = true;
@@ -532,17 +799,27 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
         for (int trial = 0; trial < 30; ++trial) {
           Rcpp::checkUserInterrupt();
           const arma::vec trial_W = W + step * direction;
+          // The displacement is feasible and step <= 1. Projection here
+          // only absorbs rounding when the full displacement hits a bound.
+          const double trial_alpha = policy.intercept ?
+            policy.project(alpha + step * direction_alpha) : 0;
           DirectEvaluation candidate;
           if (trial_W.is_finite())
-            candidate = direct_evaluate(B, X, A, R, bw, trial_W, lambda_reward, false);
-          else candidate.message = "Coefficient trial is nonfinite";
-          const bool moved = trial_W.n_elem == W.n_elem && arma::any(trial_W != W);
+            candidate = direct_evaluate(B, X, A, R, bw, trial_W, lambda_reward,
+                                         false, policy, trial_alpha);
+          else {
+            candidate.intercept = policy.intercept;
+            candidate.alpha = trial_alpha;
+            candidate.message = "Coefficient trial is nonfinite";
+          }
+          const bool moved = trial_W.n_elem == W.n_elem &&
+            (arma::any(trial_W != W) || trial_alpha != alpha);
           const double threshold = proposed.objective + control.rho * step * slope;
           accepted = moved && candidate.valid && std::isfinite(threshold) &&
             candidate.objective <= threshold;
-          direct_trace(trace, collect, "trial", "W", completed + 1, B, W,
+          direct_trace(trace, collect, "trial", policy_block, completed + 1, B, W,
                         B, trial_W, proposed.objective, candidate, slope, step, accepted,
-                        "", direction_type, direction);
+                        "", direction_type, direction, alpha, direction_alpha);
           if (candidate.valid && !moved) {
             reason = "stagnation";
             failed = true;
@@ -550,6 +827,7 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
           }
           if (accepted) {
             proposed_W = trial_W;
+            proposed_alpha = trial_alpha;
             proposed = candidate;
             W_step = direct_next_step(step, control.eta, 1.0);
             break;
@@ -557,19 +835,20 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
           step *= control.eta;
         }
         if (!accepted && !failed) {
-          reason = "w_line_search_failed";
+          reason = policy.intercept ? "policy_line_search_failed" : "w_line_search_failed";
           failed = true;
         }
       }
     } else {
-      direct_trace(trace, collect, "skip", "W", completed + 1, B, W, B, W,
-                    proposed.objective, proposed, 0, 0, true);
+      direct_trace(trace, collect, "skip", policy_block, completed + 1, B, W, B, W,
+                    proposed.objective, proposed, 0, 0, true, "", "", arma::vec(), alpha);
     }
 
     // Recompute the direction derivative at provisional coefficients. A
     // derivative failure rolls back their accepted objective-only trial.
     if (!failed) {
-      proposed = direct_evaluate(proposed_B, X, A, R, bw, proposed_W, lambda_reward);
+      proposed = direct_evaluate(proposed_B, X, A, R, bw, proposed_W, lambda_reward,
+                                   true, policy, proposed_alpha);
       if (!proposed.valid) {
         reason = "numerical_failure";
         failed_block = "B";
@@ -593,14 +872,20 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
           DirectEvaluation candidate;
           const bool feasible = direct_cayley(B, gradient, step, trial_B);
           if (feasible)
-            candidate = direct_evaluate(trial_B, X, A, R, bw, proposed_W, lambda_reward, false);
-          else candidate.message = "Cayley trial is nonfinite or unsolved";
+            candidate = direct_evaluate(trial_B, X, A, R, bw, proposed_W, lambda_reward,
+                                         false, policy, proposed_alpha);
+          else {
+            candidate.intercept = policy.intercept;
+            candidate.alpha = proposed_alpha;
+            candidate.message = "Cayley trial is nonfinite or unsolved";
+          }
           const bool moved = feasible && arma::accu(trial_B != B) > 0;
           const double threshold = proposed.objective + control.rho * step * slope;
           accepted = moved && candidate.valid && std::isfinite(threshold) &&
             candidate.objective <= threshold;
           direct_trace(trace, collect, "trial", "B", completed + 1, B, proposed_W,
-                        trial_B, proposed_W, proposed.objective, candidate, slope, step, accepted);
+                        trial_B, proposed_W, proposed.objective, candidate, slope, step, accepted,
+                        "", "", arma::vec(), proposed_alpha);
           if (candidate.valid && !moved) {
             reason = "stagnation";
             failed = true;
@@ -621,13 +906,15 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
       }
     } else if (!failed) {
       direct_trace(trace, collect, "skip", "B", completed + 1, B, proposed_W,
-                    B, proposed_W, proposed.objective, proposed, 0, 0, true);
+                    B, proposed_W, proposed.objective, proposed, 0, 0, true,
+                    "", "", arma::vec(), proposed_alpha);
     }
 
     // Both fresh gradients and all components belong to the final pair,
     // including at the last budgeted sweep, before the atomic commit.
     if (!failed) {
-      proposed = direct_evaluate(proposed_B, X, A, R, bw, proposed_W, lambda_reward);
+      proposed = direct_evaluate(proposed_B, X, A, R, bw, proposed_W, lambda_reward,
+                                   true, policy, proposed_alpha);
       if (!proposed.valid) {
         reason = "numerical_failure";
         failed_block = "B";
@@ -637,16 +924,18 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
     if (failed) {
       direct_trace(trace, collect, "rollback", failed_block, completed + 1,
                     proposed_B, proposed_W, B, W, previous_objective, state,
-                    NA_REAL, 0, false, reason);
+                    NA_REAL, 0, false, reason, "", arma::vec(), proposed_alpha);
       break;
     }
     B = proposed_B;
     W = proposed_W;
+    alpha = proposed_alpha;
     state = proposed;
     ++completed;
     direct_trace(trace, collect, "commit", "", completed, previous_B,
-                  previous_W, B, W, previous_objective, state, NA_REAL, 0, true);
-    if (state.norm_B <= control.gtol && state.norm_W <= control.gtol) {
+                  previous_W, B, W, previous_objective, state, NA_REAL, 0, true,
+                  "", "", arma::vec(), previous_alpha);
+    if (state.norm_B <= control.gtol && state.norm_policy <= control.gtol) {
       reason = "gradient_tolerance";
       break;
     }
@@ -654,9 +943,12 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
       std::max(1.0, arma::norm(previous_B, "fro"));
     const double W_change = arma::norm(W - previous_W, 2) /
       std::max(1.0, arma::norm(previous_W, 2));
+    const double alpha_change = std::abs(alpha - previous_alpha) /
+      std::max(1.0, std::abs(previous_alpha));
     const double objective_change = std::abs(state.objective - previous_objective) /
       (1.0 + std::abs(previous_objective));
     if (B_change <= control.btol && W_change <= control.btol &&
+        (!policy.intercept || alpha_change <= control.btol) &&
         objective_change <= control.ftol) ++small_sweeps;
     else small_sweeps = 0;
     if (small_sweeps >= 5) {
@@ -667,14 +959,17 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
       Rcpp::Rcout << "At sweep " << completed << ", objective = " << state.objective << std::endl;
   }
   // Also covers an initially stationary pair with a zero sweep budget.
-  if (state.norm_B <= control.gtol && state.norm_W <= control.gtol)
+  if (state.norm_B <= control.gtol && state.norm_policy <= control.gtol)
     reason = "gradient_tolerance";
-  const DirectEvaluation fresh = direct_evaluate(B, X, A, R, bw, W, lambda_reward);
+  const DirectEvaluation fresh = direct_evaluate(B, X, A, R, bw, W, lambda_reward,
+                                                true, policy, alpha);
   if (fresh.valid) state = fresh;
   else {
     reason = "numerical_failure";
     state.norm_B = NA_REAL;
     state.norm_W = NA_REAL;
+    state.residual_alpha = NA_REAL;
+    state.norm_policy = NA_REAL;
   }
   const bool converged = reason == "gradient_tolerance";
   if (control.verbose > 0) {
@@ -691,7 +986,13 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
     Rcpp::Named("lambda.reward") = lambda_reward,
     Rcpp::Named("gradient.norm") = direct_norms(state),
     Rcpp::Named("stop.reason") = reason,
-    Rcpp::Named("objective.version") = "direct_joint_v1");
+    Rcpp::Named("objective.version") = policy.intercept ? "direct_joint_intercept_v2" : "direct_joint_v1");
+  if (policy.intercept) {
+    out["intercept"] = alpha;
+    out["intercept.bounds"] = Rcpp::NumericVector::create(policy.lower, policy.upper);
+    out["kernel.mean"] = state.geometry.mean.t();
+    out["gradient.intercept"] = state.gradient_alpha;
+  }
   if (collect) out["trace"] = trace;
   return out;
 }
@@ -709,7 +1010,9 @@ Rcpp::List pdose_direct_solver(arma::mat B,
                               double bw, double rho, double eta, double gamma,
                               double tau, double epsilon, double btol,
                               double ftol, double gtol, int maxitr,
-                              int verbose, int ncore, double lambda_reward = 0.1) {
+                              int verbose, int ncore, double lambda_reward = 0.1,
+                              bool intercept = false,
+                              Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds = R_NilValue) {
   // gamma and epsilon are retained only for internal calling compatibility.
   (void)gamma;
   (void)epsilon;
@@ -717,7 +1020,8 @@ Rcpp::List pdose_direct_solver(arma::mat B,
   const DirectControls control = {rho, eta, tau, btol, ftol, gtol,
                                   maxitr, verbose, 30};
   return direct_fit(B, X, A, a_dist, a_seq, R, lambda, bw, lambda_reward,
-                     control, false, R_NilValue);
+                     control, false, R_NilValue,
+                     direct_policy(intercept, intercept_bounds, A), R_NilValue);
 }
 
 // Private audit access to the same loop. A zero direction trial budget
@@ -735,12 +1039,16 @@ Rcpp::List pdose_direct_audit_solver(arma::mat B,
                                     double ftol, double gtol, int maxitr,
                                     int verbose, int ncore, double lambda_reward = 0.1,
                                     bool trace = true, int B_trial_budget = 30,
-                                    Rcpp::Nullable<Rcpp::NumericVector> W_initial = R_NilValue) {
+                                    Rcpp::Nullable<Rcpp::NumericVector> W_initial = R_NilValue,
+                                    bool intercept = false,
+                                    Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds = R_NilValue,
+                                    Rcpp::Nullable<Rcpp::NumericVector> alpha_initial = R_NilValue) {
   (void)gamma;
   (void)epsilon;
   (void)ncore;
   const DirectControls control = {rho, eta, tau, btol, ftol, gtol,
                                   maxitr, verbose, B_trial_budget};
   return direct_fit(B, X, A, a_dist, a_seq, R, lambda, bw, lambda_reward,
-                     control, trace, W_initial);
+                     control, trace, W_initial,
+                     direct_policy(intercept, intercept_bounds, A), alpha_initial);
 }

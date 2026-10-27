@@ -49,6 +49,10 @@ For direct dose learning, `lambda` controls ridge initialization and
 estimated reward. Inspect `converge`, `gradient.norm`, and `stop.reason`
 before using a fitted rule. The nominal reward penalty depends on dose units
 and reward scale; it is not selected by the initialization's GCV procedure.
+Use `intercept = TRUE` to learn an unpenalized average training dose while
+penalizing the centered kernel coefficients. Its `intercept.bounds` constrain
+that average, not individual predictions. This option requires a positive
+`lambda.reward`; the default remains `intercept = FALSE`.
 
 ## References
 

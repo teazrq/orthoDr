@@ -19,12 +19,16 @@
 #'   the partial SAVE model (\code{\link{pSAVE}}) is used. If specified,
 #'   must have \code{nrow(B.initial) == ncol(x)} and
 #'   \code{ncol(B.initial) == ndr}. Will be orthogonalized via Gram-Schmidt.
+#'   Supply a basis when the data cannot support automatic pSAVE initialization.
 #' @param bw Kernel bandwidth, assuming each variable has unit variance.
 #'   If \code{NULL} (default), Silverman's rule is used.
 #' @param lambda Positive finite penalty for kernel ridge regression. For the
 #'   direct method this controls initialization only; a vector of candidates
 #'   invokes GCV once at the initial direction matrix. For pseudo-direct
 #'   learning it controls the final ridge dose rule. Default: \code{0.1}.
+#'   With \code{intercept = TRUE}, GCV includes the fitted intercept. Use a
+#'   scalar if custom intercept bounds constrain the mean initialization target,
+#'   except when all targets equal an attainable constant.
 #' @param K Number of candidate dose grid points used during fitting. The grid
 #'   spans the observed dose range. For direct learning, it is used only for
 #'   initialization. Must be a finite scalar at least one;
@@ -40,10 +44,10 @@
 #'   \code{gamma}, \code{tau}, \code{epsilon}, \code{btol}, \code{ftol},
 #'   \code{gtol}. Direct learning uses analytic gradients and monotone line
 #'   searches, so \code{gamma} and \code{epsilon} are unused. Its \code{gtol}
-#'   is an absolute tolerance for both gradient norms; \code{btol} and
+#'   is an absolute tolerance for the direction and policy residuals; \code{btol} and
 #'   \code{ftol} detect unsuccessful stagnation, not convergence.
 #' @param maxitr Maximum number of iterations. Default: \code{500}. For direct
-#'   learning, an iteration is a completed coefficient and direction sweep;
+#'   learning, an iteration is a completed policy and direction sweep;
 #'   zero returns the initialized model without optimization. Supply a finite
 #'   nonnegative number within the integer range; fractional values are floored.
 #' @param verbose Integer; if > 0, prints iteration progress. Default: 0.
@@ -53,8 +57,16 @@
 #' @param lambda.reward Direct learning only: one finite nonnegative coefficient
 #'   for the squared coefficient penalty in the reward objective. Default:
 #'   \code{0.1}, a nominal choice to assess for your data. Zero removes this
-#'   penalty. It is separate from \code{lambda} and is not selected by GCV.
+#'   penalty when \code{intercept = FALSE}; it must be positive when
+#'   \code{intercept = TRUE}. It is separate from \code{lambda} and is not selected by GCV.
 #'   Omit this argument for \code{method = "pseudo_direct"}.
+#' @param intercept Direct learning only: logical; learn an unpenalized average
+#'   dose with centered kernel features. Default: \code{FALSE}, retaining the
+#'   original rule without a separate intercept. Omit for pseudo-direct learning.
+#' @param intercept.bounds Direct learning with \code{intercept = TRUE} only:
+#'   two finite numbers in increasing order bounding the average fitted dose
+#'   over the training predictors. \code{NULL} uses \code{range(a)}. These bounds
+#'   do not constrain individual predictions. Omit for pseudo-direct learning.
 #'
 #' @return An object of class \code{c("orthoDr", "fit", "pdose")}, which is a
 #'   list containing:
@@ -65,20 +77,28 @@
 #'       this is negative estimated mean reward plus the coefficient penalty.}
 #'     \item{\code{itr}}{Number of completed iterations.}
 #'     \item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
-#'       was reached. Direct learning requires both coefficient and constrained
-#'       direction gradient norms to be at most \code{control$gtol}.}
+#'       was reached. Direct learning requires both policy and constrained
+#'       direction residuals to be at most \code{control$gtol}.}
 #'     \item{\code{value}, \code{penalty}}{Direct learning: estimated mean reward
 #'       and penalty contribution, with \code{fn = -value + penalty}.}
 #'     \item{\code{lambda.init}, \code{lambda.reward}}{Direct learning: selected
 #'       ridge initialization value and the supplied reward-penalty value.}
 #'     \item{\code{gradient.norm}}{Direct learning: gradient norms named
 #'       \code{B} and \code{W}, evaluated at the returned model. The direction
-#'       norm uses the full Euclidean Stiefel tangent projection.}
+#'       norm uses the full Euclidean Stiefel tangent projection. Intercept fits
+#'       also report \code{intercept}, the absolute projected intercept residual,
+#'       and \code{policy}, the joint coefficient/intercept residual norm.}
+#'     \item{\code{intercept}, \code{intercept.bounds}}{Intercept fits: the
+#'       average fitted training dose and its allowed interval.}
+#'     \item{\code{kernel.mean}}{Intercept fits: training kernel column means
+#'       used to center the dose rule when predicting.}
+#'     \item{\code{gradient.intercept}}{Intercept fits: the signed, unprojected
+#'       intercept derivative. It can be nonzero at a constrained optimum.}
 #'     \item{\code{stop.reason}}{Direct learning: whether gradient tolerance,
 #'       the iteration limit, a failed line search, stagnation, or a numerical
 #'       failure stopped fitting. Only gradient tolerance indicates convergence.}
-#'     \item{\code{objective.version}}{Direct learning: \code{"direct_joint_v1"},
-#'       identifying the penalized joint objective.}
+#'     \item{\code{objective.version}}{Direct learning: \code{"direct_joint_v1"}
+#'       without an intercept, or \code{"direct_joint_intercept_v2"} with one.}
 #'     \item{\code{method}}{The method used (\code{"direct"} or
 #'       \code{"pseudo_direct"}).}
 #'     \item{\code{keep.data}}{Whether original data was retained.}
@@ -101,6 +121,18 @@
 #' The ridge parameter \code{lambda} is the amount added to the kernel matrix
 #' during initialization and is not reused as the reward penalty.
 #'
+#' With \code{intercept = TRUE}, the rule is
+#' \deqn{d(x)=\alpha+\{k_B(x)-\mu_B\}^\top w,
+#' \qquad \mu_B=n^{-1}\sum_i k_B(x_i).}
+#' Its training average is \eqn{\alpha}. The intercept is learned jointly with
+#' the coefficients, is not penalized, and must lie in \code{intercept.bounds}.
+#' Every constant rule in that interval is represented by \eqn{w=0} with zero
+#' penalty. The bounds make this unpenalized component finite; they constrain
+#' the training average only. Predictions far from all training centers tend
+#' to \eqn{\alpha-\mu_B^\top w}, not necessarily to \eqn{\alpha}.
+#' Initialization uses centered kernel ridge regression with a fitted intercept.
+#' This option changes the fitted model and does not guarantee better policy value.
+#'
 #' The dose rule uses a finite Gaussian kernel expansion centred at the
 #' projected training observations. During a direction update, the coefficients
 #' remain fixed while the centres and projected standard deviations change
@@ -114,13 +146,18 @@
 #'
 #' Dose comparisons use the standard deviation of the observed training doses
 #' for both observed and candidate doses. Returned doses remain in their
-#' original units. A positive \code{lambda.reward} shrinks the dose rule toward
-#' zero, so its choice depends on dose units and origin as well as reward scale.
+#' original units. Without an intercept, a positive \code{lambda.reward} shrinks
+#' the dose rule toward zero, so its choice depends on the dose origin. With an
+#' intercept, it penalizes the kernel coefficients around the learned average
+#' dose. The penalty also depends on kernel bandwidth and the training centers;
+#' its numerical value is not a fixed amount of function-level regularization.
 #' Multiplying rewards by \eqn{c > 0} requires multiplying this penalty by
 #' \eqn{c} to preserve the objective's tradeoff. Multiplying dose units by
-#' \eqn{s > 0} requires dividing the penalty by \eqn{s^2}. There is no general
-#' invariance to shifting the dose origin. The nominal default is not a
-#' universally optimal choice. Assess several settings using policy evaluation
+#' \eqn{s > 0} requires dividing the penalty by \eqn{s^2}. In intercept mode,
+#' shifting doses, the intercept, and its bounds by the same constant preserves
+#' the objective. These identities do not guarantee identical solver trajectories
+#' with absolute numerical tolerances. The nominal default is not a universally
+#' optimal choice. Assess penalty and bandwidth together using policy evaluation
 #' appropriate to your data and study design. Do not select this parameter by
 #' comparing \code{fn} across settings: each uses a different penalized objective.
 #'
@@ -156,7 +193,7 @@
 #' # direct learning method
 #' orthofit <- orthoDr_pdose(train$X, train$A, train$R,
 #'   ndr = ndr, lambda = 0.1, lambda.reward = 0.1, method = "direct",
-#'   K = sqrt(n), keep.data = TRUE,
+#'   intercept = TRUE, K = sqrt(n), keep.data = TRUE,
 #'   maxitr = 500, verbose = 0, ncore = 2)
 #' orthofit$converge
 #' orthofit$gradient.norm
@@ -176,7 +213,7 @@
 orthoDr_pdose <- function(x, a, r, ndr = 2, B.initial = NULL, bw = NULL, lambda = 0.1,
                        K = sqrt(length(r)), method = c("direct","pseudo_direct"),
                        keep.data = FALSE, control = list(), maxitr = 500, verbose = 0, ncore = 0,
-                       lambda.reward = 0.1)
+                       lambda.reward = 0.1, intercept = FALSE, intercept.bounds = NULL)
 {
   if (!is.matrix(x)) stop("x must be a matrix")
   if (!is.numeric(x)) stop("x must be numerical")
@@ -185,6 +222,8 @@ orthoDr_pdose <- function(x, a, r, ndr = 2, B.initial = NULL, bw = NULL, lambda 
   method <- match.arg(method)
   if (method == "pseudo_direct" && !missing(lambda.reward))
     stop("lambda.reward is only used with method = 'direct'")
+  if (method == "pseudo_direct" && (!missing(intercept) || !missing(intercept.bounds)))
+    stop("intercept and intercept.bounds are only used with method = 'direct'")
   if (method == "direct") {
     finite_scalar <- function(value) {
       is.numeric(value) && !is.complex(value) && length(value) == 1L &&
@@ -198,6 +237,17 @@ orthoDr_pdose <- function(x, a, r, ndr = 2, B.initial = NULL, bw = NULL, lambda 
           any(!is.finite(value)))
         stop(name, " must be a finite numeric vector")
     }
+    if (!is.logical(intercept) || length(intercept) != 1L || is.na(intercept))
+      stop("intercept must be TRUE or FALSE")
+    if (!intercept && !is.null(intercept.bounds))
+      stop("intercept.bounds requires intercept = TRUE")
+    if (intercept) {
+      if (is.null(intercept.bounds)) intercept.bounds <- range(a)
+      if (!is.numeric(intercept.bounds) || is.complex(intercept.bounds) ||
+          !is.null(dim(intercept.bounds)) || length(intercept.bounds) != 2L ||
+          any(!is.finite(intercept.bounds)) || intercept.bounds[1L] >= intercept.bounds[2L])
+        stop("intercept.bounds must contain two finite numbers in increasing order")
+    }
     if (!finite_scalar(ndr) || ndr < 1 || ndr != floor(ndr) || ndr > ncol(x))
       stop("ndr must be an integer between 1 and ncol(x)")
     if (!is.numeric(lambda) || is.complex(lambda) || length(lambda) == 0L ||
@@ -205,6 +255,8 @@ orthoDr_pdose <- function(x, a, r, ndr = 2, B.initial = NULL, bw = NULL, lambda 
       stop("lambda must contain positive finite ridge parameters")
     if (!finite_scalar(lambda.reward) || lambda.reward < 0)
       stop("lambda.reward must be one finite nonnegative number")
+    if (intercept && lambda.reward <= 0)
+      stop("lambda.reward must be positive when intercept = TRUE")
     if (!finite_scalar(maxitr) || maxitr < 0 || floor(maxitr) > .Machine$integer.max)
       stop("maxitr must be a finite nonnegative number within the integer range")
     maxitr <- as.integer(floor(maxitr))
@@ -291,7 +343,7 @@ orthoDr_pdose <- function(x, a, r, ndr = 2, B.initial = NULL, bw = NULL, lambda 
     fit = pdose_direct_solver(B.initial, X, a, A.dist, cdose, r, lambda, bw,
                            control$rho, control$eta, control$gamma, control$tau, control$epsilon,
                            control$btol, control$ftol, control$gtol, maxitr, verbose, ncore,
-                           lambda.reward)
+                           lambda.reward, intercept, intercept.bounds)
     if (verbose > 0)
       cat(paste("Total time: ", round(as.numeric(Sys.time() - pre, units = "secs"), digits = 2), " secs\n", sep = ""))
   }

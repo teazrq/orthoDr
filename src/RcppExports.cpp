@@ -37,8 +37,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // pdose_direct_evaluate
-Rcpp::List pdose_direct_evaluate(const arma::mat B, const arma::mat X, const arma::colvec A, const arma::colvec R, double bw, const arma::colvec W, double lambda_reward, double cayley_step);
-RcppExport SEXP _orthoDr_pdose_direct_evaluate(SEXP BSEXP, SEXP XSEXP, SEXP ASEXP, SEXP RSEXP, SEXP bwSEXP, SEXP WSEXP, SEXP lambda_rewardSEXP, SEXP cayley_stepSEXP) {
+Rcpp::List pdose_direct_evaluate(const arma::mat B, const arma::mat X, const arma::colvec A, const arma::colvec R, double bw, const arma::colvec W, double lambda_reward, double cayley_step, bool intercept, Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds, double alpha);
+RcppExport SEXP _orthoDr_pdose_direct_evaluate(SEXP BSEXP, SEXP XSEXP, SEXP ASEXP, SEXP RSEXP, SEXP bwSEXP, SEXP WSEXP, SEXP lambda_rewardSEXP, SEXP cayley_stepSEXP, SEXP interceptSEXP, SEXP intercept_boundsSEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -50,13 +50,30 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::colvec >::type W(WSEXP);
     Rcpp::traits::input_parameter< double >::type lambda_reward(lambda_rewardSEXP);
     Rcpp::traits::input_parameter< double >::type cayley_step(cayley_stepSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdose_direct_evaluate(B, X, A, R, bw, W, lambda_reward, cayley_step));
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type intercept_bounds(intercept_boundsSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdose_direct_evaluate(B, X, A, R, bw, W, lambda_reward, cayley_step, intercept, intercept_bounds, alpha));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pdose_direct_policy_direction
+Rcpp::List pdose_direct_policy_direction(const arma::vec gradient, const arma::mat hessian, double alpha, const Rcpp::NumericVector intercept_bounds);
+RcppExport SEXP _orthoDr_pdose_direct_policy_direction(SEXP gradientSEXP, SEXP hessianSEXP, SEXP alphaSEXP, SEXP intercept_boundsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec >::type gradient(gradientSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type hessian(hessianSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type intercept_bounds(intercept_boundsSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdose_direct_policy_direction(gradient, hessian, alpha, intercept_bounds));
     return rcpp_result_gen;
 END_RCPP
 }
 // pdose_direct_solver
-Rcpp::List pdose_direct_solver(arma::mat B, const arma::mat X, const arma::colvec A, const arma::mat a_dist, const arma::colvec a_seq, const arma::colvec R, const arma::colvec lambda, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore, double lambda_reward);
-RcppExport SEXP _orthoDr_pdose_direct_solver(SEXP BSEXP, SEXP XSEXP, SEXP ASEXP, SEXP a_distSEXP, SEXP a_seqSEXP, SEXP RSEXP, SEXP lambdaSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP, SEXP lambda_rewardSEXP) {
+Rcpp::List pdose_direct_solver(arma::mat B, const arma::mat X, const arma::colvec A, const arma::mat a_dist, const arma::colvec a_seq, const arma::colvec R, const arma::colvec lambda, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore, double lambda_reward, bool intercept, Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds);
+RcppExport SEXP _orthoDr_pdose_direct_solver(SEXP BSEXP, SEXP XSEXP, SEXP ASEXP, SEXP a_distSEXP, SEXP a_seqSEXP, SEXP RSEXP, SEXP lambdaSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP, SEXP lambda_rewardSEXP, SEXP interceptSEXP, SEXP intercept_boundsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -80,13 +97,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
     Rcpp::traits::input_parameter< double >::type lambda_reward(lambda_rewardSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdose_direct_solver(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward));
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type intercept_bounds(intercept_boundsSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdose_direct_solver(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, intercept, intercept_bounds));
     return rcpp_result_gen;
 END_RCPP
 }
 // pdose_direct_audit_solver
-Rcpp::List pdose_direct_audit_solver(arma::mat B, const arma::mat X, const arma::colvec A, const arma::mat a_dist, const arma::colvec a_seq, const arma::colvec R, const arma::colvec lambda, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore, double lambda_reward, bool trace, int B_trial_budget, Rcpp::Nullable<Rcpp::NumericVector> W_initial);
-RcppExport SEXP _orthoDr_pdose_direct_audit_solver(SEXP BSEXP, SEXP XSEXP, SEXP ASEXP, SEXP a_distSEXP, SEXP a_seqSEXP, SEXP RSEXP, SEXP lambdaSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP, SEXP lambda_rewardSEXP, SEXP traceSEXP, SEXP B_trial_budgetSEXP, SEXP W_initialSEXP) {
+Rcpp::List pdose_direct_audit_solver(arma::mat B, const arma::mat X, const arma::colvec A, const arma::mat a_dist, const arma::colvec a_seq, const arma::colvec R, const arma::colvec lambda, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore, double lambda_reward, bool trace, int B_trial_budget, Rcpp::Nullable<Rcpp::NumericVector> W_initial, bool intercept, Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds, Rcpp::Nullable<Rcpp::NumericVector> alpha_initial);
+RcppExport SEXP _orthoDr_pdose_direct_audit_solver(SEXP BSEXP, SEXP XSEXP, SEXP ASEXP, SEXP a_distSEXP, SEXP a_seqSEXP, SEXP RSEXP, SEXP lambdaSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP, SEXP lambda_rewardSEXP, SEXP traceSEXP, SEXP B_trial_budgetSEXP, SEXP W_initialSEXP, SEXP interceptSEXP, SEXP intercept_boundsSEXP, SEXP alpha_initialSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -113,7 +132,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type trace(traceSEXP);
     Rcpp::traits::input_parameter< int >::type B_trial_budget(B_trial_budgetSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type W_initial(W_initialSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdose_direct_audit_solver(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, trace, B_trial_budget, W_initial));
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type intercept_bounds(intercept_boundsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type alpha_initial(alpha_initialSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdose_direct_audit_solver(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, trace, B_trial_budget, W_initial, intercept, intercept_bounds, alpha_initial));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -456,9 +478,10 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_orthoDr_gen_solver", (DL_FUNC) &_orthoDr_gen_solver, 15},
-    {"_orthoDr_pdose_direct_evaluate", (DL_FUNC) &_orthoDr_pdose_direct_evaluate, 8},
-    {"_orthoDr_pdose_direct_solver", (DL_FUNC) &_orthoDr_pdose_direct_solver, 20},
-    {"_orthoDr_pdose_direct_audit_solver", (DL_FUNC) &_orthoDr_pdose_direct_audit_solver, 23},
+    {"_orthoDr_pdose_direct_evaluate", (DL_FUNC) &_orthoDr_pdose_direct_evaluate, 11},
+    {"_orthoDr_pdose_direct_policy_direction", (DL_FUNC) &_orthoDr_pdose_direct_policy_direction, 4},
+    {"_orthoDr_pdose_direct_solver", (DL_FUNC) &_orthoDr_pdose_direct_solver, 22},
+    {"_orthoDr_pdose_direct_audit_solver", (DL_FUNC) &_orthoDr_pdose_direct_audit_solver, 26},
     {"_orthoDr_dosepred", (DL_FUNC) &_orthoDr_dosepred, 5},
     {"_orthoDr_pdose_semi_solver", (DL_FUNC) &_orthoDr_pdose_semi_solver, 19},
     {"_orthoDr_local_f", (DL_FUNC) &_orthoDr_local_f, 5},

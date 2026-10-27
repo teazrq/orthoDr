@@ -240,15 +240,23 @@ test_that("pSAVE bounds the central interval and preserves threshold multiplicit
     .package = "orthoDr"
   )
   for (n in c(70L, 99L, 100L, 101L, 200L, 201L)) {
-    x <- matrix(seq_len(n * 2), n, 2)
+    x <- cbind(seq_len(n), sin(seq_len(n)))
     a <- rep(seq_len(ceiling(n / 2)), each = 2)[seq_len(n)]
     groups <- moments <- list()
     B <- pSAVE(x, a, seq_len(n), ndr = 1)
     indices <- seq.int(max(1L, floor(n / 2 - 50)), min(n, floor(n / 2 + 50)))
     thresholds <- sort(a)[indices]
-    expect_identical(groups, lapply(thresholds, function(cut) as.numeric(a <= cut)))
     if (n != 70L)
       expect_identical(thresholds, sort(a)[(n / 2 - 50):(n / 2 + 50)])
+    admissible <- vapply(thresholds, function(cut) {
+      group <- as.numeric(a <= cut)
+      all(vapply(unique(group), function(g) {
+        xx <- x[group == g, , drop = FALSE]
+        nrow(xx) >= 3L && qr(sweep(xx, 2L, colMeans(xx), "-"))$rank == 2L
+      }, logical(1)))
+    }, logical(1))
+    thresholds <- thresholds[admissible]
+    expect_identical(groups, lapply(thresholds, function(cut) as.numeric(a <= cut)))
     expected <- eigen(Reduce("+", moments), symmetric = FALSE)$vectors[, 1, drop = FALSE]
     expect_equal(tcrossprod(B), tcrossprod(expected), tolerance = 1e-12)
   }

@@ -7,16 +7,17 @@
 pSAVE(x, a, r, ndr = 2, nslices0 = 2)
 }
 \arguments{
-\item{x}{A matrix (n x p) of features (continuous only).}
+\item{x}{A finite numeric matrix (n x p) of features (continuous only),
+with at least two rows, one column, and full centred column rank.}
 
-\item{a}{A numeric vector of observed dose levels.}
+\item{a}{A finite numeric vector of observed dose levels, one per row of x.}
 
-\item{r}{A numeric vector of rewards (outcomes).}
+\item{r}{A finite numeric vector of rewards (outcomes), one per row of x.}
 
-\item{ndr}{Integer; number of structural dimensions to estimate.
+\item{ndr}{Integer between 1 and p; number of structural dimensions to estimate.
 Default: \code{2}.}
 
-\item{nslices0}{Integer; number of slices used for SAVE.
+\item{nslices0}{Positive integer; requested number of outcome slices for SAVE.
 Default: \code{2}.}
 }
 \value{
@@ -27,6 +28,21 @@ central subspace, ordered by eigenvalues.
 Fits the partial SAVE model for dose-response settings. This model relies
 on strong assumptions; its solution is primarily used as an initial value
 in \code{\link{orthoDr_pdose}} optimization.
+}
+\details{
+Each central dose threshold contributes a grouped SAVE moment only when
+every nonempty dose group has at least p + 1 observations and full centred
+predictor rank. Repeated thresholds retain their repeated weights, and a
+threshold with one observed dose group is allowed. Outcome slices of size
+one or two retain the SAVE dependency's identity contribution.
+
+For p > 1, initialization fails if no usable dose threshold remains or if
+every retained group has either one outcome slice or only slices smaller
+than three. These cases supply no directional slice information. When used
+to initialize \code{\link{orthoDr_pdose}}, supply \code{B.initial} to bypass
+pSAVE if automatic initialization is unavailable. For a varying single
+predictor and ndr = 1, the entire available feature subspace is returned
+exactly as \code{matrix(1, 1, 1)} after input validation.
 }
 \examples{
 set.seed(1)
