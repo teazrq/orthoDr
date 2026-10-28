@@ -106,5 +106,5 @@ orthogonality constraints. \emph{Mathematical Programming}, 142(1-2),
 Zhang, H. and Hager, W. W. (2004). A nonmonotone line search technique
 and its application to unconstrained optimization.
 \emph{SIAM Journal on Optimization}, 14(4), 1043--1056.
-\doi{10.1137/S1052623403426556}.
+\doi{10.1137/S1052623403428208}.
 }

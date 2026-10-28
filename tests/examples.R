@@ -4,10 +4,20 @@ check_getting_started <- function() {
   grDevices::pdf(file = tempfile(fileext = ".pdf"))
   on.exit(grDevices::dev.off(), add = TRUE)
   e <- new.env(parent = globalenv())
+  sys.source(system.file("examples", "source-md5.R", package = "orthoDr"),
+             envir = environment())
+  hash_cases <- replicate(3L, tempfile())
+  on.exit(unlink(hash_cases), add = TRUE)
+  writeBin(charToRaw("x <- 1\n"), hash_cases[1L])
+  writeBin(charToRaw("x <- 1\r\n"), hash_cases[2L])
+  writeBin(charToRaw("x <- 2\n"), hash_cases[3L])
+  hashes <- unname(vapply(hash_cases, canonical_source_md5, character(1)))
+  stopifnot(identical(hashes[1L], hashes[2L]),
+            !identical(hashes[1L], hashes[3L]))
   sys.source(system.file("examples", "getting-started.R", package = "orthoDr"),
              envir = e)
-  source_hash <- unname(tools::md5sum(system.file(
-    "examples", "getting-started.R", package = "orthoDr")))
+  source_hash <- canonical_source_md5(system.file(
+    "examples", "getting-started.R", package = "orthoDr"))
   guide <- readLines(system.file("examples", "getting-started.md", package = "orthoDr"))
   stopifnot(
     any(grepl(paste0("Source MD5: ", source_hash), guide, fixed = TRUE)),
@@ -24,6 +34,10 @@ check_getting_started <- function() {
     all(apply(e$surv_prediction$surv, 2, function(s) all(diff(s) <= 1e-12))),
     length(e$dose_prediction$pred) == 5L,
     all(is.finite(e$dose_prediction$pred)),
+    isTRUE(e$dose_fit$converge),
+    identical(e$dose_fit$stop.reason, "gradient_tolerance"),
+    all(e$dose_fit$gradient.norm <= 1e-6),
+    abs(e$dose_fit$fn + e$dose_fit$value - e$dose_fit$penalty) < 1e-12,
     length(e$pseudo_prediction$pred) == 5L,
     all(is.finite(e$pseudo_prediction$pred)),
     identical(dim(e$pseudo_fit$B), c(3L, 2L)),

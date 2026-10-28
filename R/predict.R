@@ -30,6 +30,10 @@
 #' of the supplied features and the training projection scales. Personalized
 #' dose predictions evaluate a continuous fitted rule and are not constrained
 #' to the fitting grid or observed dose range.
+#' For direct fits made with \code{intercept = TRUE}, prediction includes the
+#' learned average-dose component and uses the training kernel means for
+#' centering. The intercept bounds restrict the average fitted training dose,
+#' not individual predictions.
 #'
 #' Legacy forward survival objects without a stored bandwidth require the
 #' original bandwidth to be restored or the model to be refitted. If all
@@ -81,7 +85,11 @@
 #' # the direct learning method
 #' orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = 0.1,
 #'                       method = "direct", K = as.integer(sqrt(n)), keep.data = TRUE,
-#'                       maxitr = 150, verbose = FALSE, ncore = 2)
+#'                       maxitr = 500, verbose = FALSE, ncore = 2, lambda.reward = 0.1,
+#'                       intercept = TRUE)
+#' orthofit$converge
+#' orthofit$gradient.norm
+#' orthofit$stop.reason
 #'
 #' predict(orthofit,test$X)
 #'
@@ -236,6 +244,18 @@ predict_orthoDr_pdose <- function(object, testx, ...)
 
   if (class(object)[3] == "pdose")
       pred = dosepred(object$B, object$x, testx, object$bw, object$W)
+
+  if (identical(object$objective.version, "direct_joint_intercept_v2")) {
+    alpha <- object$intercept
+    kernel.mean <- object$kernel.mean
+    if (!is.numeric(alpha) || is.complex(alpha) || length(alpha) != 1L ||
+        !is.finite(alpha) || !is.numeric(kernel.mean) || is.complex(kernel.mean) ||
+        length(kernel.mean) != nrow(object$x) || any(!is.finite(kernel.mean)))
+      stop("This intercept fit is missing valid intercept or kernel.mean state; refit the model.")
+    pred <- pred + alpha - sum(kernel.mean * object$W)
+  } else if (!is.null(object$intercept) || !is.null(object$kernel.mean)) {
+    stop("This dose fit has intercept state without its supported objective.version; refit the model.")
+  }
 
   return(list("pred" = pred))
 }

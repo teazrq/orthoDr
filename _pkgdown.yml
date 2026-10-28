@@ -2,6 +2,7 @@ url: https://teazrq.github.io/orthoDr/
 
 template:
   bootstrap: 5
+  math-rendering: katex
   bslib:
     preset: cosmo
     primary: "#1c5fa8"

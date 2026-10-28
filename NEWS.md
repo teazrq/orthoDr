@@ -1,5 +1,30 @@
 # orthoDr (development version)
 
+* Updated direct learning with `intercept = TRUE` to propose adaptive spectral
+  step lengths for direction updates. The objective, coefficient penalty,
+  mean-dose bounds, initialization, and joint residual convergence criterion
+  are unchanged. Fits can still stop before reaching the gradient tolerance;
+  inspect `stop.reason` and `gradient.norm`.
+* Added optional `intercept = TRUE` for direct dose learning. It learns an
+  unpenalized average training dose and penalizes centered kernel coefficients.
+  `intercept.bounds` constrains that average, not individual predictions.
+  Intercept fits require a positive `lambda.reward` and report their joint
+  policy residual. The default remains `intercept = FALSE`; older fitted
+  objects retain their prediction behavior.
+* Repaired automatic pSAVE initialization for small samples by excluding dose
+  groups without a usable predictor covariance and handling the dependency's
+  one-breakpoint slicing case. Structurally uninformative slice configurations
+  now give a specific error suggesting `B.initial`. Valid historical thresholds,
+  including ties, retain their contributions for both dose-learning methods.
+* Revised direct dose learning to optimize one penalized reward objective over
+  both dose-rule coefficients and directions. `lambda` now controls its ridge
+  initialization only; the new `lambda.reward` controls the squared coefficient
+  penalty. Kernel centres and projected scales follow the fitted directions.
+  Direct fits now report the estimated reward, penalty, both gradient norms,
+  and stopping reason. Failed line searches preserve the last completed sweep,
+  and small steps no longer imply convergence. The direct `fn` field includes
+  the reward penalty, so it cannot be compared directly with older values.
+  Existing fitted objects retain their prediction behavior.
 * Expanded the tutorials with reduced predictors, predicted survival curves,
   and explanations of the different targets and dimensions in dose finding.
   Clarified prediction inputs and corrected example and reference descriptions.
@@ -24,7 +49,7 @@
 * Protected optimizer step calculations at stationary and degenerate updates,
   prevented numerical stagnation from reporting movement-based convergence,
   and corrected completed iteration counts and maximization histories.
-  Direct-dose gradient stopping retains its conditional-policy interpretation.
+  Direct-dose convergence now requires stationarity in both parameter blocks.
 * Validated general optimizer callback values on every evaluation and accepted
   integer as well as double numeric callbacks.
 * Preserved requested regression initializer dimensions, repaired CP-SIR and
@@ -38,10 +63,6 @@
 * Fixed const-reference issues in C++ headers
 * Migrated to roxygen2-managed NAMESPACE with explicit exports
 * Updated CITATION to modern `bibentry()` API
-
-# orthoDr 1.0.0
-
-* CRAN release v1.0
 
 # orthoDr 0.6.2
 

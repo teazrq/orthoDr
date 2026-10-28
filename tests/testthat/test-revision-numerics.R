@@ -35,13 +35,6 @@ revision_dose_w <- function(B, d, grid, lambda = .1) {
   unname(drop(solve(k + diag(lambda[which.min(scores)], nrow(k)), target)))
 }
 
-revision_dose_f <- function(B, W, d) {
-  k <- revision_x_kernel(B, d$x, d$bw)
-  dose <- drop(crossprod(k, W))
-  weights <- k * exp(-(outer(d$a, dose, "-") / (sd(d$a) * d$bw))^2)
-  -mean(drop(crossprod(weights, d$r)) / colSums(weights))
-}
-
 revision_semi_f <- function(B, d) {
   z <- cbind(d$x %*% B, d$a)
   z <- sweep(z, 2, apply(z, 2, sd) * d$bw * sqrt(2), "/")
@@ -206,63 +199,25 @@ test_that("dose wrapper uses one observed scale, resolves defaults and floors K 
   for (bad in list(0, .9, Inf, NA_real_, c(1, 2), "3"))
     expect_error(run(a, K = bad), "K must be")
   expect_error(run(rep(1, 150)), "positive finite standard deviation")
-  expect_error(run(replace(a, 1, Inf)), "positive finite standard deviation")
+  expect_error(run(replace(a, 1, Inf)), "a must be a finite numeric vector")
   expect_error(run(a, method = "unknown"), "arg")
 })
 
-test_that("direct dose matches an independent conditional-gradient update and final state", {
+test_that("pseudo-direct retains its ridge policy and objective with one grid candidate", {
   d <- revision_dose_data()
-  grid <- seq(min(d$a), max(d$a), length.out = 7L)
-  W <- revision_dose_w(d$B, d, grid, c(.03, .1, .5))
-  f0 <- revision_dose_f(d$B, W, d)
-  epsilon <- 1e-6
-  G <- matrix(vapply(seq_len(nrow(d$B)), function(i) {
-    perturbed <- d$B
-    perturbed[i, 1] <- perturbed[i, 1] + epsilon
-    (revision_dose_f(perturbed, W, d) - f0) / epsilon
-  }, numeric(1)), nrow(d$B), 1)
-  projected <- G - d$B %*% crossprod(G, d$B)
-  tau <- .001
-  reference_B <- NULL
-  for (trial in seq_len(5L)) {
-    reference_B <- revision_cayley(d$B, G, tau)
-    reference_W <- revision_dose_w(reference_B, d, grid, c(.03, .1, .5))
-    reference_f <- revision_dose_f(reference_B, reference_W, d)
-    if (reference_f <= f0 - tau * 1e-4 * sum(projected^2) || trial == 5L) break
-    tau <- .2 * tau
+  for (K in c(1L, 7L)) {
+    fit <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B,
+                         bw = d$bw, K = K, method = "pseudo_direct", maxitr = 1, ncore = 1)
+    expect_true(all(is.finite(fit$B)))
+    expect_true(all(is.finite(fit$W)))
+    grid <- seq(min(d$a), max(d$a), length.out = K)
+    expect_equal(as.vector(fit$W), revision_dose_w(fit$B, d, grid), tolerance = 1e-9)
+    expect_equal(fit$fn, revision_semi_f(fit$B, d), tolerance = 1e-12)
   }
-  fit <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B, bw = d$bw,
-                       lambda = c(.03, .1, .5), K = 7, method = "direct", maxitr = 1, ncore = 1)
-  expect_equal(fit$B, reference_B, tolerance = 1e-9)
-  expect_equal(as.vector(fit$W), reference_W, tolerance = 1e-8)
-  expect_equal(fit$fn, reference_f, tolerance = 1e-10)
-  expect_equal(fit$fn, revision_dose_f(fit$B, as.vector(fit$W), d), tolerance = 1e-12)
-  expect_equal(fit$itr, 1L)
-  expect_identical(fit$converge, FALSE)
-
-  D <- matrix(c(-.8, .6, 0), 3, 1)
-  plus <- d$B * cos(epsilon) + D * sin(epsilon)
-  minus <- d$B * cos(epsilon) - D * sin(epsilon)
-  conditional <- (revision_dose_f(plus, W, d) - revision_dose_f(minus, W, d)) / (2 * epsilon)
-  profile <- (revision_dose_f(plus, revision_dose_w(plus, d, grid, c(.03, .1, .5)), d) -
-                revision_dose_f(minus, revision_dose_w(minus, d, grid, c(.03, .1, .5)), d)) / (2 * epsilon)
-  expect_gt(abs(conditional - profile), .001)
 })
 
-test_that("both dose methods support one grid candidate and retain their own objectives", {
+test_that("direct defaults resolve to the explicit method", {
   d <- revision_dose_data()
-  for (method in c("direct", "pseudo_direct")) {
-    for (K in c(1L, 7L)) {
-      fit <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B,
-                           bw = d$bw, K = K, method = method, maxitr = 1, ncore = 1)
-      expect_true(all(is.finite(fit$B)))
-      expect_true(all(is.finite(fit$W)))
-      grid <- seq(min(d$a), max(d$a), length.out = K)
-      expect_equal(as.vector(fit$W), revision_dose_w(fit$B, d, grid), tolerance = 1e-9)
-      reference_f <- if (method == "direct") revision_dose_f(fit$B, as.vector(fit$W), d) else revision_semi_f(fit$B, d)
-      expect_equal(fit$fn, reference_f, tolerance = 1e-12)
-    }
-  }
   defaults <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B,
                             bw = d$bw, K = 7, maxitr = 1, ncore = 1)
   explicit <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B,
@@ -270,7 +225,7 @@ test_that("both dose methods support one grid candidate and retain their own obj
   expect_equal(defaults, explicit)
 })
 
-test_that("built-in flat stops finalize policies and preserve direct stopping timing", {
+test_that("regression and pseudo-direct flat stops finalize their original policies", {
   d <- revision_dose_data()
   for (cores in c(1L, 2L)) {
     flat_reg <- orthoDr:::local_solver(d$B, d$x, matrix(0, nrow(d$x), 1), d$bw,
@@ -284,11 +239,6 @@ test_that("built-in flat stops finalize policies and preserve direct stopping ti
     flat_d <- d
     flat_d$r[] <- 0
     expect_equal(as.vector(semi$W), revision_dose_w(semi$B, flat_d, min(d$a)), tolerance = 1e-10)
-    direct <- orthoDr_pdose(d$x, d$a, rep(0, nrow(d$x)), ndr = 1, B.initial = d$B,
-                            bw = d$bw, K = 1, method = "direct", maxitr = 5, ncore = cores)
-    expect_equal(direct$itr, 5L)
-    expect_identical(direct$converge, TRUE)
-    expect_equal(direct$B, d$B)
   }
 })
 
@@ -300,7 +250,7 @@ test_that("built-in nonstationary stagnation respects effective limits and core 
                        control = list(tau = 1e-20, gtol = 1e-20))
     expect_equal(reg$itr, 5L)
     expect_identical(reg$converge, FALSE)
-    for (method in c("direct", "pseudo_direct")) {
+    for (method in "pseudo_direct") {
       fit <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B, bw = d$bw,
                            K = 7, method = method, maxitr = 8, ncore = cores,
                            control = list(tau = 1e-20, gtol = 1e-20))

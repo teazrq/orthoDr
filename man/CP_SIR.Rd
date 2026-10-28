@@ -38,7 +38,7 @@ first and last event ranks and truncated to integer indices. Risk sets
 include all observations at or after the event time.
 }
 \examples{
-# This is setting 1 in Sun et. al. (2017) with reduced sample size
+# Setting 1 from Sun et al. (2019), reduced sample size
 library(MASS)
 set.seed(1)
 N = 200; P = 6
@@ -57,9 +57,9 @@ cpsir.fit = CP_SIR(dataX, Y, Censor)
 distance(failEDR, cpsir.fit$vectors[, 1:ndr, drop = FALSE], "dist")
 }
 \references{
-Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2017). Counting process based
-dimension reduction method for censored outcomes.
-\emph{arXiv preprint} \doi{10.48550/arXiv.1704.05046}.
+Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2019). Counting process-based
+dimension reduction methods for censored outcomes.
+\emph{Biometrika}, 106(1), 181--196. \doi{10.1093/biomet/asy064}.
 }
 \seealso{
 \code{\link{orthoDr_surv}}, \code{\link{silverman}}

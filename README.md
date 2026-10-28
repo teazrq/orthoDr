@@ -44,10 +44,22 @@ Numerical results can differ between versions.
 
 For documentation matching your installed version, use `help(package = "orthoDr")`.
 
+For direct dose learning, `lambda` controls ridge initialization and
+`lambda.reward` controls the squared coefficient penalty when optimizing
+estimated reward. Inspect `converge`, `gradient.norm`, and `stop.reason`
+before using a fitted rule. The convergence flag concerns numerical
+stationarity; policy quality needs separate evaluation. The nominal reward
+penalty depends on dose units and reward scale; it is not selected by the
+initialization's GCV procedure.
+Use `intercept = TRUE` to learn an unpenalized average training dose while
+penalizing the centered kernel coefficients. Its `intercept.bounds` constrain
+that average, not individual predictions. This option requires a positive
+`lambda.reward`; the default remains `intercept = FALSE`.
+
 ## References
 
 - Wen, Z. & Yin, W. (2013). A feasible method for optimization with orthogonality constraints. *Mathematical Programming*, 142(1-2), 397–434.
 - Ma, Y. & Zhu, L. (2012). A semiparametric approach to dimension reduction. *JASA*, 107(497), 168–179.
 - Ma, Y. & Zhu, L. (2013). Efficient estimation in sufficient dimension reduction. *Annals of Statistics*, 41(1), 250–268.
-- Sun, Q., Zhu, R., Wang, T. & Zeng, D. (2017). Counting process based dimension reduction for censored outcomes. arXiv:1704.05046.
+- Sun, Q., Zhu, R., Wang, T. & Zeng, D. (2019). Counting process-based dimension reduction methods for censored outcomes. *Biometrika*, 106(1), 181-196. [doi:10.1093/biomet/asy064](https://doi.org/10.1093/biomet/asy064).
 - Zhou, W., Zhu, R. & Zeng, D. (2021). A parsimonious personalized dose-finding model via dimension reduction. *Biometrika*, 108(3), 643-659. [doi:10.1093/biomet/asaa087](https://doi.org/10.1093/biomet/asaa087).

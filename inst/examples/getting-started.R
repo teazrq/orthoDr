@@ -169,15 +169,39 @@ new_dose_x <- matrix(runif(5 * 3, -1, 1), ncol = 3)
 #' ### Fit a dose rule directly
 #'
 #' The direct method targets the dose rule. Its simulated target depends only
-#' on $x_2$, so we use `ndr = 1`. We choose `K = 12` candidate doses and
-#' `lambda = 0.1` for this example; these are not selected by the fit.
+#' on $x_2$, so we use `ndr = 1`. The `K = 12` candidate doses and ridge
+#' parameter `lambda = 0.1` initialize the rule. The fit then minimizes
+#' negative estimated mean reward plus a squared coefficient penalty controlled by
+#' `lambda.reward`. We set it to 0.1 here; this choice is not selected by GCV
+#' and should be assessed together with the kernel bandwidth for your data.
+#' We opt into `intercept = TRUE` to learn an unpenalized average dose and
+#' penalize the centered kernel coefficients. The default is `FALSE`.
 
 dose_fit <- orthoDr_pdose(
   x_dose, observed_dose, reward, method = "direct", ndr = 1,
-  K = 12, lambda = 0.1, keep.data = TRUE, maxitr = 500, ncore = 1
+  K = 12, lambda = 0.1, lambda.reward = 0.1, intercept = TRUE,
+  keep.data = TRUE, maxitr = 500, ncore = 1
 )
-dose_prediction <- predict(dose_fit, new_dose_x)
 dose_fit$converge
+data.frame(gradient_norm = dose_fit$gradient.norm)
+dose_fit$stop.reason
+
+#' For this fit, `converge = TRUE` means that the joint policy residual and
+#' direction gradient meet the numerical tolerance. The policy residual combines
+#' the coefficient gradient with the intercept condition at its bounds.
+#' If convergence is `FALSE`, inspect `stop.reason` and the residuals before using
+#' the rule. A small
+#' change between iterations alone does not establish convergence.
+
+dose_fit$intercept
+dose_fit$intercept.bounds
+
+#' `intercept` is the average fitted dose over the training predictors.
+#' By default its bounds are the observed dose range. Supply
+#' `intercept.bounds = c(lower, upper)` when a different mean-dose interval is
+#' appropriate. These bounds do not restrict each individual prediction.
+
+dose_prediction <- predict(dose_fit, new_dose_x)
 
 #' ### Fit the reward surface first
 #'
@@ -205,7 +229,9 @@ round(data.frame(
   simulated_optimal = 1 + 0.3 * new_dose_x[, 2]
 ), 3)
 
-#' The candidate grid is used during fitting. Final predictions come from a
+#' The direct method uses the candidate grid only to initialize its rule;
+#' pseudo-direct learning uses it to construct the final ridge rule.
+#' Final predictions come from a
 #' continuous fitted rule, so they need not be grid points and are not constrained
 #' to the observed dose range. This table illustrates the returned values, not
 #' the relative performance of the methods. Numerical convergence does not

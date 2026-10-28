@@ -5,8 +5,24 @@ gen_solver <- function(B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, 
     .Call(`_orthoDr_gen_solver`, B, f, g, env, useg, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose)
 }
 
-pdose_direct_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_pdose_direct_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+pdose_direct_evaluate <- function(B, X, A, R, bw, W, lambda_reward, cayley_step = 0, intercept = FALSE, intercept_bounds = NULL, alpha = 0) {
+    .Call(`_orthoDr_pdose_direct_evaluate`, B, X, A, R, bw, W, lambda_reward, cayley_step, intercept, intercept_bounds, alpha)
+}
+
+pdose_direct_policy_direction <- function(gradient, hessian, alpha, intercept_bounds) {
+    .Call(`_orthoDr_pdose_direct_policy_direction`, gradient, hessian, alpha, intercept_bounds)
+}
+
+pdose_direct_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward = 0.1, intercept = FALSE, intercept_bounds = NULL) {
+    .Call(`_orthoDr_pdose_direct_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, intercept, intercept_bounds)
+}
+
+pdose_direct_audit_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward = 0.1, trace = TRUE, B_trial_budget = 30L, W_initial = NULL, intercept = FALSE, intercept_bounds = NULL, alpha_initial = NULL, audit_fail_final_sweep = -1L) {
+    .Call(`_orthoDr_pdose_direct_audit_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, trace, B_trial_budget, W_initial, intercept, intercept_bounds, alpha_initial, audit_fail_final_sweep)
+}
+
+pdose_direct_spectral_scalar <- function(SS, SZ, ZZ, m, fallback, finite_vectors = TRUE, evaluation_valid = TRUE) {
+    .Call(`_orthoDr_pdose_direct_spectral_scalar`, SS, SZ, ZZ, m, fallback, finite_vectors, evaluation_valid)
 }
 
 dosepred <- function(B, X, X_test, bw, W) {
