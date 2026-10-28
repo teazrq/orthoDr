@@ -73,7 +73,7 @@ units, with columns normalized to unit length.}
 }
 \description{
 Fits a counting-process-based semiparametric dimension reduction (IR-CP)
-model for right-censored survival outcomes (Sun, Zhu, Wang & Zeng, 2017).
+model for right-censored survival outcomes (Sun, Zhu, Wang & Zeng, 2019).
 Three estimating equations are available: \code{"forward"}, \code{"dn"},
 and \code{"dm"}.
 }
@@ -84,7 +84,7 @@ prediction for all three methods. If all observed times are equal, the
 centered time coordinate is set to zero, giving a constant time kernel.
 }
 \examples{
-# Setting 1 from Sun et al. (2017), reduced sample size
+# Setting 1 from Sun et al. (2019), reduced sample size
 library(MASS)
 set.seed(1)
 N <- 200; P <- 6
@@ -112,9 +112,9 @@ distance(failEDR, dm.fit$B, "dist")
 
 }
 \references{
-Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2017). Counting process based
-dimension reduction method for censored outcomes.
-\emph{arXiv preprint} \doi{10.48550/arXiv.1704.05046}.
+Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2019). Counting process-based
+dimension reduction methods for censored outcomes.
+\emph{Biometrika}, 106(1), 181--196. \doi{10.1093/biomet/asy064}.
 }
 \seealso{
 \code{\link{orthoDr_pdose}}, \code{\link{CP_SIR}}, \code{\link{view_dr_surv}}

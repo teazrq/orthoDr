@@ -1,5 +1,10 @@
 # orthoDr (development version)
 
+* Updated direct learning with `intercept = TRUE` to propose adaptive spectral
+  step lengths for direction updates. The objective, coefficient penalty,
+  mean-dose bounds, initialization, and joint residual convergence criterion
+  are unchanged. Fits can still stop before reaching the gradient tolerance;
+  inspect `stop.reason` and `gradient.norm`.
 * Added optional `intercept = TRUE` for direct dose learning. It learns an
   unpenalized average training dose and penalizes centered kernel coefficients.
   `intercept.bounds` constrains that average, not individual predictions.
@@ -58,10 +63,6 @@
 * Fixed const-reference issues in C++ headers
 * Migrated to roxygen2-managed NAMESPACE with explicit exports
 * Updated CITATION to modern `bibentry()` API
-
-# orthoDr 1.0.0
-
-* CRAN release v1.0
 
 # orthoDr 0.6.2
 

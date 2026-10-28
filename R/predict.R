@@ -89,6 +89,7 @@
 #'                       intercept = TRUE)
 #' orthofit$converge
 #' orthofit$gradient.norm
+#' orthofit$stop.reason
 #'
 #' predict(orthofit,test$X)
 #'

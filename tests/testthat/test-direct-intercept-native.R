@@ -294,7 +294,9 @@ test_that("constant rewards, finite budgets and stagnation retain fresh policy d
   expect_identical(initial$stop.reason, "iteration_limit")
   intercept_expect_state(initial, z)
   small <- intercept_audit(z, maxitr = 8, w = z$w, alpha = z$alpha,
-    control = list(tau = 1e-12, gtol = 1e-20, btol = 1e-6, ftol = 1e-6))
+    # Loose change thresholds deliberately exercise stagnation. A tiny
+    # initial tau no longer implies tiny later steps after spectral scaling.
+    control = list(tau = 1e-12, gtol = 1e-20, btol = 10, ftol = 10))
   expect_equal(small$itr, 5)
   expect_identical(small$stop.reason, "stagnation")
   expect_false(small$converge)

@@ -103,6 +103,7 @@ orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = 0.1,
                       intercept = TRUE)
 orthofit$converge
 orthofit$gradient.norm
+orthofit$stop.reason
 
 predict(orthofit,test$X)
 

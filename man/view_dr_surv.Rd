@@ -57,9 +57,9 @@ orthoDr.fit = orthoDr_surv(dataX, Y, Censor, ndr = 1, method = "dm")
 view_dr_surv(dataX, Y, Censor, orthoDr.fit$B)
 }
 \references{
-Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2017). Counting process based
-dimension reduction method for censored outcomes.
-\emph{arXiv preprint} \doi{10.48550/arXiv.1704.05046}.
+Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2019). Counting process-based
+dimension reduction methods for censored outcomes.
+\emph{Biometrika}, 106(1), 181--196. \doi{10.1093/biomet/asy064}.
 }
 \seealso{
 \code{\link{orthoDr_surv}}, \code{\link{distance}}

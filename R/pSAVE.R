@@ -35,10 +35,10 @@
 #' exactly as \code{matrix(1, 1, 1)} after input validation.
 #'
 #' @references
-#' Feng, Z., Wen, M.X., Yu, Z. and Zhu, L. (2013). On partial sufficient
+#' Feng, Z., Wen, X.M., Yu, Z. and Zhu, L. (2013). On partial sufficient
 #' dimension reduction with applications to partially linear multi-index
 #' models. \emph{Journal of the American Statistical Association},
-#' 108(501), 237--256. \doi{10.1080/01621459.2013.849167}.
+#' 108(501), 237--246. \doi{10.1080/01621459.2012.746065}.
 #'
 #' @seealso \code{\link{orthoDr_pdose}}
 #'

@@ -17,8 +17,12 @@ pdose_direct_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta,
     .Call(`_orthoDr_pdose_direct_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, intercept, intercept_bounds)
 }
 
-pdose_direct_audit_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward = 0.1, trace = TRUE, B_trial_budget = 30L, W_initial = NULL, intercept = FALSE, intercept_bounds = NULL, alpha_initial = NULL) {
-    .Call(`_orthoDr_pdose_direct_audit_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, trace, B_trial_budget, W_initial, intercept, intercept_bounds, alpha_initial)
+pdose_direct_audit_solver <- function(B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward = 0.1, trace = TRUE, B_trial_budget = 30L, W_initial = NULL, intercept = FALSE, intercept_bounds = NULL, alpha_initial = NULL, audit_fail_final_sweep = -1L) {
+    .Call(`_orthoDr_pdose_direct_audit_solver`, B, X, A, a_dist, a_seq, R, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, lambda_reward, trace, B_trial_budget, W_initial, intercept, intercept_bounds, alpha_initial, audit_fail_final_sweep)
+}
+
+pdose_direct_spectral_scalar <- function(SS, SZ, ZZ, m, fallback, finite_vectors = TRUE, evaluation_valid = TRUE) {
+    .Call(`_orthoDr_pdose_direct_spectral_scalar`, SS, SZ, ZZ, m, fallback, finite_vectors, evaluation_valid)
 }
 
 dosepred <- function(B, X, X_test, bw, W) {

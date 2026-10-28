@@ -21,17 +21,21 @@ citHeader("If orthoDr_surv is used, please also cite:")
 
 bibentry(
   bibtype = "Article",
-  title = "Counting Process Based Dimension Reduction Method for Censored Outcomes",
+  title = "Counting process-based dimension reduction methods for censored outcomes",
   author = c(person("Qiang", "Sun"),
              person("Ruoqing", "Zhu"),
              person("Tao", "Wang"),
              person("Donglin", "Zeng")),
   journal = "Biometrika",
   year = "2019",
-  url = "https://arxiv.org/abs/1704.05046",
+  volume = "106",
+  number = "1",
+  pages = "181--196",
+  doi = "10.1093/biomet/asy064",
+  url = "https://doi.org/10.1093/biomet/asy064",
   textVersion = paste0("Sun, Q., Zhu, R., Wang, T., & Zeng, D. (2019). ",
-                       "Counting Process Based Dimension Reduction Method for Censored Outcomes. ",
-                       "Biometrika, 106(1), 181-196.")
+                       "Counting process-based dimension reduction methods for censored outcomes. ",
+                       "Biometrika, 106(1), 181-196. doi:10.1093/biomet/asy064")
 )
 
 citHeader("If orthoDr_pdose is used, please also cite:")

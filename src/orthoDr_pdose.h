@@ -90,7 +90,13 @@ Rcpp::List pdose_direct_audit_solver(arma::mat B,
                                     Rcpp::Nullable<Rcpp::NumericVector> W_initial,
                                     bool intercept,
                                     Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds,
-                                    Rcpp::Nullable<Rcpp::NumericVector> alpha_initial);
+                                    Rcpp::Nullable<Rcpp::NumericVector> alpha_initial,
+                                    int audit_fail_final_sweep);
+
+Rcpp::List pdose_direct_spectral_scalar(double SS, double SZ, double ZZ,
+                                       int m, double fallback,
+                                       bool finite_vectors,
+                                       bool evaluation_valid);
 
 arma::vec dosepred(arma::mat B,
                    arma::mat X,

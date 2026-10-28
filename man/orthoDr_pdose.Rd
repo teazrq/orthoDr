@@ -151,8 +151,8 @@ conditional mean reward as a function of dose and \eqn{B^\top x}, then a
 dose rule is constructed. The methods need not estimate the same subspace.
 
 Direct learning initializes a kernel dose rule using grid-selected doses
-and ridge regression. It then alternates updates of the coefficients
-\eqn{w} and directions \eqn{B} to minimize
+and ridge regression. Without a separate intercept, it alternates updates
+of the coefficients \eqn{w} and directions \eqn{B} to minimize
 \deqn{Q(B,w) = -\widehat V(B,w) + \lambda_{\mathrm{reward}} w^\top w,}
 subject to \eqn{B^\top B = I}. Here \eqn{\widehat V} is the estimated mean
 reward, with no extra division of the penalty by sample size. The penalty
@@ -165,6 +165,8 @@ With \code{intercept = TRUE}, the rule is
 \qquad \mu_B=n^{-1}\sum_i k_B(x_i).}
 Its training average is \eqn{\alpha}. The intercept is learned jointly with
 the coefficients, is not penalized, and must lie in \code{intercept.bounds}.
+The reward objective is optimized over \eqn{B}, \eqn{\alpha}, and \eqn{w}
+with the same coefficient penalty.
 Every constant rule in that interval is represented by \eqn{w=0} with zero
 penalty. The bounds make this unpenalized component finite; they constrain
 the training average only. Predictions far from all training centers tend
@@ -178,6 +180,11 @@ remain fixed while the centres and projected standard deviations change
 with \eqn{B}. This joint finite-dimensional formulation differs from the
 paper's literal fixed-function direction update. Ridge coefficients are not
 refitted during optimization or after stopping.
+
+With \code{intercept = TRUE}, direction updates use an adaptive spectral
+trial step when a usable same-policy secant is available; otherwise they
+retain the usual trial step. The monotone line search and joint residual
+convergence criterion are unchanged.
 
 Pseudo-direct learning constructs a ridge dose rule after fitting the reward
 surface. Both methods predict continuous doses, which need not lie on the
@@ -231,6 +238,7 @@ orthofit <- orthoDr_pdose(train$X, train$A, train$R,
   maxitr = 500, verbose = 0, ncore = 2)
 orthofit$converge
 orthofit$gradient.norm
+orthofit$stop.reason
 
 dose <- predict(orthofit, test$X)
 mean((test$D_opt - dose$pred)^2)

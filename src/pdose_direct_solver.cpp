@@ -699,6 +699,53 @@ void direct_trace(Rcpp::List& trace, const bool collect,
   trace.push_back(entry);
 }
 
+// Fixed-policy tangent secants change only the intercept-mode trial length.
+struct DirectSpectral {
+  bool usable = false;
+  double step, SS = NA_REAL, SZ = NA_REAL, ZZ = NA_REAL, threshold = NA_REAL;
+  std::string reason;
+  explicit DirectSpectral(double fallback) : step(fallback), reason("no_anchor") {}
+};
+
+DirectSpectral direct_spectral_scalar(const double SS, const double SZ,
+                                      const double ZZ, const int m,
+                                      const double fallback,
+                                      const bool finite_vectors,
+                                      const bool evaluation_valid) {
+  DirectSpectral out(fallback);
+  out.SS = SS;
+  out.SZ = SZ;
+  out.ZZ = ZZ;
+  if (!evaluation_valid) { out.reason = "invalid_evaluation"; return out; }
+  if (!finite_vectors || !std::isfinite(SS) || !std::isfinite(SZ) ||
+      !std::isfinite(ZZ)) { out.reason = "nonfinite_pair"; return out; }
+  if (SS <= 0 || ZZ <= 0) { out.reason = "degenerate_pair"; return out; }
+  out.threshold = (std::sqrt(std::numeric_limits<double>::epsilon()) * std::sqrt(SS)) * std::sqrt(ZZ);
+  if (!(SZ > out.threshold)) { out.reason = "nonpositive_or_small_curvature"; return out; }
+  const double ratio = m % 2 == 1 ? SS / SZ : SZ / ZZ;
+  if (!std::isfinite(ratio) || ratio <= 0) { out.reason = "invalid_ratio"; return out; }
+  out.step = std::min(ratio, 1e10);
+  out.usable = true;
+  out.reason = m % 2 == 1 ? "tau1" : "tau2";
+  return out;
+}
+
+arma::mat direct_tangent(const arma::mat& B, const arma::mat& Z) {
+  const arma::mat BtZ = B.t() * Z;
+  return Z - B * (0.5 * (BtZ + BtZ.t()));
+}
+
+void direct_spectral_trace_history(Rcpp::List& trace, const bool collect,
+                                   const bool has_anchor, const arma::mat& anchor,
+                                   const int m) {
+  if (!collect) return;
+  Rcpp::List entry = trace[trace.size() - 1];
+  entry["history.has.anchor"] = has_anchor;
+  entry["history.anchor"] = anchor;
+  entry["history.m"] = m;
+  trace[trace.size() - 1] = entry;
+}
+
 double direct_next_step(const double accepted, const double eta,
                          const double cap = 1e10) {
   return accepted >= cap * eta ? cap : accepted / eta;
@@ -711,7 +758,8 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
                       const DirectControls& control, const bool collect,
                       const Rcpp::Nullable<Rcpp::NumericVector>& W_initial,
                       const DirectPolicy& policy,
-                      const Rcpp::Nullable<Rcpp::NumericVector>& alpha_initial) {
+                      const Rcpp::Nullable<Rcpp::NumericVector>& alpha_initial,
+                      const int audit_fail_final_sweep = -1) {
   direct_validate(B, X, A, R, a_dist, grid, lambda, bw, lambda_reward, control);
   if (policy.intercept && lambda_reward <= 0)
     Rcpp::stop("lambda.reward must be positive when intercept = TRUE");
@@ -755,6 +803,9 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
   int small_sweeps = 0;
   double W_step = std::min(control.tau, 1.0);
   double B_step = std::min(control.tau, 1e10);
+  arma::mat spectral_anchor;
+  bool has_spectral_anchor = false;
+  int spectral_m = 0;
   std::string reason = "iteration_limit";
   if (control.verbose > 1)
     Rcpp::Rcout << "Initial direct-dose objective: " << state.objective << std::endl;
@@ -774,6 +825,7 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
     double proposed_alpha = alpha;
     DirectEvaluation proposed = state;
     bool failed = false;
+    bool basis_moved = false;
     std::string failed_block;
 
     const std::string policy_block = policy.intercept ? "policy" : "W";
@@ -865,7 +917,45 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
         failed = true;
       } else {
         bool accepted = false;
-        double step = B_step;
+        DirectSpectral spectral(B_step);
+        arma::mat s, z, current_tangent, previous_tangent, transported;
+        const bool attempted_pair = policy.intercept && has_spectral_anchor;
+        if (attempted_pair) {
+          const DirectEvaluation previous_at_policy = direct_evaluate(
+            spectral_anchor, X, A, R, bw, proposed_W, lambda_reward,
+            true, policy, proposed_alpha);
+          if (previous_at_policy.valid) {
+            current_tangent = direct_tangent(B, gradient);
+            previous_tangent = direct_tangent(spectral_anchor, previous_at_policy.gradient_B);
+            transported = direct_tangent(B, previous_tangent);
+            s = direct_tangent(B, B - spectral_anchor);
+            z = current_tangent - transported;
+            spectral = direct_spectral_scalar(arma::accu(s % s), arma::accu(s % z),
+              arma::accu(z % z), spectral_m, B_step,
+              s.is_finite() && z.is_finite() && current_tangent.is_finite() &&
+                previous_tangent.is_finite() && transported.is_finite(), true);
+          } else spectral.reason = "invalid_evaluation";
+        } else if (!policy.intercept) spectral.reason = "legacy_mode";
+        double step = spectral.step;
+        if (collect) {
+          Rcpp::List entry = Rcpp::List::create(
+            Rcpp::Named("event") = "B.proposal", Rcpp::Named("block") = "B",
+            Rcpp::Named("sweep") = completed + 1,
+            Rcpp::Named("origin") = spectral.usable ? "spectral" : "fallback",
+            Rcpp::Named("reason") = spectral.reason,
+            Rcpp::Named("step") = step, Rcpp::Named("fallback") = B_step,
+            Rcpp::Named("m") = spectral_m, Rcpp::Named("has.anchor") = has_spectral_anchor,
+            Rcpp::Named("attempted.pair") = attempted_pair,
+            Rcpp::Named("B.current") = B, Rcpp::Named("anchor") = spectral_anchor,
+            Rcpp::Named("W.current") = proposed_W, Rcpp::Named("intercept.current") = proposed_alpha,
+            Rcpp::Named("s") = s, Rcpp::Named("z") = z,
+            Rcpp::Named("SS") = spectral.SS, Rcpp::Named("SZ") = spectral.SZ,
+            Rcpp::Named("ZZ") = spectral.ZZ, Rcpp::Named("threshold") = spectral.threshold);
+          entry["gradient.current.tangent"] = current_tangent;
+          entry["gradient.previous.tangent"] = previous_tangent;
+          entry["gradient.previous.transported"] = transported;
+          trace.push_back(entry);
+        }
         for (int trial = 0; trial < control.B_trial_budget; ++trial) {
           Rcpp::checkUserInterrupt();
           arma::mat trial_B;
@@ -893,6 +983,7 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
           }
           if (accepted) {
             proposed_B = trial_B;
+            basis_moved = true;
             proposed = candidate;
             B_step = direct_next_step(step, control.eta);
             break;
@@ -915,6 +1006,10 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
     if (!failed) {
       proposed = direct_evaluate(proposed_B, X, A, R, bw, proposed_W, lambda_reward,
                                    true, policy, proposed_alpha);
+      if (completed + 1 == audit_fail_final_sweep) {
+        proposed.valid = false;
+        proposed.message = "Audit-injected final derivative failure";
+      }
       if (!proposed.valid) {
         reason = "numerical_failure";
         failed_block = "B";
@@ -925,7 +1020,13 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
       direct_trace(trace, collect, "rollback", failed_block, completed + 1,
                     proposed_B, proposed_W, B, W, previous_objective, state,
                     NA_REAL, 0, false, reason, "", arma::vec(), proposed_alpha);
+      direct_spectral_trace_history(trace, collect, has_spectral_anchor, spectral_anchor, spectral_m);
       break;
+    }
+    if (policy.intercept && basis_moved) {
+      spectral_anchor = previous_B;
+      has_spectral_anchor = true;
+      ++spectral_m;
     }
     B = proposed_B;
     W = proposed_W;
@@ -935,6 +1036,7 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
     direct_trace(trace, collect, "commit", "", completed, previous_B,
                   previous_W, B, W, previous_objective, state, NA_REAL, 0, true,
                   "", "", arma::vec(), previous_alpha);
+    direct_spectral_trace_history(trace, collect, has_spectral_anchor, spectral_anchor, spectral_m);
     if (state.norm_B <= control.gtol && state.norm_policy <= control.gtol) {
       reason = "gradient_tolerance";
       break;
@@ -993,7 +1095,12 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
     out["kernel.mean"] = state.geometry.mean.t();
     out["gradient.intercept"] = state.gradient_alpha;
   }
-  if (collect) out["trace"] = trace;
+  if (collect) {
+    out["trace"] = trace;
+    out["audit.history"] = Rcpp::List::create(
+      Rcpp::Named("has.anchor") = has_spectral_anchor,
+      Rcpp::Named("anchor") = spectral_anchor, Rcpp::Named("m") = spectral_m);
+  }
   return out;
 }
 
@@ -1025,7 +1132,8 @@ Rcpp::List pdose_direct_solver(arma::mat B,
 }
 
 // Private audit access to the same loop. A zero direction trial budget
-// exercises atomic rollback; production always uses thirty trials.
+// exercises first-sweep rollback; the final-gradient hook tests established
+// history rollback. Production always uses thirty trials and no failure hook.
 // [[Rcpp::export]]
 Rcpp::List pdose_direct_audit_solver(arma::mat B,
                                     const arma::mat X,
@@ -1042,7 +1150,8 @@ Rcpp::List pdose_direct_audit_solver(arma::mat B,
                                     Rcpp::Nullable<Rcpp::NumericVector> W_initial = R_NilValue,
                                     bool intercept = false,
                                     Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds = R_NilValue,
-                                    Rcpp::Nullable<Rcpp::NumericVector> alpha_initial = R_NilValue) {
+                                    Rcpp::Nullable<Rcpp::NumericVector> alpha_initial = R_NilValue,
+                                    int audit_fail_final_sweep = -1) {
   (void)gamma;
   (void)epsilon;
   (void)ncore;
@@ -1050,5 +1159,19 @@ Rcpp::List pdose_direct_audit_solver(arma::mat B,
                                   maxitr, verbose, B_trial_budget};
   return direct_fit(B, X, A, a_dist, a_seq, R, lambda, bw, lambda_reward,
                      control, trace, W_initial,
-                     direct_policy(intercept, intercept_bounds, A), alpha_initial);
+                     direct_policy(intercept, intercept_bounds, A), alpha_initial,
+                     audit_fail_final_sweep);
+}
+
+// Private audit access to the scalar convention used by the production loop.
+// [[Rcpp::export]]
+Rcpp::List pdose_direct_spectral_scalar(double SS, double SZ, double ZZ,
+                                       int m, double fallback,
+                                       bool finite_vectors = true,
+                                       bool evaluation_valid = true) {
+  const DirectSpectral out = direct_spectral_scalar(SS, SZ, ZZ, m, fallback,
+                                                    finite_vectors, evaluation_valid);
+  return Rcpp::List::create(Rcpp::Named("usable") = out.usable,
+    Rcpp::Named("step") = out.step, Rcpp::Named("reason") = out.reason,
+    Rcpp::Named("threshold") = out.threshold);
 }

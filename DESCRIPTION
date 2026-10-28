@@ -17,7 +17,7 @@ Description: Utilize an orthogonality constrained optimization algorithm of
     Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1> to solve a variety of
     dimension reduction problems in the semiparametric framework, such as
     Ma & Zhu (2012) <DOI:10.1080/01621459.2011.646925>, Ma & Zhu (2013)
-    <DOI:10.1214/12-AOS1072>, Sun, Zhu, Wang & Zeng (2017) <doi:10.48550/arXiv.1704.05046>
+    <DOI:10.1214/12-AOS1072>, Sun, Zhu, Wang & Zeng (2019) <doi:10.1093/biomet/asy064>
     and Zhou, Zhu & Zeng (2021) <doi:10.1093/biomet/asaa087>. It also serves as a
     general purpose optimization solver for problems with orthogonality constraints.
     Parallel computing for approximating the gradient is enabled
@@ -27,6 +27,7 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 NeedsCompilation: yes
+Depends: R (>= 3.5.0)
 Imports: Rcpp (>= 1.0.0), survival, dr, pracma, plot3D, rgl, MASS
 Suggests: testthat (>= 3.0.0), knitr, rmarkdown, rprojroot
 Config/testthat/edition: 3
