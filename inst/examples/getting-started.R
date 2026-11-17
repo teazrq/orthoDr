@@ -234,7 +234,7 @@ pseudo_fit$stop.reason
 #' The final grid smoother uses dose bandwidth `bw / sqrt(2)` in training-dose
 #' SD units; reward-surface fitting uses `bw`. Assess bandwidth and penalty
 #' using evaluation appropriate to the study design.
-
+#'
 #' ### Interpret predicted doses
 #'
 #' `pred` contains one estimated dose for each new observation, in the units
