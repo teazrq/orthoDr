@@ -3,18 +3,21 @@
 #' @export
 #'
 #' @description
-#' Calculate a distance metric between two linear subspaces spanned by the
-#' columns of \code{s1} and \code{s2}. Several metrics are supported.
+#' Compares the linear subspaces spanned by the columns of \code{s1} and
+#' \code{s2} using projection-matrix distances or correlations.
 #'
-#' @param s1 A matrix whose columns span the first subspace.
-#' @param s2 A matrix whose columns span the second subspace.
+#' @param s1 A matrix with linearly independent columns spanning the first subspace.
+#' @param s2 A matrix with linearly independent columns spanning the second subspace,
+#'   with the same number of rows as \code{s1}.
 #' @param type Character; the distance measure to use:
 #'   \describe{
 #'     \item{\code{"dist"}}{Frobenius norm of the difference between
 #'       projection matrices (default).}
-#'     \item{\code{"trace"}}{Trace correlation (1 = identical).}
-#'     \item{\code{"canonical"}}{Mean canonical correlation; requires
-#'       \code{x}.}
+#'     \item{\code{"trace"}}{Trace correlation. For subspaces of equal
+#'       dimension, 1 indicates identical subspaces.}
+#'     \item{\code{"canonical"}}{Mean canonical correlation between
+#'       \code{x \%*\% s1} and \code{x \%*\% s2}, without centering;
+#'       requires \code{x}.}
 #'     \item{\code{"sine"}}{Sine metric between subspaces.}
 #'   }
 #' @param x A matrix of covariate values, required only when

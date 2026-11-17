@@ -29,6 +29,8 @@ navbar:
     - text: Changelog
       href: news/index.html
   right:
+    - text: Python version
+      href: https://teazrq.github.io/orthoDr-Python/
     - icon: fa-github fa-lg
       href: https://github.com/teazrq/orthoDr
       aria-label: GitHub

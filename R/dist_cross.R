@@ -1,9 +1,15 @@
-#' @title dist_cross
+#' @title Gaussian Kernel Weights Between Two Data Matrices
 #' @export
-#' @description Cross distance matrix. An extension to the dist() function. Calculate the Gaussian kernel distance between rows of X1 and rows of X2
-#' @param x1 first data matrix
-#' @param x2 second data matrix
-#' @return A distance matrix, with its (i, j)th element being the Gaussian kernel distance between ith row of \code{X1} jth row of \code{X2}.
+#' @description
+#' Computes Gaussian kernel weights between every row of \code{x1} and every
+#' row of \code{x2}, using their supplied coordinates without scaling.
+#' @param x1 A numeric matrix with one row per observation.
+#' @param x2 A numeric matrix with the same number and order of columns as \code{x1}.
+#' @return A matrix with \code{nrow(x1)} rows and \code{nrow(x2)} columns.
+#'   Entry \eqn{(i,j)} is \eqn{\exp(-\|x_{1i}-x_{2j}\|^2)}, where
+#'   \eqn{x_{1i}} and \eqn{x_{2j}} are the corresponding rows. These are
+#'   unnormalized similarity weights, with value one for identical rows.
+#' @seealso \code{\link{kernel_weight}}
 #' @examples
 #' # two matrices
 #' set.seed(1)

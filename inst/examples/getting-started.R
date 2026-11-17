@@ -96,11 +96,17 @@ scaled_new_x <- scale(new_x,
 #'
 #' ## Fit a survival model and predict curves
 #'
-#' Estimate how the probability of remaining event-free changes over time for
-#' new observations. Observed time is the minimum of event and censoring times. An event
-#' indicator of **1 means an event**, and 0 means censoring. We use the
+#' Predict the probability of remaining event-free over time for new
+#' observations. Observed time is the minimum of event and censoring times.
+#' An event indicator of **1 means an event**, and 0 means censoring. We use the
 #' martingale estimating equation, `method = "dm"`. Event times in this
 #' simulation depend on the first predictor, so we request one direction.
+#'
+#' The survival methods assume that event and censoring times are independent
+#' conditional on the full predictor vector, as described in the
+#' [method paper](https://doi.org/10.1093/biomet/asy064).
+#' Prediction also relies on an adequate fitted reduction and local data support.
+#' The fitting function does not check these study conditions.
 
 set.seed(102)
 x_surv <- matrix(rnorm(120 * 4), ncol = 4)
@@ -186,12 +192,11 @@ dose_fit$converge
 data.frame(gradient_norm = dose_fit$gradient.norm)
 dose_fit$stop.reason
 
-#' For this fit, `converge = TRUE` means that the joint policy residual and
-#' direction gradient meet the numerical tolerance. The policy residual combines
-#' the coefficient gradient with the intercept condition at its bounds.
+#' For this fit, `converge = TRUE` means that the direction gradient and the
+#' joint residual for the dose-rule coefficients and intercept meet the numerical
+#' tolerance. The joint residual accounts for the intercept bounds.
 #' If convergence is `FALSE`, inspect `stop.reason` and the residuals before using
-#' the rule. A small
-#' change between iterations alone does not establish convergence.
+#' the rule. A small change between iterations alone does not establish convergence.
 
 dose_fit$intercept
 dose_fit$intercept.bounds
@@ -219,9 +224,10 @@ pseudo_fit$converge
 pseudo_fit$gradient.norm
 pseudo_fit$stop.reason
 
-#' `gradient.norm` measures the constrained gradient of reward-standardized
-#' mean squared error. Only reaching its tolerance reports convergence;
-#' `fn` still gives reward RMSE in the original units. The reward smoother
+#' `gradient.norm` measures the constrained gradient of mean squared reward
+#' error after centering rewards and dividing by their training standard
+#' deviation. Only reaching its tolerance reports convergence. The returned `fn` is the root
+#' mean squared reward error in the original reward units. The reward smoother
 #' includes the training observation itself, so a small fitting error does
 #' not establish accurate dose recommendations.
 #'
@@ -229,11 +235,12 @@ pseudo_fit$stop.reason
 #' to add an unpenalized constant to the final pseudo-direct ridge rule. That
 #' constant is unbounded and does not use `intercept.bounds`. It avoids shrinking
 #' the rule toward zero dose, but it does not guarantee better decisions.
-#' Pseudo-direct `lambda` penalizes the kernel function through its RKHS norm;
-#' it differs from the direct method's squared coefficient penalty.
+#' Pseudo-direct `lambda` penalizes the kernel function through its squared
+#' reproducing kernel Hilbert space (RKHS) norm. This differs from the direct
+#' method's squared coefficient penalty.
 #' The final grid smoother uses dose bandwidth `bw / sqrt(2)` in training-dose
-#' SD units; reward-surface fitting uses `bw`. Assess bandwidth and penalty
-#' using evaluation appropriate to the study design.
+#' standard deviation units; reward-surface fitting uses `bw`. Assess bandwidth
+#' and penalty using evaluation appropriate to the study design.
 #'
 #' ### Interpret predicted doses
 #'
@@ -249,9 +256,9 @@ round(data.frame(
 
 #' The direct method uses the candidate grid only to initialize its rule;
 #' pseudo-direct learning uses it to construct the final ridge rule.
-#' Final predictions come from a
-#' continuous fitted rule, so they need not be grid points and are not constrained
-#' to the observed dose range. This table illustrates the returned values, not
+#' Final predictions come from a continuous fitted rule, so they need not be
+#' grid points and are not constrained to the observed dose range. This table
+#' illustrates the returned values, not
 #' the relative performance of the methods. Numerical convergence does not
 #' establish a globally optimal rule or its performance on new data.
 

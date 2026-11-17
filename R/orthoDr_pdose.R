@@ -10,15 +10,16 @@
 #' @name orthoDr_pdose
 #' @export
 #'
-#' @param x A numeric matrix of features (continuous only).
-#' @param a A numeric vector of observed dose levels.
-#' @param r A numeric vector of observed rewards (outcomes). Larger values
+#' @param x A numeric matrix of continuous predictors, with one row per observation.
+#' @param a A numeric vector of observed dose levels, one per row of \code{x}.
+#' @param r A numeric vector of observed rewards (outcomes), one per row of \code{x}. Larger values
 #'   are preferred.
 #' @param ndr Number of directions to estimate.
 #' @param B.initial Initial \code{B} matrix. If \code{NULL} (default),
 #'   the partial SAVE model (\code{\link{pSAVE}}) is used. If specified,
 #'   must have \code{nrow(B.initial) == ncol(x)} and
-#'   \code{ncol(B.initial) == ndr}. Will be orthogonalized via Gram-Schmidt.
+#'   \code{ncol(B.initial) == ndr}, with linearly independent columns. A
+#'   custom or random basis is allowed and is orthonormalized before fitting.
 #'   Supply a basis when the data cannot support automatic pSAVE initialization.
 #' @param bw Kernel bandwidth, assuming each variable has unit variance.
 #'   If \code{NULL} (default), Silverman's rule is used. Pseudo-direct reward

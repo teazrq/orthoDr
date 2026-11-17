@@ -1,7 +1,8 @@
 #' @title orthoDr: Semi-Parametric Dimension Reduction Models Using Orthogonality Constrained Optimization
-#' @description Provides semi-parametric dimension reduction methods using
-#'   orthogonality constrained optimization. Includes regression, survival,
-#'   and personalized dose models.
+#' @description Estimates linear combinations of predictors for regression,
+#'   censored survival outcomes, and personalized dose rules using
+#'   semiparametric dimension reduction. Also provides a general optimizer
+#'   for objectives with orthonormal direction matrices.
 #' @keywords internal
 "_PACKAGE"
 

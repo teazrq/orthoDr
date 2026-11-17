@@ -2,8 +2,9 @@
 title: Survival
 ---
 
-This tutorial uses orthoDr 2.0.0. See [Get Started](get-started.html) for
-installation and the complete R script.
+Estimate reduced predictors from right-censored survival data and predict
+survival curves for new observations. See [Get Started](get-started.html)
+for installation and the complete R script for orthoDr 2.0.0.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)

@@ -1,11 +1,17 @@
-#' @title kernel_weight
+#' @title Gaussian Kernel Weights
 #' @export
-#' @description Calculate the Gaussian kernel weights between rows of X1 and rows of X2
-#' @param x1 first data matrix
-#' @param x2 second data matrix
-#' @param kernel the kernel function, currently only using Gaussian kernel
-#' @param dist the distance metric, currently only using the Euclidean distance
-#' @return A distance matrix, with its (i, j)th element being the kernel weights for the ith row of \code{X1} jth row of \code{X2}.
+#' @description
+#' Computes Gaussian kernel weights between every row of \code{x1} and every
+#' row of \code{x2}, using their supplied coordinates without scaling.
+#' @param x1 A numeric matrix with one row per observation.
+#' @param x2 A numeric matrix with the same number and order of columns as \code{x1}.
+#' @param kernel Retained for compatibility. The function always uses a Gaussian kernel.
+#' @param dist Retained for compatibility. The function always uses squared Euclidean distances.
+#' @return A matrix with \code{nrow(x1)} rows and \code{nrow(x2)} columns.
+#'   Entry \eqn{(i,j)} is \eqn{\exp(-\|x_{1i}-x_{2j}\|^2)}, where
+#'   \eqn{x_{1i}} and \eqn{x_{2j}} are the corresponding rows. These are
+#'   unnormalized similarity weights, with value one for identical rows.
+#' @seealso \code{\link{dist_cross}}
 #' @examples
 #' # two matrices
 #' set.seed(1)

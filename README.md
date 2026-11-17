@@ -12,8 +12,8 @@ optimizer for problems with orthogonality constraints.
 
 - **Regression**: SIR, SAVE, PHD, locally efficient, and efficient estimation
 - **Survival**: dimension reduction for censored outcomes
-- **Dose finding**: personalized dose estimation via partial SAVE and direct/pseudo-direct learning
-- **General optimizer**: `ortho_optim()` for any orthogonality-constrained objective
+- **Dose finding**: direct and pseudo-direct learning, with partial SAVE as the default initialization
+- **General optimizer**: `ortho_optim()` for a supplied objective with orthonormal directions
 
 ## Installation
 
@@ -43,6 +43,7 @@ Numerical results can differ between versions.
   [CRAN 0.6.8 reference manual](https://cran.r-project.org/web/packages/orthoDr/refman/orthoDr.html).
 
 For documentation matching your installed version, use `help(package = "orthoDr")`.
+For Python, see the [orthoDr Python package and documentation](https://teazrq.github.io/orthoDr-Python/).
 
 For direct dose learning, `lambda` controls ridge initialization and
 `lambda.reward` controls the squared coefficient penalty when optimizing

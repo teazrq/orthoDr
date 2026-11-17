@@ -2,8 +2,9 @@
 title: Personalized Dose Finding
 ---
 
-This tutorial uses orthoDr 2.0.0. See [Get Started](get-started.html) for
-installation and the complete R script.
+Learn a personalized dose rule from predictors, observed doses, and rewards,
+then predict doses for new observations. See [Get Started](get-started.html)
+for installation and the complete R script for orthoDr 2.0.0.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)
@@ -28,7 +29,7 @@ The finite-sample dose kernel uses the individual projected coordinates.
 Rotating a basis or rescaling predictors can therefore change a fitted rule.
 Apply any chosen predictor preprocessing consistently to training and new data.
 
-See `orthoDr_pdose()` for candidate grids, bandwidths, initialization, and
-regularization, and the numerical stopping criteria. The
+See `orthoDr_pdose()` for candidate grids, bandwidths, initialization,
+regularization, and numerical stopping criteria. The
 [method paper](https://doi.org/10.1093/biomet/asaa087) explains the distinction
 between direct and pseudo-direct learning and their assumptions.
