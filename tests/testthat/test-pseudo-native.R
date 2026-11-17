@@ -320,3 +320,17 @@ test_that("invalid native geometry and controls fail clearly", {
     expect_error(pseudo_native_eval(invalid), "lambda.*positive finite")
   }
 })
+test_that("large finite ridge values retain intercept GCV degrees of freedom", {
+  set.seed(38191)
+  n <- 17L
+  x <- matrix(rnorm(n * 3), n, 3)
+  a <- runif(n, 0, 4)
+  r <- cos(a) + .7 * x[, 1] - .2 * x[, 2]^2
+  evaluated <- orthoDr:::pdose_semi_evaluate(matrix(c(1, 0, 0), 3, 1),
+    x, r, a, .7, seq(0, 4, length.out = 7), c(100, 1e100, 1e200), TRUE)
+  target <- drop(evaluated$grid.targets)
+  intercept_only <- n * sum((target - mean(target))^2) / (n - 1)^2
+  expect_equal(drop(evaluated$GCV)[2:3], rep(intercept_only, 2), tolerance = 1e-12)
+  expect_identical(evaluated$lambda.init, 100)
+})
+

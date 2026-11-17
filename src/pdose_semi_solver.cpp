@@ -344,7 +344,10 @@ PseudoRidge pseudo_ridge(const arma::mat& K, const arma::vec& target,
       const double t = valid ? arma::accu(v) : 0;
       valid = valid && std::isfinite(t) && t > 0;
       if (valid) {
-        denominator -= static_cast<long double>(arma::accu(arma::square(v))) / t;
+        // Divide before multiplying: squaring v first underflows at large
+        // finite ridge values, even when its degrees-of-freedom term is valid.
+        const long double vnorm = arma::norm(v, 2);
+        denominator -= vnorm * (vnorm / t);
         if (constant) {
           alpha = target(0);
           W.zeros(n);
