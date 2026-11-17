@@ -225,24 +225,21 @@ test_that("direct defaults resolve to the explicit method", {
   expect_equal(defaults, explicit)
 })
 
-test_that("regression and pseudo-direct flat stops finalize their original policies", {
+test_that("regression flat stops finalize and constant pseudo rewards are unidentified", {
   d <- revision_dose_data()
   for (cores in c(1L, 2L)) {
     flat_reg <- orthoDr:::local_solver(d$B, d$x, matrix(0, nrow(d$x), 1), d$bw,
                                         1e-4, .2, .85, .001, 1e-6, 1e-6, 1e-6, 1e-6, 2L, 0L, cores)
     expect_equal(flat_reg$itr, 0L)
     expect_identical(flat_reg$converge, TRUE)
-    semi <- orthoDr_pdose(d$x, d$a, rep(0, nrow(d$x)), ndr = 1, B.initial = d$B,
-                          bw = d$bw, K = 1, method = "pseudo_direct", maxitr = 8, ncore = cores)
-    expect_equal(semi$itr, 0L)
-    expect_identical(semi$converge, TRUE)
-    flat_d <- d
-    flat_d$r[] <- 0
-    expect_equal(as.vector(semi$W), revision_dose_w(semi$B, flat_d, min(d$a)), tolerance = 1e-10)
+    for (constant in c(0, .1))
+      expect_error(orthoDr_pdose(d$x, d$a, rep(constant, nrow(d$x)), ndr = 1,
+        B.initial = d$B, bw = d$bw, K = 1, method = "pseudo_direct",
+        maxitr = 8, ncore = cores), "Constant rewards.*identify")
   }
 })
 
-test_that("built-in nonstationary stagnation respects effective limits and core agreement", {
+test_that("regression limits and pseudo failed-search rollback preserve valid states", {
   d <- revision_dose_data()
   for (cores in c(1L, 2L)) {
     reg <- orthoDr_reg(d$x, d$r, ndr = 1, B.initial = d$B, bw = d$bw,
@@ -254,9 +251,21 @@ test_that("built-in nonstationary stagnation respects effective limits and core 
       fit <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B, bw = d$bw,
                            K = 7, method = method, maxitr = 8, ncore = cores,
                            control = list(tau = 1e-20, gtol = 1e-20))
-      expect_equal(fit$itr, 8L)
+      # The tiny-step case formerly forced acceptance after five failed trials.
+      # The revised search stops after its first accepted update and retains
+      # exactly that complete state when the next thirty trials fail.
+      accepted <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B, bw = d$bw,
+        K = 7, method = method, maxitr = 1, ncore = cores,
+        control = list(tau = 1e-20, gtol = 1e-20))
+      expect_equal(fit$itr, 1L)
+      expect_identical(fit$stop.reason, "line_search_failed")
       expect_identical(fit$converge, FALSE)
+      for (name in c("B", "W", "fn", "objective.scaled", "gradient.norm"))
+        expect_equal(fit[[name]], accepted[[name]], tolerance = 0)
       expect_equal(fit$B, d$B)
+      expect_equal(drop(crossprod(fit$B)), 1, tolerance = 1e-12)
+      expect_gt(fit$gradient.norm, 1e-20)
+      expect_equal(fit$fn, revision_semi_f(fit$B, d), tolerance = 1e-12)
     }
   }
   for (method in c("direct", "pseudo_direct")) {

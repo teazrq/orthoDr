@@ -231,11 +231,14 @@ test_that("pSAVE bounds the central interval and preserves threshold multiplicit
   groups <- list()
   moments <- list()
   local_mocked_bindings(
-    dr = function(formula, data, ...) {
-      groups[[length(groups) + 1L]] <<- data$a
-      M <- matrix(c(sum(data$a), 1, 1, sum(!data$a)), 2, 2)
-      moments[[length(moments) + 1L]] <<- M
-      list(M = M)
+    .psave_grouped_moment = function(x, y, group, nslices) {
+      groups[[length(groups) + 1L]] <<- group
+      fraction <- mean(group)
+      local <- list(covariance = diag(c(1 + fraction, 2)),
+                    raw.moment = matrix(c(.3 + fraction, .1, .1, 1.4 - fraction), 2, 2),
+                    fallback.mass = 0, has.contrasts = TRUE, has.information = TRUE)
+      moments[[length(moments) + 1L]] <<- local
+      local
     },
     .package = "orthoDr"
   )
@@ -257,7 +260,10 @@ test_that("pSAVE bounds the central interval and preserves threshold multiplicit
     }, logical(1))
     thresholds <- thresholds[admissible]
     expect_identical(groups, lapply(thresholds, function(cut) as.numeric(a <= cut)))
-    expected <- eigen(Reduce("+", moments), symmetric = FALSE)$vectors[, 1, drop = FALSE]
+    reference <- Reduce("+", lapply(moments, `[[`, "covariance")) / length(moments)
+    raw <- Reduce("+", lapply(moments, `[[`, "raw.moment")) / length(moments)
+    expected <- eigen(raw %*% reference, symmetric = FALSE)$vectors[, 1, drop = FALSE]
+    expected <- expected / sqrt(sum(expected^2))
     expect_equal(tcrossprod(B), tcrossprod(expected), tolerance = 1e-12)
   }
 })

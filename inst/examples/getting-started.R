@@ -212,10 +212,28 @@ dose_prediction <- predict(dose_fit, new_dose_x)
 
 pseudo_fit <- orthoDr_pdose(
   x_dose, observed_dose, reward, method = "pseudo_direct", ndr = 2,
-  K = 12, lambda = 0.1, keep.data = TRUE, maxitr = 150, ncore = 1
+  K = 12, lambda = 0.1, keep.data = TRUE, maxitr = 500, ncore = 1
 )
 pseudo_prediction <- predict(pseudo_fit, new_dose_x)
 pseudo_fit$converge
+pseudo_fit$gradient.norm
+pseudo_fit$stop.reason
+
+#' `gradient.norm` measures the constrained gradient of reward-standardized
+#' mean squared error. Only reaching its tolerance reports convergence;
+#' `fn` still gives reward RMSE in the original units. The reward smoother
+#' includes the training observation itself, so a small fitting error does
+#' not establish accurate dose recommendations.
+#'
+#' We retain the default rule without an intercept here. Set `intercept = TRUE`
+#' to add an unpenalized constant to the final pseudo-direct ridge rule. That
+#' constant is unbounded and does not use `intercept.bounds`. It avoids shrinking
+#' the rule toward zero dose, but it does not guarantee better decisions.
+#' Pseudo-direct `lambda` penalizes the kernel function through its RKHS norm;
+#' it differs from the direct method's squared coefficient penalty.
+#' The final grid smoother uses dose bandwidth `bw / sqrt(2)` in training-dose
+#' SD units; reward-surface fitting uses `bw`. Assess bandwidth and penalty
+#' using evaluation appropriate to the study design.
 
 #' ### Interpret predicted doses
 #'

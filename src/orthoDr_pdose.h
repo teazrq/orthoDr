@@ -104,28 +104,10 @@ arma::vec dosepred(arma::mat B,
                    double bw,
                    arma::colvec W);
 				   
-double pdose_semi_f(const arma::mat& B,
-                      const arma::mat& X,
-                      const arma::colvec& R,
-                      const arma::colvec& A,
-                      const double bw,
-                      int ncore);
-
-void  pdose_semi_g( const arma::mat& B,
-                 const double F0,
-                 arma::mat& G,
-                 const arma::mat& X,
-                 const arma::colvec& R,
-                 const arma::colvec& A,
-                 const double bw,
-                 const double epsilon,
-                 int ncore);
-
-Rcpp::List pdose_semi_solver(arma::mat& B,
+Rcpp::List pdose_semi_solver(arma::mat B,
                   const arma::mat& X,
                   const arma::colvec& R,
                   const arma::colvec& A,
-                  const arma::mat a_dist,
                   const arma::colvec a_seq,
                   const arma::colvec lambda,
                   const double bw,
@@ -139,6 +121,22 @@ Rcpp::List pdose_semi_solver(arma::mat& B,
                   double gtol,
                   int maxitr,
                   int verbose,
-                  int ncore);				 
+                  int ncore,
+                  bool intercept);
+
+Rcpp::List pdose_semi_evaluate(const arma::mat B, const arma::mat X,
+                  const arma::colvec R, const arma::colvec A, double bw,
+                  const arma::colvec a_seq, const arma::colvec lambda,
+                  bool intercept, double cayley_step, double dose_factor);
+
+Rcpp::List pdose_semi_audit_solver(arma::mat B, const arma::mat& X,
+                  const arma::colvec& R, const arma::colvec& A,
+                  const arma::colvec a_seq, const arma::colvec lambda,
+                  const double bw, double rho, double eta, double gamma,
+                  double tau, double epsilon, double btol, double ftol,
+                  double gtol, int maxitr, int verbose, int ncore,
+                  bool intercept, bool trace, int trial_budget,
+                  int audit_fail_gradient_iteration,
+                  int audit_fail_trial_iteration);
 				   
 #endif

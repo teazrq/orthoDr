@@ -173,16 +173,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // pdose_semi_solver
-List pdose_semi_solver(arma::mat& B, const arma::mat& X, const arma::colvec& R, const arma::colvec& A, const arma::mat a_dist, const arma::colvec a_seq, const arma::colvec lambda, const double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
-RcppExport SEXP _orthoDr_pdose_semi_solver(SEXP BSEXP, SEXP XSEXP, SEXP RSEXP, SEXP ASEXP, SEXP a_distSEXP, SEXP a_seqSEXP, SEXP lambdaSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
+Rcpp::List pdose_semi_solver(arma::mat B, const arma::mat& X, const arma::colvec& R, const arma::colvec& A, const arma::colvec a_seq, const arma::colvec lambda, const double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore, bool intercept);
+RcppExport SEXP _orthoDr_pdose_semi_solver(SEXP BSEXP, SEXP XSEXP, SEXP RSEXP, SEXP ASEXP, SEXP a_seqSEXP, SEXP lambdaSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP, SEXP interceptSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat& >::type B(BSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type B(BSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type R(RSEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type A(ASEXP);
-    Rcpp::traits::input_parameter< const arma::mat >::type a_dist(a_distSEXP);
     Rcpp::traits::input_parameter< const arma::colvec >::type a_seq(a_seqSEXP);
     Rcpp::traits::input_parameter< const arma::colvec >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type bw(bwSEXP);
@@ -197,7 +196,61 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdose_semi_solver(B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdose_semi_solver(B, X, R, A, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, intercept));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pdose_semi_evaluate
+Rcpp::List pdose_semi_evaluate(const arma::mat B, const arma::mat X, const arma::colvec R, const arma::colvec A, double bw, const arma::colvec a_seq, const arma::colvec lambda, bool intercept, double cayley_step, double dose_factor);
+RcppExport SEXP _orthoDr_pdose_semi_evaluate(SEXP BSEXP, SEXP XSEXP, SEXP RSEXP, SEXP ASEXP, SEXP bwSEXP, SEXP a_seqSEXP, SEXP lambdaSEXP, SEXP interceptSEXP, SEXP cayley_stepSEXP, SEXP dose_factorSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat >::type B(BSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type A(ASEXP);
+    Rcpp::traits::input_parameter< double >::type bw(bwSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type a_seq(a_seqSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< double >::type cayley_step(cayley_stepSEXP);
+    Rcpp::traits::input_parameter< double >::type dose_factor(dose_factorSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdose_semi_evaluate(B, X, R, A, bw, a_seq, lambda, intercept, cayley_step, dose_factor));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pdose_semi_audit_solver
+Rcpp::List pdose_semi_audit_solver(arma::mat B, const arma::mat& X, const arma::colvec& R, const arma::colvec& A, const arma::colvec a_seq, const arma::colvec lambda, const double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore, bool intercept, bool trace, int trial_budget, int audit_fail_gradient_iteration, int audit_fail_trial_iteration);
+RcppExport SEXP _orthoDr_pdose_semi_audit_solver(SEXP BSEXP, SEXP XSEXP, SEXP RSEXP, SEXP ASEXP, SEXP a_seqSEXP, SEXP lambdaSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP, SEXP interceptSEXP, SEXP traceSEXP, SEXP trial_budgetSEXP, SEXP audit_fail_gradient_iterationSEXP, SEXP audit_fail_trial_iterationSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type B(BSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type a_seq(a_seqSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const double >::type bw(bwSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< double >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< double >::type btol(btolSEXP);
+    Rcpp::traits::input_parameter< double >::type ftol(ftolSEXP);
+    Rcpp::traits::input_parameter< double >::type gtol(gtolSEXP);
+    Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
+    Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< bool >::type trace(traceSEXP);
+    Rcpp::traits::input_parameter< int >::type trial_budget(trial_budgetSEXP);
+    Rcpp::traits::input_parameter< int >::type audit_fail_gradient_iteration(audit_fail_gradient_iterationSEXP);
+    Rcpp::traits::input_parameter< int >::type audit_fail_trial_iteration(audit_fail_trial_iterationSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdose_semi_audit_solver(B, X, R, A, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, intercept, trace, trial_budget, audit_fail_gradient_iteration, audit_fail_trial_iteration));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -503,6 +556,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_orthoDr_pdose_direct_spectral_scalar", (DL_FUNC) &_orthoDr_pdose_direct_spectral_scalar, 7},
     {"_orthoDr_dosepred", (DL_FUNC) &_orthoDr_dosepred, 5},
     {"_orthoDr_pdose_semi_solver", (DL_FUNC) &_orthoDr_pdose_semi_solver, 19},
+    {"_orthoDr_pdose_semi_evaluate", (DL_FUNC) &_orthoDr_pdose_semi_evaluate, 10},
+    {"_orthoDr_pdose_semi_audit_solver", (DL_FUNC) &_orthoDr_pdose_semi_audit_solver, 23},
     {"_orthoDr_local_f", (DL_FUNC) &_orthoDr_local_f, 5},
     {"_orthoDr_local_solver", (DL_FUNC) &_orthoDr_local_solver, 15},
     {"_orthoDr_phd_init", (DL_FUNC) &_orthoDr_phd_init, 5},

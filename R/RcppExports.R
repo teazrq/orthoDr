@@ -29,8 +29,16 @@ dosepred <- function(B, X, X_test, bw, W) {
     .Call(`_orthoDr_dosepred`, B, X, X_test, bw, W)
 }
 
-pdose_semi_solver <- function(B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_pdose_semi_solver`, B, X, R, A, a_dist, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+pdose_semi_solver <- function(B, X, R, A, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, intercept = FALSE) {
+    .Call(`_orthoDr_pdose_semi_solver`, B, X, R, A, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, intercept)
+}
+
+pdose_semi_evaluate <- function(B, X, R, A, bw, a_seq, lambda, intercept = FALSE, cayley_step = 1e-4, dose_factor = 0.70710678118654752440) {
+    .Call(`_orthoDr_pdose_semi_evaluate`, B, X, R, A, bw, a_seq, lambda, intercept, cayley_step, dose_factor)
+}
+
+pdose_semi_audit_solver <- function(B, X, R, A, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, intercept = FALSE, trace = TRUE, trial_budget = 30L, audit_fail_gradient_iteration = -1L, audit_fail_trial_iteration = -1L) {
+    .Call(`_orthoDr_pdose_semi_audit_solver`, B, X, R, A, a_seq, lambda, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, intercept, trace, trial_budget, audit_fail_gradient_iteration, audit_fail_trial_iteration)
 }
 
 local_f <- function(B, X, Y, bw, ncore) {

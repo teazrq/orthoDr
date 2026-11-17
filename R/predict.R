@@ -34,6 +34,10 @@
 #' learned average-dose component and uses the training kernel means for
 #' centering. The intercept bounds restrict the average fitted training dose,
 #' not individual predictions.
+#' Pseudo-direct fits made with \code{intercept = TRUE} instead predict
+#' \eqn{\alpha+k(x)^\top w}, using their stored unbounded constant and no
+#' kernel-mean centering. Previously saved dose models retain their prediction
+#' formulas.
 #'
 #' Legacy forward survival objects without a stored bandwidth require the
 #' original bandwidth to be restored or the model to be refitted. If all
@@ -96,7 +100,10 @@
 #' # the pseudo direct learning method
 #' orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = seq(0.1,0.2,0.01),
 #'                       method = "pseudo_direct", K = as.integer(sqrt(n)), keep.data = TRUE,
-#'                       maxitr = 150, verbose = FALSE, ncore = 2)
+#'                       maxitr = 500, verbose = FALSE, ncore = 2)
+#' orthofit$converge
+#' orthofit$gradient.norm
+#' orthofit$stop.reason
 #'
 #' predict(orthofit,test$X)
 
@@ -234,7 +241,10 @@ predict_orthoDr_pdose <- function(object, testx, ...)
 {
   # check test data
   if (missing(testx)) stop("testx is missing")
-  if (!is.matrix(testx) || !is.numeric(testx)) stop("testx must be a numerical matrix")
+  if (!is.matrix(testx) || !is.numeric(testx) || is.complex(testx) ||
+      any(!is.finite(testx))) stop("testx must be a finite numerical matrix")
+  if (ncol(testx) != nrow(object$B))
+    stop("New observations must have the same number of predictors as the training data")
 
   if (class(object)[2] !="fit")
     stop("This is not an orthoDr fitted object")
@@ -242,9 +252,7 @@ predict_orthoDr_pdose <- function(object, testx, ...)
   if (!object$keep.data)
     stop("Need the original data for prediction. Please specify keep.data = TRUE in model fitting.")
 
-  if (class(object)[3] == "pdose")
-      pred = dosepred(object$B, object$x, testx, object$bw, object$W)
-
+  offset <- 0
   if (identical(object$objective.version, "direct_joint_intercept_v2")) {
     alpha <- object$intercept
     kernel.mean <- object$kernel.mean
@@ -252,10 +260,19 @@ predict_orthoDr_pdose <- function(object, testx, ...)
         !is.finite(alpha) || !is.numeric(kernel.mean) || is.complex(kernel.mean) ||
         length(kernel.mean) != nrow(object$x) || any(!is.finite(kernel.mean)))
       stop("This intercept fit is missing valid intercept or kernel.mean state; refit the model.")
-    pred <- pred + alpha - sum(kernel.mean * object$W)
+    offset <- alpha - sum(kernel.mean * object$W)
+  } else if (identical(object$objective.version, "pseudo_mse_intercept_v1")) {
+    alpha <- object$intercept
+    if (!is.numeric(alpha) || is.complex(alpha) || length(alpha) != 1L ||
+        !is.finite(alpha) || !is.null(object$kernel.mean))
+      stop("This pseudo-direct fit is missing valid intercept state; refit the model.")
+    offset <- alpha
   } else if (!is.null(object$intercept) || !is.null(object$kernel.mean)) {
     stop("This dose fit has intercept state without its supported objective.version; refit the model.")
   }
+
+  pred <- if (nrow(testx) == 0L) numeric(0) else
+    dosepred(object$B, object$x, testx, object$bw, object$W) + offset
 
   return(list("pred" = pred))
 }

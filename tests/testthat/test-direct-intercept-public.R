@@ -40,9 +40,9 @@ test_that("the intercept API validates only its intended direct mode", {
   pseudo <- intercept_public_fixture()
   pseudo$method <- "pseudo_direct"
   pseudo$lambda.reward <- NULL
-  expect_error(do.call(orthoDr_pdose, c(pseudo, list(intercept = FALSE))),
-               "only used with method")
-  expect_error(do.call(orthoDr_pdose, c(pseudo, list(intercept.bounds = NULL))),
+  expect_no_error(do.call(orthoDr_pdose, c(pseudo, list(intercept = FALSE))))
+  expect_no_error(do.call(orthoDr_pdose, c(pseudo, list(intercept.bounds = NULL))))
+  expect_error(do.call(orthoDr_pdose, c(pseudo, list(intercept.bounds = c(0, 4)))),
                "only used with method")
 })
 
