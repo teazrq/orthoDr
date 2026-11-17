@@ -16,6 +16,18 @@ cat(guide_section("Learn a personalized dose and predict"), sep = "\n")
 
 ## Next steps
 
+Both dose methods use pSAVE as the default starting basis. Supply a
+full-column-rank `B.initial` matrix with one row per predictor and `ndr`
+columns to use another starting point, including a random one. The function
+orthonormalizes the supplied basis before fitting. pSAVE is one initialization
+option; final dose accuracy can vary with the starting point.
+Use unit-length starting columns or an orthonormal basis. Extremely small
+columns can be rejected as numerically rank deficient.
+
+The finite-sample dose kernel uses the individual projected coordinates.
+Rotating a basis or rescaling predictors can therefore change a fitted rule.
+Apply any chosen predictor preprocessing consistently to training and new data.
+
 See `orthoDr_pdose()` for candidate grids, bandwidths, initialization, and
 regularization, and the numerical stopping criteria. The
 [method paper](https://doi.org/10.1093/biomet/asaa087) explains the distinction

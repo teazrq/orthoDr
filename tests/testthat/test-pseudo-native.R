@@ -334,3 +334,34 @@ test_that("large finite ridge values retain intercept GCV degrees of freedom", {
   expect_identical(evaluated$lambda.init, 100)
 })
 
+test_that("one small backtracked update does not declare stagnation", {
+  set.seed(44092)
+  n <- 23L; p <- 6L; d <- 2L
+  x <- matrix(rnorm(n * p), n, p) %*% diag(c(1, 5, 2, .5, 3, 1.5))
+  a <- runif(n, 0, 4)
+  r <- cos(a) + .5 * x[, 1] + sin(x[, 2])
+  B <- qr.Q(qr(matrix(rnorm(p * d), p, d)))
+  btol <- .19574116303110745; ftol <- .03245876060592319
+  fit <- orthoDr:::pdose_semi_audit_solver(B, x, r, a,
+    seq(0, 4, length.out = 9), c(.1, .3), .7, 1e-4, .2, .85, 12,
+    1e-6, btol, ftol, 1e-20, 60L, 0L, 1L, FALSE, TRUE)
+  commits <- Filter(function(z) identical(z$event, "commit"), fit$trace)
+  previous <- fit$trace[[1]]
+  direction_change <- objective_change <- numeric(length(commits))
+  for (i in seq_along(commits)) {
+    direction_change[i] <- norm(commits[[i]]$B - previous$B, "F") / sqrt(p)
+    objective_change[i] <- abs(commits[[i]]$objective - previous$objective) /
+      (1 + abs(previous$objective))
+    previous <- commits[[i]]
+  }
+  expect_gt(fit$itr, 5L)
+  expect_lt(direction_change[5], btol)
+  expect_lt(objective_change[5], ftol)
+  expect_gt(mean(direction_change[1:5]), btol)
+  expect_gt(mean(objective_change[1:5]), ftol)
+  expect_identical(fit$stop.reason, "stagnation")
+  expect_false(fit$converge)
+  expect_lt(mean(tail(direction_change, 5)), btol)
+  expect_lt(mean(tail(objective_change, 5)), ftol)
+})
+

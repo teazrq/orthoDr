@@ -64,3 +64,9 @@ test_that("pseudo controls and constant rewards fail clearly", {
   z$r[] <- .1
   expect_error(pseudo_public_fit(z, B.initial = NULL), "Constant rewards")
 })
+test_that("genuine saved dose objects retain their predictions", {
+  for (method in c("pseudo_direct", "direct", "direct_intercept")) {
+    saved <- readRDS(test_path("fixtures", paste0("r-", method, ".rds")))
+    expect_equal(drop(predict(saved$fit, saved$testx)$pred), saved$pred, tolerance = 2e-12)
+  }
+})

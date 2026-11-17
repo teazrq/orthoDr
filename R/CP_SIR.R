@@ -17,9 +17,9 @@
 #'
 #' @return A list with components:
 #' \describe{
-#'   \item{\code{values}}{Eigenvalues of the estimation matrix.}
+#'   \item{\code{values}}{Singular values of the estimation matrix.}
 #'   \item{\code{vectors}}{Estimated directions (columns), ordered by
-#'     eigenvalues.}
+#'     decreasing singular value.}
 #' }
 #'
 #' @details
