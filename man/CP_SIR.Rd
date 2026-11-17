@@ -11,7 +11,7 @@ CP_SIR(x, y, censor, bw = silverman(1, length(y)))
 
 \item{y}{A numeric vector of observed survival times.}
 
-\item{censor}{A numeric vector of censoring indicators (1 = event,
+\item{censor}{A numeric vector of event indicators (1 = event,
 0 = censored).}
 
 \item{bw}{Numeric; kernel bandwidth for nonparametric estimation
@@ -26,10 +26,11 @@ decreasing singular value.}
 }
 }
 \description{
-Fits the CP-SIR model for right-censored survival outcomes. This model is
-correct only under strong assumptions, but since it requires only an SVD,
-its solution is commonly used as the initial value in
-\code{\link{orthoDr_surv}} optimization.
+Estimates counting-process-based sliced inverse regression (CP-SIR)
+directions for right-censored survival outcomes using a singular value
+decomposition. Statistical recovery requires strong assumptions. The
+directions are used by default to initialize \code{\link{orthoDr_surv}};
+that function also accepts a custom starting matrix.
 }
 \details{
 Events at the same observed time share the midpoint of their event ranks

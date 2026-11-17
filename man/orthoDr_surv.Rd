@@ -20,12 +20,13 @@ orthoDr_surv(
 )
 }
 \arguments{
-\item{x}{A numeric matrix of features. Features are standardized
+\item{x}{A numeric matrix with one row per observation and one column per
+predictor. Predictors are standardized
 internally for fitting; the returned directions use the original units.}
 
 \item{y}{A numeric vector of observed survival times.}
 
-\item{censor}{A numeric vector of censoring indicators (1 = event,
+\item{censor}{A numeric vector of event indicators (1 = event,
 0 = censored).}
 
 \item{method}{The estimating equation: \code{"forward"} (1-d model),
@@ -68,7 +69,8 @@ list containing:
 units, with columns normalized to unit length.}
 \item{\code{fn}}{The final objective function value.}
 \item{\code{itr}}{Number of iterations performed.}
-\item{\code{converge}}{Logical; \code{TRUE} when convergence was reached.}
+\item{\code{converge}}{Logical; \code{TRUE} when a numerical stopping
+criterion was reached. This does not establish prediction accuracy.}
 \item{\code{method}}{The method used (e.g., \code{"dm"}).}
 \item{\code{keep.data}}{Whether original data was retained.}
 }
@@ -80,6 +82,11 @@ Three estimating equations are available: \code{"forward"}, \code{"dn"},
 and \code{"dm"}.
 }
 \details{
+The methods assume that event and censoring times are independent
+conditional on the full predictor vector. Prediction also relies on an
+adequate fitted reduction and local data support. The function does not
+check these study conditions.
+
 Observations with the same time share a complete risk set, including events
 and censored observations at that time. The bandwidth is retained for
 prediction for all three methods. If all observed times are equal, the

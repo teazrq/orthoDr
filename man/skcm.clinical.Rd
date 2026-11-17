@@ -3,15 +3,18 @@
 \docType{data}
 \name{skcm.clinical}
 \alias{skcm.clinical}
-\title{skcm.clinical}
+\title{Clinical Data for Cutaneous Melanoma}
 \format{
-Contains 469 subjects with 156 failures. Each row contains one subject, subject ID is indicated by row name. Variables include \code{Time}, \code{Censor}, \code{Gender} and \code{Age}. \code{Age} has 8 missing values.
+Contains 469 subjects with 156 events. Each row represents one
+subject, identified by its row name. Variables are \code{Time},
+\code{Censor}, \code{Gender}, and \code{Age}. \code{Age} has 8 missing values.
 }
 \usage{
 skcm.clinical
 }
 \description{
-The clinical variables of the SKCM dataset. The original data was obtained from The Cancer Genome Atlas (TCGA).
+Clinical variables for the skin cutaneous melanoma (SKCM)
+data from The Cancer Genome Atlas (TCGA).
 }
 \references{
 \url{https://www.cancer.gov/ccg/research/genome-sequencing/tcga}

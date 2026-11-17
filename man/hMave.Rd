@@ -11,7 +11,7 @@ hMave(x, y, censor, m0, B0 = NULL)
 
 \item{y}{A numeric vector or one-column matrix of observed survival times.}
 
-\item{censor}{A logical or numeric vector or one-column matrix of censoring
+\item{censor}{A logical or numeric vector or one-column matrix of event
 indicators (1 = event, 0 = censored).}
 
 \item{m0}{Integer; number of structural dimensions to estimate.}
@@ -23,14 +23,16 @@ indicators (1 = event, 0 = censored).}
 A list with components:
 \describe{
 \item{\code{B}}{The estimated direction matrix (p x m0).}
-\item{\code{cv}}{Leave-one-out cross-validation error.}
+\item{\code{cv}}{Sum of squared leave-one-out prediction errors for
+Gaussian kernel values of standardized event times, evaluated among
+observed events. This is not a survival-probability or hazard prediction loss.}
 }
 }
 \description{
-An almost direct R translation of Xia, Zhang & Xu's (2010) hMAVE Matlab
-code, with additional options for supplying a custom initial value.
-This algorithm does \emph{not} use the orthogonality constrained
-optimization framework of \code{\link{ortho_optim}}.
+Estimates dimension reduction directions for right-censored survival data
+using hazard minimum average variance estimation (hMAVE). The implementation
+translates Xia, Zhang & Xu's (2010) MATLAB code and allows a custom starting
+matrix. It uses its own fitting algorithm rather than \code{\link{ortho_optim}}.
 }
 \examples{
 # generate some survival data

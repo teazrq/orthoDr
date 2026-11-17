@@ -74,10 +74,9 @@ was reached, and \code{FALSE} when the iteration limit was exhausted.}
 }
 }
 \description{
-A general-purpose optimization solver for problems with orthogonality
-constraints on the columns of \code{B}. Implements the curvilinear search
-algorithm of Wen & Yin (2013), which ensures that \code{B} remains on the
-Stiefel manifold \eqn{B^\top B = I} throughout optimization.
+Minimizes or maximizes a supplied objective subject to \eqn{B^\top B = I},
+so the columns of \code{B} are orthonormal. Uses the curvilinear search
+algorithm of Wen & Yin (2013) on the Stiefel manifold.
 If no analytical gradient is provided, a numerical approximation is used.
 }
 \examples{

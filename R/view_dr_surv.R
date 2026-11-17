@@ -1,18 +1,24 @@
-#' @title 2D or 3D view of survival data on reduced dimension
+#' @title Plot Survival Data Against One Reduced Predictor
 #' @name view_dr_surv
 #' @export
-#' @description Produce 2D or 3D plots of right censored survival data based on a given dimension reduction space
-#' @param x A matrix or data.frame for features (continuous only). The algorithm will not scale the columns to unit variance
-#' @param y A vector of observed time
-#' @param censor A vector of censoring indicator
-#' @param B The dimension reduction subspace, can only be 1 dimensional
-#' @param bw A Kernel bandwidth (3D plot only) for approximating the survival function, default is the Silverman's formula
-#' @param FUN A scaling function applied to the time points \code{y}. Default is \code{"log"}.
-#' @param type \code{2D} or \code{3D} plot
-#' @param legend.add Should legend be added (2D plot only)
-#' @param xlab x axis label
-#' @param ylab y axis label
-#' @param zlab z axis label
+#' @description
+#' Plots observed survival times against \eqn{xB} in two dimensions, or a
+#' kernel-smoothed survival surface over time and \eqn{xB} in three dimensions.
+#' @param x A numeric matrix of continuous predictors, with one row per
+#'   observation. Columns are not scaled internally.
+#' @param y A numeric vector of observed survival times, one per row of \code{x}.
+#' @param censor A vector of event indicators (1 = event, 0 = censored).
+#' @param B A vector or one-column matrix of direction weights, with one entry
+#'   per predictor. Only one reduced predictor can be displayed.
+#' @param bw Kernel bandwidth for the 3D survival estimate, in units of
+#'   \eqn{xB}. The default is \code{silverman(1, length(y)) * sd(x \%*\% B)}.
+#' @param FUN A function, or its name, applied to \code{y} before plotting.
+#'   Default: \code{"log"}. Use \code{identity} to retain the supplied time scale.
+#' @param type Plot type: \code{"2D"} or \code{"3D"}.
+#' @param legend.add Logical; add a legend to the 2D plot.
+#' @param xlab Label for the reduced-predictor axis.
+#' @param ylab Label for the transformed-time axis.
+#' @param zlab Label for the survival-probability axis in a 3D plot.
 #' @return Invisible \code{NULL}. Called for its side-effect (producing a plot).
 #'
 #' @references

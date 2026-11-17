@@ -2,9 +2,9 @@
 #'
 #' @description
 #' Fits a semiparametric sufficient dimension reduction model for continuous
-#' outcomes using the methods of Ma & Zhu (2012, 2013). The direction matrix
-#' \code{B} is estimated via orthogonality-constrained optimization on the
-#' Stiefel manifold, ensuring \eqn{B^\top B = I}.
+#' outcomes using the methods of Ma & Zhu (2012, 2013). It estimates a
+#' direction matrix \code{B} subject to \eqn{B^\top B = I}; \eqn{xB} gives
+#' the reduced predictors.
 #'
 #' Kernel calculations divide each coordinate of \eqn{B^\top x} by its sample
 #' standard deviation and by \code{bw * sqrt(2)}. Raw predictor values still
@@ -26,15 +26,17 @@
 #' @param ndr Integer; number of directions to estimate (default 2). Must be
 #'   \eqn{\ge 1} and \eqn{\le} \code{ncol(x)}. Values > 4 produce a warning.
 #' @param B.initial Initial \eqn{B} matrix (\eqn{p \times ndr}), or \code{NULL}
-#'   (default). When \code{NULL}, \code{initB()} selects the best among SIR,
-#'   SAVE, and PHD starters by minimising the squared norm of the estimating
-#'   equation.  **Exception:** for \code{method = "local"} with \code{ndr = 1},
-#'   a multi-start strategy runs LOCAL from all three inits and selects the
-#'   result that maximises the nonparametric \eqn{R^2} of the Nadaraya–Watson
-#'   regression of \eqn{Y} on \eqn{B^T X}.
+#'   (default). When \code{NULL}, the function selects the starting matrix
+#'   with the smallest squared estimating-equation norm among SIR, SAVE,
+#'   and PHD candidates. For \code{ndr = 2}, it also considers the leading
+#'   SIR and SAVE directions together when they are linearly independent.
+#'   For \code{method = "local"} with \code{ndr = 1}, it instead fits from
+#'   each of the three starting matrices and selects the result with the
+#'   largest nonparametric \eqn{R^2} for the Nadaraya-Watson regression of
+#'   \eqn{Y} on \eqn{B^T X}.
 #' @param bw X-kernel bandwidth. \code{NULL} (default) uses Silverman's rule
 #'   of thumb. Internal Y-kernel bandwidths are derived from the sample size
-#'   and structural dimension — they are not user-tunable.
+#'   and structural dimension; they are not user-tunable.
 #' @param keep.data Logical; if \code{TRUE}, the original data is stored in the
 #'   returned object for use by \code{\link{predict}}. Default \code{FALSE}.
 #' @param control A named list of optimizer tuning parameters. Recognised
@@ -68,7 +70,7 @@
 #'     \item{PHD}{Semiparametric principal Hessian directions.}
 #'     \item{Local}{Locally efficient estimator (Ma & Zhu 2013,
 #'       Section~3.1) with a normal posited model for the conditional
-#'       density.  This yields a mean-regression estimator — it captures
+#'       density. This yields a mean-regression estimator, which captures
 #'       dependence of \eqn{Y} on \eqn{\beta^\top x} through the conditional
 #'       mean only, not higher moments.  For \eqn{d = 1} with default
 #'       initialisation, a multi-start strategy runs LOCAL from SIR, SAVE,
@@ -90,7 +92,7 @@
 #'     \item{\code{fn}}{Final objective value.}
 #'     \item{\code{itr}}{Number of iterations performed.}
 #'     \item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
-#'       was reached.}
+#'       was reached. This describes numerical stopping, not prediction accuracy.}
 #'     \item{\code{method}}{Method used (e.g., \code{"sir"}).}
 #'     \item{\code{keep.data}}{Whether original data was stored.}
 #'   }

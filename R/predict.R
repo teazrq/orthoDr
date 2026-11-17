@@ -1,4 +1,4 @@
-#' @title predict.orthoDr
+#' @title Predict Responses, Survival Probabilities, or Personalized Doses
 #' @name predict.orthoDr
 #' @export
 #' @description Predicts conditional mean outcomes, survival probabilities, or

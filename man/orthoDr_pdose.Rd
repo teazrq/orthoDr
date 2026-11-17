@@ -25,11 +25,11 @@ orthoDr_pdose(
 )
 }
 \arguments{
-\item{x}{A numeric matrix of features (continuous only).}
+\item{x}{A numeric matrix of continuous predictors, with one row per observation.}
 
-\item{a}{A numeric vector of observed dose levels.}
+\item{a}{A numeric vector of observed dose levels, one per row of \code{x}.}
 
-\item{r}{A numeric vector of observed rewards (outcomes). Larger values
+\item{r}{A numeric vector of observed rewards (outcomes), one per row of \code{x}. Larger values
 are preferred.}
 
 \item{ndr}{Number of directions to estimate.}
@@ -37,7 +37,8 @@ are preferred.}
 \item{B.initial}{Initial \code{B} matrix. If \code{NULL} (default),
 the partial SAVE model (\code{\link{pSAVE}}) is used. If specified,
 must have \code{nrow(B.initial) == ncol(x)} and
-\code{ncol(B.initial) == ndr}. Will be orthogonalized via Gram-Schmidt.
+\code{ncol(B.initial) == ndr}, with linearly independent columns. A
+custom or random basis is allowed and is orthonormalized before fitting.
 Supply a basis when the data cannot support automatic pSAVE initialization.}
 
 \item{bw}{Kernel bandwidth, assuming each variable has unit variance.

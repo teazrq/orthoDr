@@ -1,8 +1,10 @@
-#' @title print.orthoDr
+#' @title Print an orthoDr Fit or Prediction Summary
+#' @description Prints the estimated direction matrix for a fitted model,
+#'   or identifies the returned quantities for a prediction object.
 #' @export
 #' @keywords internal
-#' @param x A fitted orthoDr object
-#' @param ... Further arguments passed to or from other methods
+#' @param x An orthoDr fitted model or prediction object.
+#' @param ... Additional arguments, currently unused.
 #' @return Invisible NULL. Called for its side-effect (printing to console).
 #' @examples
 #' # generate some survival data

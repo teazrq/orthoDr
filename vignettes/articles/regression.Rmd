@@ -2,8 +2,9 @@
 title: Regression
 ---
 
-This tutorial uses orthoDr 2.0.0. See [Get Started](get-started.html) for
-installation and the complete R script.
+Estimate reduced predictors for a continuous response and predict its
+conditional mean for new observations. See [Get Started](get-started.html)
+for installation and the complete R script for orthoDr 2.0.0.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)

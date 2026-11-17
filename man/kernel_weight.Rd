@@ -2,24 +2,28 @@
 % Please edit documentation in R/kernel_weight.R
 \name{kernel_weight}
 \alias{kernel_weight}
-\title{kernel_weight}
+\title{Gaussian Kernel Weights}
 \usage{
 kernel_weight(x1, x2, kernel = "gaussian", dist = "euclidean")
 }
 \arguments{
-\item{x1}{first data matrix}
+\item{x1}{A numeric matrix with one row per observation.}
 
-\item{x2}{second data matrix}
+\item{x2}{A numeric matrix with the same number and order of columns as \code{x1}.}
 
-\item{kernel}{the kernel function, currently only using Gaussian kernel}
+\item{kernel}{Retained for compatibility. The function always uses a Gaussian kernel.}
 
-\item{dist}{the distance metric, currently only using the Euclidean distance}
+\item{dist}{Retained for compatibility. The function always uses squared Euclidean distances.}
 }
 \value{
-A distance matrix, with its (i, j)th element being the kernel weights for the ith row of \code{X1} jth row of \code{X2}.
+A matrix with \code{nrow(x1)} rows and \code{nrow(x2)} columns.
+Entry \eqn{(i,j)} is \eqn{\exp(-\|x_{1i}-x_{2j}\|^2)}, where
+\eqn{x_{1i}} and \eqn{x_{2j}} are the corresponding rows. These are
+unnormalized similarity weights, with value one for identical rows.
 }
 \description{
-Calculate the Gaussian kernel weights between rows of X1 and rows of X2
+Computes Gaussian kernel weights between every row of \code{x1} and every
+row of \code{x2}, using their supplied coordinates without scaling.
 }
 \examples{
 # two matrices
@@ -27,4 +31,7 @@ set.seed(1)
 x1 = matrix(rnorm(10), 5, 2)
 x2 = matrix(rnorm(6), 3, 2)
 kernel_weight(x1, x2)
+}
+\seealso{
+\code{\link{dist_cross}}
 }

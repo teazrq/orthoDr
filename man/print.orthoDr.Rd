@@ -2,20 +2,21 @@
 % Please edit documentation in R/print.R
 \name{print.orthoDr}
 \alias{print.orthoDr}
-\title{print.orthoDr}
+\title{Print an orthoDr Fit or Prediction Summary}
 \usage{
 \method{print}{orthoDr}(x, ...)
 }
 \arguments{
-\item{x}{A fitted orthoDr object}
+\item{x}{An orthoDr fitted model or prediction object.}
 
-\item{...}{Further arguments passed to or from other methods}
+\item{...}{Additional arguments, currently unused.}
 }
 \value{
 Invisible NULL. Called for its side-effect (printing to console).
 }
 \description{
-print.orthoDr
+Prints the estimated direction matrix for a fitted model,
+or identifies the returned quantities for a prediction object.
 }
 \examples{
 # generate some survival data

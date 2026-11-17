@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.R
 \name{predict.orthoDr}
 \alias{predict.orthoDr}
-\title{predict.orthoDr}
+\title{Predict Responses, Survival Probabilities, or Personalized Doses}
 \usage{
 \method{predict}{orthoDr}(object, testx, ...)
 }

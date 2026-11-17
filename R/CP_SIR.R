@@ -3,14 +3,15 @@
 #' @export
 #'
 #' @description
-#' Fits the CP-SIR model for right-censored survival outcomes. This model is
-#' correct only under strong assumptions, but since it requires only an SVD,
-#' its solution is commonly used as the initial value in
-#' \code{\link{orthoDr_surv}} optimization.
+#' Estimates counting-process-based sliced inverse regression (CP-SIR)
+#' directions for right-censored survival outcomes using a singular value
+#' decomposition. Statistical recovery requires strong assumptions. The
+#' directions are used by default to initialize \code{\link{orthoDr_surv}};
+#' that function also accepts a custom starting matrix.
 #'
 #' @param x A matrix (n x p) of features (continuous only).
 #' @param y A numeric vector of observed survival times.
-#' @param censor A numeric vector of censoring indicators (1 = event,
+#' @param censor A numeric vector of event indicators (1 = event,
 #'   0 = censored).
 #' @param bw Numeric; kernel bandwidth for nonparametric estimation
 #'   (one-dimensional). Default: Silverman's rule via \code{\link{silverman}}.
