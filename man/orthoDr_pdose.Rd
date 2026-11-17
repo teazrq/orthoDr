@@ -76,7 +76,9 @@ is an absolute tolerance for the direction and policy residuals; \code{btol} and
 Pseudo-direct learning also uses analytic gradients; \code{epsilon} is
 unused. Its \code{gtol} applies to the constrained gradient of normalized
 mean squared reward error. Its nonmonotone search permits
-\code{gamma} between zero and one, inclusive.}
+\code{gamma} between zero and one, inclusive.
+Stagnation requires small direction and objective changes averaged over
+five accepted updates.}
 
 \item{maxitr}{Maximum number of iterations. Default: \code{500}. For direct
 learning, an iteration is a completed policy and direction sweep;

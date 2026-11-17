@@ -530,10 +530,11 @@ Rcpp::List pseudo_fit(arma::mat B, const arma::mat& X, const arma::vec& R,
       _["previous.step"] = previous_step, _["accepted.step"] = trial_step,
       _["spectral.valid"] = valid_spectral));
     if (state.norm <= control.gtol) reason = "gradient_tolerance";
+    // A single heavily backtracked step can be tiny while the next spectral
+    // step is useful. Require small changes across five accepted updates.
     else if (completed >= 5 &&
-      ((B_change < control.btol && F_change < control.ftol) ||
-       (arma::mean(changes.col(0)) < control.btol &&
-        arma::mean(changes.col(1)) < control.ftol))) reason = "stagnation";
+      arma::mean(changes.col(0)) < control.btol &&
+      arma::mean(changes.col(1)) < control.ftol) reason = "stagnation";
     if (control.verbose > 1 && completed % 10 == 0)
       Rcpp::Rcout << "At iteration " << completed << ", normalized MSE = " << state.objective << std::endl;
   }

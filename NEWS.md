@@ -10,6 +10,8 @@
   `gradient.norm`, `stop.reason`, and `objective.scaled` describe the returned
   state. Failed searches retain the last accepted state, and dose-grid averages
   use stable log weights. The existing bandwidth convention is unchanged.
+  Stagnation checks average five accepted updates so one short backtracked
+  step does not stop an otherwise progressing fit.
 * Added an optional unpenalized intercept to the final pseudo-direct kernel
   ridge rule, including intercept-aware GCV. Its default remains `FALSE`.
   This intercept is an unbounded constant, distinct from direct learning's

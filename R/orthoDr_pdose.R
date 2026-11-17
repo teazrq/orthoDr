@@ -52,6 +52,8 @@
 #'   unused. Its \code{gtol} applies to the constrained gradient of normalized
 #'   mean squared reward error. Its nonmonotone search permits
 #'   \code{gamma} between zero and one, inclusive.
+#'   Stagnation requires small direction and objective changes averaged over
+#'   five accepted updates.
 #' @param maxitr Maximum number of iterations. Default: \code{500}. For direct
 #'   learning, an iteration is a completed policy and direction sweep;
 #'   For pseudo-direct learning, it counts accepted direction updates.
