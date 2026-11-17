@@ -47,6 +47,10 @@ For direct fits made with \code{intercept = TRUE}, prediction includes the
 learned average-dose component and uses the training kernel means for
 centering. The intercept bounds restrict the average fitted training dose,
 not individual predictions.
+Pseudo-direct fits made with \code{intercept = TRUE} instead predict
+\eqn{\alpha+k(x)^\top w}, using their stored unbounded constant and no
+kernel-mean centering. Previously saved dose models retain their prediction
+formulas.
 
 Legacy forward survival objects without a stored bandwidth require the
 original bandwidth to be restored or the model to be refitted. If all
@@ -110,7 +114,10 @@ predict(orthofit,test$X)
 # the pseudo direct learning method
 orthofit = orthoDr_pdose(train$X, train$A, train$R, ndr = ndr, lambda = seq(0.1,0.2,0.01),
                       method = "pseudo_direct", K = as.integer(sqrt(n)), keep.data = TRUE,
-                      maxitr = 150, verbose = FALSE, ncore = 2)
+                      maxitr = 500, verbose = FALSE, ncore = 2)
+orthofit$converge
+orthofit$gradient.norm
+orthofit$stop.reason
 
 predict(orthofit,test$X)
 }

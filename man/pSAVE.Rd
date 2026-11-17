@@ -21,8 +21,10 @@ Default: \code{2}.}
 Default: \code{2}.}
 }
 \value{
-A matrix whose columns are the estimated basis vectors of the
-central subspace, ordered by eigenvalues.
+A matrix of unit-length directions in the original predictor
+coordinates, ordered by decreasing common-coordinate eigenvalue. Each
+column's largest absolute entry is positive (first entry in a tie).
+The columns need not be Euclidean-orthogonal.
 }
 \description{
 Fits the partial SAVE model for dose-response settings. This model relies
@@ -33,8 +35,23 @@ in \code{\link{orthoDr_pdose}} optimization.
 Each central dose threshold contributes a grouped SAVE moment only when
 every nonempty dose group has at least p + 1 observations and full centred
 predictor rank. Repeated thresholds retain their repeated weights, and a
-threshold with one observed dose group is allowed. Outcome slices of size
-one or two retain the SAVE dependency's identity contribution.
+threshold with one observed dose group is allowed. Group and slice
+covariances use their population divisors. Each group's symmetric-whitened
+SAVE moment is transported to raw coefficient coordinates before pooling.
+Its eigenproblem uses the group-size-weighted average within-group
+covariance as a common reference, and the selected directions are mapped
+back to the original predictor coordinates.
+
+Outcome slices of size one or two contribute only a scalar identity in
+the common coordinates. They supply no directional information and are
+excluded from the transported local moments without renormalizing the
+remaining slice weights. This preserves their nondirectional fallback,
+rather than transporting a local identity through unequal group covariances.
+The construction corrects aggregation in incompatible local coordinates;
+it does not reproduce historical pSAVE output. Affine predictor changes
+transform the raw selected subspace accordingly when its eigenvalue
+boundary is separated and numerical group admissibility is unchanged.
+Statistical subspace recovery still requires appropriate SAVE assumptions.
 
 For p > 1, initialization fails if no usable dose threshold remains or if
 every retained group has either one outcome slice or only slices smaller

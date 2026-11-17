@@ -1,17 +1,59 @@
-psave_legacy_reference <- function(x, a, r, ndr = 1, nslices0 = 2) {
+# Independent Cholesky local coordinates and a raw coefficient eigenproblem.
+# Only the separately tested slice partition is shared with the implementation.
+psave_coordinate_reference <- function(x, a, r, ndr = 1, nslices0 = 2,
+                                        transport_fallback = FALSE) {
   n <- nrow(x)
   p <- ncol(x)
   cuts <- sort(a)[seq.int(max(1L, floor(n / 2 - 50)),
                           min(n, floor(n / 2 + 50)))]
-  total <- matrix(0, p, p)
+  reference <- raw <- matrix(0, p, p)
+  fallback <- 0
+  retained <- numeric()
   for (cut in cuts) {
-    fit <- dr::dr(r ~ x, data = list(x = x, a = as.numeric(a <= cut), r = r),
-                  group = ~a, nslices = nslices0, chi2approx = "bx",
-                  numdir = p, method = "save")
-    total <- total + fit$M
+    group <- a <= cut
+    indices <- lapply(unique(group), function(g) which(group == g))
+    if (!all(vapply(indices, function(i) {
+      length(i) >= p + 1L && qr(sweep(x[i, , drop = FALSE], 2L,
+                                      colMeans(x[i, , drop = FALSE]), "-"))$rank == p
+    }, logical(1)))) next
+    retained <- c(retained, cut)
+    for (i in indices) {
+      xx <- x[i, , drop = FALSE]
+      centered <- sweep(xx, 2L, colMeans(xx), "-")
+      covariance <- crossprod(centered) / length(i)
+      inverse <- solve(t(chol(covariance)))
+      slices <- orthoDr:::.psave_slices(r[i], nslices0)
+      reference <- reference + length(i) / n * covariance
+      for (j in seq_len(slices$nslices)) {
+        size <- slices$slice.sizes[j]
+        if (size < 3L) {
+          fallback <- fallback + size / n
+          if (transport_fallback)
+            raw <- raw + size / n * crossprod(inverse)
+          next
+        }
+        subset <- xx[slices$slice.indicator == j, , drop = FALSE]
+        subset <- sweep(subset, 2L, colMeans(subset), "-")
+        within <- crossprod(subset) / size
+        contrast <- diag(p) - inverse %*% within %*% t(inverse)
+        raw <- raw + size / n * t(inverse) %*% contrast %*% contrast %*% inverse
+      }
+    }
   }
-  eigen(total, symmetric = FALSE)$vectors[, seq_len(ndr), drop = FALSE]
+  reference <- reference / length(retained)
+  raw <- raw / length(retained)
+  solution <- eigen(raw %*% reference, symmetric = FALSE)
+  order <- order(Re(solution$values), decreasing = TRUE)
+  directions <- Re(solution$vectors[, order[seq_len(ndr)], drop = FALSE])
+  directions <- sweep(directions, 2L, sqrt(colSums(directions^2)), "/")
+  for (j in seq_len(ndr))
+    if (directions[which.max(abs(directions[, j])), j] < 0)
+      directions[, j] <- -directions[, j]
+  list(B = directions, values = Re(solution$values[order]), covariance = reference,
+       raw.moment = raw, fallback.mass = fallback / length(retained), thresholds = retained)
 }
+
+psave_projector <- function(b) tcrossprod(qr.Q(qr(b)))
 
 test_that("pSAVE validates real finite inputs and dimensions before initialization", {
   set.seed(261030)
@@ -73,7 +115,7 @@ test_that("the slicing adapter preserves successful dependency results", {
                                   slice.sizes = 20L))
 })
 
-test_that("feasible pSAVE retains historical tied and one-group moments exactly", {
+test_that("corrected pSAVE matches independent raw-coordinate moments with dose ties", {
   set.seed(261028)
   for (n in c(150L, 200L)) {
     x <- matrix(rnorm(n * 3), n, 3)
@@ -81,32 +123,172 @@ test_that("feasible pSAVE retains historical tied and one-group moments exactly"
     a <- runif(n)
     for (dose in list(a, round(a, 1), rep(1, n))) {
       actual <- pSAVE(x, dose, r, ndr = 1)
-      expected <- psave_legacy_reference(x, dose, r)
-      expect_identical(actual, expected)
+      expected <- psave_coordinate_reference(x, dose, r)
+      expect_gt(expected$values[1] - expected$values[2], 1e-5)
+      expect_equal(actual, expected$B, tolerance = 2e-11)
+      expect_equal(colSums(actual^2), 1, tolerance = 1e-14)
+      expect_gt(actual[which.max(abs(actual[, 1])), 1], 0)
     }
   }
 })
 
-test_that("singleton and uninformative groups retain their historical contributions", {
+test_that("singleton and uninformative groups preserve weights in common coordinates", {
   set.seed(261031)
   x <- matrix(rnorm(60), 20, 3)
   a <- rep(1, 20)
   r <- c(rep(0, 19), 1)
   expect_identical(orthoDr:::.psave_slices(r, 2)$slice.sizes, c(19, 1))
-  expect_identical(pSAVE(x, a, r, ndr = 1), psave_legacy_reference(x, a, r))
+  expect_equal(pSAVE(x, a, r, ndr = 1), psave_coordinate_reference(x, a, r)$B,
+               tolerance = 2e-11)
 
   # The first ten thresholds have only constant-outcome groups. The final ten
   # have a single group with outcome contrasts. Preserve all twenty weights.
   a <- rep(0:1, each = 10)
   r <- a
-  expect_identical(pSAVE(x, a, r, ndr = 1), psave_legacy_reference(x, a, r))
+  expect_equal(pSAVE(x, a, r, ndr = 1), psave_coordinate_reference(x, a, r)$B,
+               tolerance = 2e-11)
 
   # A singleton-only group contributes identity alongside an informative group.
   x <- matrix(rnorm(120), 40, 3)
   a <- rep(0:1, each = 20)
   r <- c(seq_len(20), rep(0:1, each = 10))
-  expect_identical(pSAVE(x, a, r, ndr = 1, nslices0 = 20),
-                   psave_legacy_reference(x, a, r, nslices0 = 20))
+  expect_equal(pSAVE(x, a, r, ndr = 1, nslices0 = 20),
+                psave_coordinate_reference(x, a, r, nslices0 = 20)$B,
+                tolerance = 2e-11)
+})
+
+test_that("local SAVE matches dependency slice covariances and separates tiny fallback", {
+  set.seed(261033)
+  x <- matrix(rnorm(60), 20, 3) %*% diag(c(1, 4, .7))
+  r <- c(rep(0, 19), 1)
+  local <- orthoDr:::.psave_group_moment(x, r, 2)
+  expected <- dr::dr(r ~ x, data = list(x = x, a = rep(1, 20), r = r),
+                     group = ~a, nslices = 2, numdir = 3, method = "save",
+                     slice.function = orthoDr:::.psave_slices)
+  expect_equal(local$moment + local$fallback.mass * diag(3), expected$M,
+               tolerance = 2e-12)
+  expect_equal(local$fallback.mass, 1 / 20)
+  expect_equal(local$covariance, crossprod(sweep(x, 2L, colMeans(x), "-")) / 20,
+               tolerance = 1e-14)
+  tiny <- orthoDr:::.psave_group_moment(x, seq_len(20), 20)
+  expect_identical(tiny$moment, matrix(0, 3, 3))
+  expect_equal(tiny$fallback.mass, 1)
+})
+
+test_that("equal-covariance correction recovers an anisotropic mixed raw direction", {
+  covariance <- matrix(c(2, 1.2, .3, 1.2, 16, 1, .3, 1, .7), 3, 3)
+  eig <- eigen(covariance, symmetric = TRUE)
+  root <- eig$vectors %*% diag(sqrt(eig$values)) %*% t(eig$vectors)
+  beta <- c(1, 1, 0) / sqrt(2)
+  q <- qr.Q(qr(cbind(root %*% beta, c(0, 0, 1), c(1, 0, 0))))
+  blocks <- lapply(c(.25, 1.75), function(v) {
+    z <- diag(sqrt(3 * c(v, 1, 1)))
+    rbind(z, -z) %*% t(q) %*% root
+  })
+  x <- do.call(rbind, blocks)
+  r <- rep(0:1, each = 6)
+  actual <- pSAVE(x, rep(1, 12), r, ndr = 1)
+  expect_equal(actual[, 1], beta, tolerance = 5e-14)
+  local <- orthoDr:::.psave_group_moment(x, r, 2)
+  reduced <- local$inverse.sqrt %*% eigen(local$moment, symmetric = TRUE)$vectors[, 1]
+  expect_equal(psave_projector(actual), psave_projector(matrix(reduced, 3, 1)),
+               tolerance = 5e-14)
+})
+
+test_that("anisotropic correlated Gaussian direction is recovered approximately", {
+  set.seed(716)
+  scales <- c(1, 5, 2, .5)
+  covariance <- outer(scales, scales) * .6^abs(outer(seq_len(4), seq_len(4), "-"))
+  x <- matrix(rnorm(4000 * 4), 4000, 4) %*% chol(covariance)
+  beta <- c(1, 1, 0, 0) / sqrt(2)
+  r <- as.numeric(x %*% beta) ^ 2 / as.numeric(t(beta) %*% covariance %*% beta) +
+    rnorm(nrow(x), sd = .02)
+  actual <- pSAVE(x, rep(1, nrow(x)), r, ndr = 1)
+  expect_lt(sqrt(sum((psave_projector(actual) - tcrossprod(beta))^2)), .12)
+})
+
+test_that("a complete tied eigenspace is compared through its projector", {
+  covariance <- matrix(c(2, 1.2, .3, 1.2, 16, 1, .3, 1, .7), 3, 3)
+  eig <- eigen(covariance, symmetric = TRUE)
+  root <- eig$vectors %*% diag(sqrt(eig$values)) %*% t(eig$vectors)
+  blocks <- lapply(c(.25, 1.75), function(v) {
+    z <- diag(sqrt(3 * c(v, v, 1)))
+    rbind(z, -z) %*% root
+  })
+  x <- do.call(rbind, blocks)
+  r <- rep(0:1, each = 6)
+  expected <- solve(root, diag(3)[, 1:2])
+  actual <- pSAVE(x, rep(1, 12), r, ndr = 2)
+  expect_equal(psave_projector(actual), psave_projector(expected), tolerance = 5e-14)
+  expect_equal(psave_projector(pSAVE(x[12:1, ], rep(1, 12), r[12:1], ndr = 2)),
+               psave_projector(expected), tolerance = 5e-14)
+})
+
+test_that("unequal group moments transform affinely in raw selected coordinates", {
+  set.seed(119)
+  n <- 181
+  a <- round(runif(n, 0, 4), 1)
+  x <- matrix(rnorm(n * 4), n, 4)
+  transform <- diag(c(1, 3, .7, 2))
+  transform[1, 2] <- .8
+  high <- a > 2
+  x[high, ] <- sweep(x[high, ] %*% transform, 2L, 0:3, "+")
+  r <- (x[, 1] + .4 * x[, 2])^2 + .3 * x[, 3] + rnorm(n)
+  expected <- psave_coordinate_reference(x, a, r, ndr = 2)
+  expect_gt(expected$values[2] - expected$values[3], 1e-4)
+  actual <- pSAVE(x, a, r, ndr = 2)
+  expect_equal(actual, expected$B, tolerance = 3e-11)
+  change <- matrix(c(2, 0, .2, 0, .3, .7, 0, -.3,
+                      0, .4, 1.4, 0, -.2, 0, .1, 1.1), 4, 4)
+  shifted <- sweep(x %*% change, 2L, c(5, -2, 1, 8), "+")
+  transformed <- pSAVE(shifted, a, r, ndr = 2)
+  expect_equal(psave_projector(transformed), psave_projector(solve(change, actual)),
+               tolerance = 3e-11)
+})
+
+test_that("mixed tiny slices are direction neutral in common coordinates", {
+  set.seed(88)
+  x <- matrix(rnorm(300 * 3), 300, 3)
+  x[1:250, ] <- x[1:250, ] %*% matrix(c(1, 0, 0, 3, 6, 0, 0, 0, .4), 3, 3)
+  x[251:300, ] <- sweep(x[251:300, ], 2L, c(2, -1, 4), "+")
+  a <- rep(0:1, c(250, 50))
+  r <- c(1:250, rep(0:1, c(20, 30)))
+  expected <- psave_coordinate_reference(x, a, r, nslices0 = 300)
+  actual <- pSAVE(x, a, r, ndr = 1, nslices0 = 300)
+  expect_equal(expected$fallback.mass, 250 / 300)
+  expect_equal(psave_projector(actual), psave_projector(expected$B), tolerance = 3e-11)
+  polluted <- psave_coordinate_reference(x, a, r, nslices0 = 300,
+                                          transport_fallback = TRUE)
+  expect_gt(sqrt(sum((psave_projector(actual) - psave_projector(polluted$B))^2)), .2)
+  original <- orthoDr:::.psave_grouped_moment
+  local_mocked_bindings(
+    .psave_grouped_moment = function(...) {
+      local <- original(...)
+      local$fallback.mass <- local$fallback.mass + 100
+      local
+    }, .package = "orthoDr"
+  )
+  expect_identical(pSAVE(x, a, r, ndr = 1, nslices0 = 300), actual)
+})
+
+test_that("central thresholds retain repeated weights and odd-size truncation", {
+  set.seed(133)
+  x <- matrix(rnorm(151 * 3), 151, 3)
+  a <- round(runif(151), 1)
+  r <- x[, 1] + rnorm(151)
+  observed <- list()
+  original <- orthoDr:::.psave_grouped_moment
+  local_mocked_bindings(
+    .psave_grouped_moment = function(x, y, group, nslices) {
+      observed[[length(observed) + 1L]] <<- group
+      original(x, y, group, nslices)
+    }, .package = "orthoDr"
+  )
+  pSAVE(x, a, r, ndr = 1)
+  cuts <- sort(a)[25:125]
+  expect_length(observed, 101L)
+  expect_lt(length(unique(cuts)), 101L)
+  expect_identical(observed, lapply(cuts, function(cut) as.numeric(a <= cut)))
 })
 
 test_that("pSAVE rejects structural zero and identity slice information", {
@@ -143,10 +325,11 @@ test_that("each actual dose group must have full centred predictor rank", {
   x <- cbind(1:12, c(2 * (1:6), sin(7:12)))
   a <- 1:12
   observed <- list()
+  original <- orthoDr:::.psave_grouped_moment
   local_mocked_bindings(
-    dr = function(formula, data, ...) {
-      observed[[length(observed) + 1L]] <<- data$a
-      list(M = matrix(c(sum(data$a), 1, 1, sum(!data$a)), 2, 2))
+    .psave_grouped_moment = function(x, y, group, nslices) {
+      observed[[length(observed) + 1L]] <<- group
+      original(x, y, group, nslices)
     },
     .package = "orthoDr"
   )

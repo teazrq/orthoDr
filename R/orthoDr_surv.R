@@ -23,6 +23,8 @@
 #'   the counting-process-based SIR model (\code{\link{CP_SIR}}) is used.
 #'   If specified, must have \code{nrow(B.initial) == ncol(x)} and
 #'   \code{ncol(B.initial) == ndr}. Will be orthogonalized via Gram-Schmidt.
+#'   Express this starting matrix in the internally standardized predictor
+#'   coordinates used for fitting.
 #' @param bw Kernel bandwidth, assuming each variable has unit variance.
 #'   If \code{NULL} (default), Silverman's rule is used.
 #' @param keep.data Logical; if \code{TRUE}, the original data is stored in

@@ -16,15 +16,32 @@
 #' @param nslices0 Positive integer; requested number of outcome slices for SAVE.
 #'   Default: \code{2}.
 #'
-#' @return A matrix whose columns are the estimated basis vectors of the
-#'   central subspace, ordered by eigenvalues.
+#' @return A matrix of unit-length directions in the original predictor
+#'   coordinates, ordered by decreasing common-coordinate eigenvalue. Each
+#'   column's largest absolute entry is positive (first entry in a tie).
+#'   The columns need not be Euclidean-orthogonal.
 #'
 #' @details
 #' Each central dose threshold contributes a grouped SAVE moment only when
 #' every nonempty dose group has at least p + 1 observations and full centred
 #' predictor rank. Repeated thresholds retain their repeated weights, and a
-#' threshold with one observed dose group is allowed. Outcome slices of size
-#' one or two retain the SAVE dependency's identity contribution.
+#' threshold with one observed dose group is allowed. Group and slice
+#' covariances use their population divisors. Each group's symmetric-whitened
+#' SAVE moment is transported to raw coefficient coordinates before pooling.
+#' Its eigenproblem uses the group-size-weighted average within-group
+#' covariance as a common reference, and the selected directions are mapped
+#' back to the original predictor coordinates.
+#'
+#' Outcome slices of size one or two contribute only a scalar identity in
+#' the common coordinates. They supply no directional information and are
+#' excluded from the transported local moments without renormalizing the
+#' remaining slice weights. This preserves their nondirectional fallback,
+#' rather than transporting a local identity through unequal group covariances.
+#' The construction corrects aggregation in incompatible local coordinates;
+#' it does not reproduce historical pSAVE output. Affine predictor changes
+#' transform the raw selected subspace accordingly when its eigenvalue
+#' boundary is separated and numerical group admissibility is unchanged.
+#' Statistical subspace recovery still requires appropriate SAVE assumptions.
 #'
 #' For p > 1, initialization fails if no usable dose threshold remains or if
 #' every retained group has either one outcome slice or only slices smaller
@@ -79,7 +96,7 @@ pSAVE <- function(x, a, r, ndr = 2, nslices0 = 2) {
 
   # Preserve the central threshold multiset, including odd-size truncation and ties.
   Z <- sort(a)[seq.int(max(1L, floor(n / 2 - 50)), min(n, floor(n / 2 + 50)))]
-  groups <- list()
+  threshold_moments <- list()
   has_contrasts <- has_information <- FALSE
   for (cut in Z) {
     group <- as.numeric(a <= cut)
@@ -88,33 +105,95 @@ pSAVE <- function(x, a, r, ndr = 2, nslices0 = 2) {
       length(idx) >= p + 1L && centred_rank(x[idx, , drop = FALSE]) == p
     }, logical(1))
     if (!all(admissible)) next
-    groups[[length(groups) + 1L]] <- group
-    slices <- lapply(indices, function(idx) .psave_slices(r[idx], nslices0))
-    has_contrasts <- has_contrasts || any(vapply(slices, function(s) {
-      s$nslices > 1L
-    }, logical(1)))
-    has_information <- has_information || any(vapply(slices, function(s) {
-      s$nslices > 1L && any(s$slice.sizes >= 3L)
-    }, logical(1)))
+    local <- .psave_grouped_moment(x, r, group, nslices0)
+    threshold_moments[[length(threshold_moments) + 1L]] <- local
+    has_contrasts <- has_contrasts || local$has.contrasts
+    has_information <- has_information || local$has.information
   }
-  if (!length(groups))
+  if (!length(threshold_moments))
     stop("pSAVE has no admissible dose threshold; supply B.initial to orthoDr_pdose")
   if (!has_contrasts)
     stop("pSAVE has no outcome-slice contrasts; supply B.initial to orthoDr_pdose")
   if (!has_information)
     stop("pSAVE has no directional slice information: every retained group has one outcome slice or only slices smaller than three; supply B.initial to orthoDr_pdose")
 
-  train <- list(x = x, a = a, r = r)
-  M_total <- matrix(0, p, p)
-  for (group in groups) {
-    train$a <- group
-    dimdr <- dr(formula = r ~ x, data = train, group = ~a,
-                nslices = nslices0, chi2approx = "bx", numdir = p,
-                method = "save", slice.function = .psave_slices)
-    M_total <- M_total + dimdr$M
+  nt <- length(threshold_moments)
+  reference <- raw_moment <- matrix(0, p, p)
+  for (local in threshold_moments) {
+    reference <- reference + local$covariance / nt
+    raw_moment <- raw_moment + local$raw.moment / nt
   }
-  Beta <- eigen(M_total, symmetric = FALSE, only.values = FALSE, EISPACK = FALSE)
-  Beta$vectors[, seq_len(ndr), drop = FALSE]
+  roots <- .psave_covariance_roots(reference)
+  common <- roots$sqrt %*% raw_moment %*% roots$sqrt
+  # The omitted total fallback mass multiplies I and changes no directions.
+  common <- (common + t(common)) / 2
+  vectors <- eigen(common, symmetric = TRUE)$vectors[, seq_len(ndr), drop = FALSE]
+  directions <- roots$inverse.sqrt %*% vectors
+  directions <- sweep(directions, 2L, sqrt(colSums(directions^2)), "/")
+  for (j in seq_len(ndr)) {
+    pivot <- which.max(abs(directions[, j]))
+    if (directions[pivot, j] < 0) directions[, j] <- -directions[, j]
+  }
+  directions
+}
+
+# Small explicit local moments avoid relying on the dr object's pooled layout.
+.psave_covariance_roots <- function(covariance) {
+  decomposition <- eigen((covariance + t(covariance)) / 2, symmetric = TRUE)
+  if (any(!is.finite(decomposition$values)) || any(decomposition$values <= 0))
+    stop("dose group covariance must be positive definite for whitening")
+  vectors <- decomposition$vectors
+  values <- sqrt(decomposition$values)
+  list(sqrt = tcrossprod(sweep(vectors, 2L, values, "*"), vectors),
+       inverse.sqrt = tcrossprod(sweep(vectors, 2L, values, "/"), vectors))
+}
+
+.psave_group_moment <- function(x, y, nslices) {
+  n <- nrow(x)
+  p <- ncol(x)
+  centered <- sweep(x, 2L, colMeans(x), "-")
+  covariance <- crossprod(centered) / n
+  inverse <- .psave_covariance_roots(covariance)$inverse.sqrt
+  z <- centered %*% inverse
+  slices <- .psave_slices(y, nslices)
+  moment <- matrix(0, p, p)
+  fallback <- 0
+  for (j in seq_len(slices$nslices)) {
+    size <- slices$slice.sizes[j]
+    if (size < 3L) {
+      fallback <- fallback + size / n
+      next
+    }
+    zj <- z[slices$slice.indicator == j, , drop = FALSE]
+    zj <- sweep(zj, 2L, colMeans(zj), "-")
+    difference <- diag(p) - crossprod(zj) / size
+    moment <- moment + size / n * (difference %*% difference)
+  }
+  list(covariance = covariance, inverse.sqrt = inverse, moment = moment,
+       fallback.mass = fallback, slices = slices)
+}
+
+.psave_grouped_moment <- function(x, y, group, nslices) {
+  n <- nrow(x)
+  p <- ncol(x)
+  covariance <- raw_moment <- matrix(0, p, p)
+  fallback <- 0
+  has_contrasts <- has_information <- FALSE
+  for (g in unique(group)) {
+    selected <- group == g
+    local <- .psave_group_moment(x[selected, , drop = FALSE], y[selected], nslices)
+    weight <- sum(selected) / n
+    covariance <- covariance + weight * local$covariance
+    raw_moment <- raw_moment + weight *
+      local$inverse.sqrt %*% local$moment %*% local$inverse.sqrt
+    fallback <- fallback + weight * local$fallback.mass
+    has_contrasts <- has_contrasts || local$slices$nslices > 1L
+    has_information <- has_information ||
+      (local$slices$nslices > 1L && any(local$slices$slice.sizes >= 3L))
+  }
+  list(covariance = covariance, raw.moment = raw_moment,
+       fallback.mass = fallback, has.contrasts = has_contrasts,
+       has.information = has_information)
 }
 
 # Repair only dr's confirmed one-breakpoint branch; preserve every other result.

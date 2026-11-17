@@ -643,7 +643,7 @@ test_that("an omitted direct reward penalty preserves the pseudo-direct call pat
   expect_error(pseudo(lambda.reward = .1), "lambda.reward.*direct|direct.*lambda.reward")
   fit <- pseudo()
   expect_null(fit$lambda.reward)
-  expect_null(fit$objective.version)
+  expect_identical(fit$objective.version, "pseudo_mse_v1")
   # The original pseudo-direct ridge rule remains a final-state construction.
   reference <- direct_initial_reference(c(z[c("x", "a", "r", "bw")], list(B = fit$B)))
   expect_equal(drop(fit$W), reference$W, tolerance = 1e-9)

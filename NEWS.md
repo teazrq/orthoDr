@@ -1,5 +1,22 @@
 # orthoDr (development version)
 
+* Corrected pSAVE to combine group SAVE information in common coordinates and
+  return directions in the original predictor units. Automatic starts for both
+  dose methods can change, especially with unequal predictor scales. Small
+  outcome slices remain direction-neutral; existing fitted objects are unchanged.
+* Pseudo-direct learning now uses an analytic gradient of reward-standardized
+  mean squared error. `fn` remains raw reward RMSE. `converge = TRUE` now requires
+  the constrained gradient tolerance; small changes alone report `stagnation`.
+  `gradient.norm`, `stop.reason`, and `objective.scaled` describe the returned
+  state. Failed searches retain the last accepted state, and dose-grid averages
+  use stable log weights. The existing bandwidth convention is unchanged.
+  Stagnation checks average five accepted updates so one short backtracked
+  step does not stop an otherwise progressing fit.
+* Added an optional unpenalized intercept to the final pseudo-direct kernel
+  ridge rule, including intercept-aware GCV. Its default remains `FALSE`.
+  This intercept is an unbounded constant, distinct from direct learning's
+  bounded average dose. Predictions from previously saved objects are preserved.
+
 * Updated direct learning with `intercept = TRUE` to propose adaptive spectral
   step lengths for direction updates. The objective, coefficient penalty,
   mean-dose bounds, initialization, and joint residual convergence criterion
