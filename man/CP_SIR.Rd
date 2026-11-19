@@ -7,12 +7,16 @@
 CP_SIR(x, y, censor, bw = silverman(1, length(y)))
 }
 \arguments{
-\item{x}{A matrix (n x p) of features (continuous only).}
+\item{x}{A finite numeric matrix of continuous predictors. Centered columns
+must be linearly independent. Remove constant or redundant predictors.}
 
-\item{y}{A numeric vector of observed survival times.}
+\item{y}{Observed follow-up times, one finite value per subject, including
+censored subjects.}
 
-\item{censor}{A numeric vector of event indicators (1 = event,
-0 = censored).}
+\item{censor}{A numeric or logical vector or one-column matrix, with one
+event indicator per observation (1 or \code{TRUE} = event, 0 or \code{FALSE} =
+censored). Missing and other values cause an error. At least one event
+is required.}
 
 \item{bw}{Numeric; kernel bandwidth for nonparametric estimation
 (one-dimensional). Default: Silverman's rule via \code{\link{silverman}}.}
@@ -33,6 +37,11 @@ directions are used by default to initialize \code{\link{orthoDr_surv}};
 that function also accepts a custom starting matrix.
 }
 \details{
+The estimation matrix pairs each event subject's deviation from the risk-set
+mean with a contrast estimated from neighboring events. Smoothing the
+neighborhood can make this matrix asymmetric. CP-SIR uses its left singular
+vectors and maps them back to the original feature coordinates.
+
 Events at the same observed time share the midpoint of their event ranks
 when selecting a neighborhood. Neighborhood endpoints are bounded by the
 first and last event ranks and truncated to integer indices. Risk sets

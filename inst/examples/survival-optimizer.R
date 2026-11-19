@@ -1,4 +1,4 @@
-# Supplemental examples for orthoDr 2.0.0: principal components, a simulated
+# Supplemental examples for orthoDr 2.1.0: principal components, a simulated
 # survival model, and the bundled melanoma data. Run interactively to explore
 # the 3D rgl plots. The simpler survival tutorial plots predicted curves.
 

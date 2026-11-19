@@ -174,13 +174,8 @@ List surv_forward_solver(arma::mat B,
   int ndr = B.n_cols;
 
   arma::mat crit(maxitr,3);
-  bool invH = true;
-  arma::mat eye2P(2*ndr,2*ndr);
-
-  if(ndr < P/2){
-    invH = false;
-    eye2P.eye();
-  }
+  bool search_failed = false;
+  const bool invH = ndr >= P / 2;
 
   if (ncore > 1) OMPMSG(1);
   int haveCore = omp_get_max_threads();
@@ -202,25 +197,6 @@ List surv_forward_solver(arma::mat B,
   orthoDr::check_state(F, G);
 
   arma::mat GX = G.t() * B;
-  arma::mat GXT;
-  arma::mat H;
-  arma::mat RX;
-  arma::mat U;
-  arma::mat V;
-  arma::mat VU;
-  arma::mat VX;
-
-  if(invH){
-    GXT = G * B.t();
-    H = 0.5 * (GXT - GXT.t());
-    RX = H * B;
-  }else{
-    U = join_rows(G, B);
-    V = join_rows(B, -G);
-    VU = V.t() * U;
-    VX = V.t() * B;
-  }
-
   arma::mat dtX = G - B * GX;
   double nrmG = norm(dtX, "fro");
 
@@ -234,10 +210,7 @@ List surv_forward_solver(arma::mat B,
   bool converged = nrmG < gtol;
   arma::mat BP;
   double FP;
-  arma::mat GP;
   arma::mat dtXP;
-  arma::mat diag_n(P, P);
-  arma::mat aa;
   arma::mat S;
   double BDiff;
   double FDiff;
@@ -250,45 +223,22 @@ List surv_forward_solver(arma::mat B,
   for(itr = 1; !converged && itr <= maxitr; itr++){
     BP = B;
     FP = F;
-    GP = G;
     dtXP = dtX;
 
-    int nls = 1;
-    double deriv = rho * nrmG * nrmG;
-
-    while(true){
-      if(invH){
-        diag_n.eye();
-        B = solve(diag_n + tau * H, BP - tau * RX);
-      }else{
-        aa = solve(eye2P + 0.5 * tau * VU, VX);
-        B = BP - U * (tau * aa);
-      }
-
-      F = surv_forward_f(B, X, Fail_Ind, Risk_Start, bw, ncore);
-      surv_forward_g(B, F, G, X, Fail_Ind, Risk_Start, bw, epsilon, ncore);
-      orthoDr::check_state(F, G);
-
-      if((F <= (Cval - tau*deriv)) || (nls >= 5)){
-        break;
-      }
-      tau = eta * tau;
-      nls = nls + 1;
+    const double deriv = rho * nrmG * nrmG;
+    const orthoDr::CayleyCurve curve(B, G, invH);
+    const auto f_eval = [&](const arma::mat& candidate) {
+      return surv_forward_f(candidate, X, Fail_Ind, Risk_Start, bw, ncore);
+    };
+    if (!orthoDr::backtrack(B, F, tau, eta, Cval, deriv, curve, f_eval)) {
+      search_failed = true;
+      break;
     }
+    surv_forward_g(B, F, G, X, Fail_Ind, Risk_Start, bw, epsilon, ncore);
+    orthoDr::check_state(F, G);
 
     completed = itr;
     GX = G.t() * B;
-
-    if(invH){
-      GXT = G * B.t();
-      H = 0.5 * (GXT - GXT.t());
-      RX = H * B;
-    }else{
-      U = join_rows(G, B);
-      V = join_rows(B, -G);
-      VU = V.t() * U;
-      VX = V.t() * B;
-    }
 
     dtX = G - B * GX;
     nrmG = norm(dtX, "fro");
@@ -343,9 +293,11 @@ List surv_forward_solver(arma::mat B,
 
   }
 
-  if(!converged){
-    if (verbose > 0) Rcout << "exceed max iteration before convergence ... " << std::endl;
-  }
+
+  if (verbose > 0 && !converged)
+    Rcout << (search_failed ?
+      "line search failed to find a feasible sufficient-decrease step" :
+      "iteration limit reached") << std::endl;
 
   arma::mat diag_P(ndr,ndr);
   diag_P.eye();

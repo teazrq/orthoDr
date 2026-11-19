@@ -6,20 +6,34 @@
 #' kernel-smoothed survival surface over time and \eqn{xB} in three dimensions.
 #' @param x A numeric matrix of continuous predictors, with one row per
 #'   observation. Columns are not scaled internally.
-#' @param y A numeric vector of observed survival times, one per row of \code{x}.
-#' @param censor A vector of event indicators (1 = event, 0 = censored).
+#' @param y Observed follow-up times, one finite value per row of \code{x}.
+#' @param censor A numeric or logical vector or one-column matrix, with one
+#'   event indicator per observation (1 or `TRUE` = event, 0 or `FALSE` =
+#'   censored). Missing and other values cause an error.
 #' @param B A vector or one-column matrix of direction weights, with one entry
 #'   per predictor. Only one reduced predictor can be displayed.
 #' @param bw Kernel bandwidth for the 3D survival estimate, in units of
 #'   \eqn{xB}. The default is \code{silverman(1, length(y)) * sd(x \%*\% B)}.
 #' @param FUN A function, or its name, applied to \code{y} before plotting.
-#'   Default: \code{"log"}. Use \code{identity} to retain the supplied time scale.
+#'   The default logarithm requires positive times. Use \code{identity} to
+#'   retain the supplied time scale. The transformation must give one finite
+#'   display coordinate per observation.
 #' @param type Plot type: \code{"2D"} or \code{"3D"}.
 #' @param legend.add Logical; add a legend to the 2D plot.
 #' @param xlab Label for the reduced-predictor axis.
 #' @param ylab Label for the transformed-time axis.
 #' @param zlab Label for the survival-probability axis in a 3D plot.
 #' @return Invisible \code{NULL}. Called for its side-effect (producing a plot).
+#' @details
+#' The 3D time grid combines the observed follow-up times at empirical
+#' percentiles 0 through 100 (including censored observations) with every
+#' distinct event time. Percentiles use the inverse empirical distribution,
+#' so each grid point is an observed time. The supplied \code{FUN} is applied
+#' once to all observation times, and the corresponding transformed values
+#' define the plotted grid. Risk sets use the original follow-up times.
+#' When several knots share a display coordinate, the surface shows survival
+#' at the latest of those follow-up times. A single distinct transformed time is displayed
+#' as a line across the reduced predictor.
 #'
 #' @references
 #' Sun, Q., Zhu, R., Wang, T. and Zeng, D. (2019). Counting process-based
@@ -41,7 +55,8 @@ view_dr_surv <- function(x, y, censor, B = NULL, bw = NULL, FUN = "log", type = 
 
   if (!is.matrix(x)) stop("x must be a matrix")
   if (!is.numeric(x)) stop("x must be numerical")
-  if (nrow(x) != length(y) || nrow(x) != length(censor)) stop("Number of observations do not match")
+  check_survival_time(y, nrow(x))
+  check_survival_censor(censor, nrow(x))
 
   if (is.null(B)) stop("B must be given")
 
@@ -50,12 +65,12 @@ view_dr_surv <- function(x, y, censor, B = NULL, bw = NULL, FUN = "log", type = 
   FUN <- match.fun(FUN)
 
   y2 = FUN(y)
+  check_survival_time(y2, nrow(x), name = "FUN(y)")
 
   bx = x %*% B
 
   if (type == "2D")
   {
-    plot.new()
     par(mar = c(4, 4.2, 2, 2))
     plot(bx, y2, col = ifelse(censor == 1, "blue", "red"), pch = ifelse(censor == 1, 19, 3), xlab= xlab, ylab= ylab, cex.lab = 1.5)
 
@@ -64,6 +79,7 @@ view_dr_surv <- function(x, y, censor, B = NULL, bw = NULL, FUN = "log", type = 
 
   if (type == "3D")
   {
+    y2 = as.numeric(y2)
 
     if(is.null(bw))
       bw = silverman(1, length(bx))*sd(bx)
@@ -74,34 +90,41 @@ view_dr_surv <- function(x, y, censor, B = NULL, bw = NULL, FUN = "log", type = 
       bw = silverman(1, length(bx))*sd(bx)
     }
 
-    timegrid = sort(unique(c(y2, seq(0, max(y2), length.out = 100))))
+    # Integer order ranks avoid rounding an empirical percentile off a jump.
+    ranks = pmax(1, 1 + floor(((0:100) * as.double(length(y)) - 1) / 100))
+    knots = unique(c(order(y)[ranks], which(censor == 1)))
+    knots = knots[order(y2[knots], y[knots])]
+    knots = knots[!duplicated(y2[knots], fromLast = TRUE)]
+    timegrid = y2[knots]
     xgrid = seq(min(bx), max(bx), length.out = 100)
 
-    S = matrix(NA, length(xgrid), length(timegrid))
-
-    for (i in 1:nrow(S))
-    {
-      dif = xgrid[i] - bx
-      k = exp(-0.5*(dif/bw)^2)
-      fit = survfit(Surv(y2, censor) ~ 1, weights = k)
-      S[i,] = summary(fit, times= timegrid)$surv
-    }
-
+    log_weights = -(outer(xgrid, drop(bx), "-") / bw / sqrt(2))^2
+    if (any(rowSums(is.finite(log_weights)) == 0))
+      stop("Cannot compute finite Gaussian surface weights; increase bw")
+    km = weighted_km(log_weights, y, censor)
+    block_times = y[km$order[!duplicated(km$blocks)]]
+    S = t(km$surv[match(y[knots], block_times), , drop = FALSE])
 
     M = mesh(xgrid, timegrid)
     colorlut <- rainbow(102, start = 0.1)
 
     yscale = max(y2) - min(y2)
+    if (yscale == 0) yscale = 1
     xscale = max(bx) - min(bx)
 
-    surface3d(M$x/xscale, M$y/yscale*1.5, S, col = colorlut[S*100+1], alpha = 0.9, theta = 50, phi = 20, labels = c("x", "y", "z"))
+    if (length(timegrid) == 1L)
+      rgl::lines3d(xgrid/xscale, rep(timegrid/yscale*1.5, length(xgrid)),
+                   S[, 1], col = colorlut[S[, 1]*100+1], alpha = 0.9)
+    else
+      surface3d(M$x/xscale, M$y/yscale*1.5, S, col = colorlut[S*100+1], alpha = 0.9, theta = 50, phi = 20, labels = c("x", "y", "z"))
     box3d(expand = 1.1, draw_front = FALSE)
 
     axis3d(edge = "x-+", at = seq(min(bx), max(bx), length.out = 6)/xscale,
            labels = round(seq(min(bx), max(bx), length.out = 6), 2),
            tick = TRUE, line = 0, nticks = 5, cex = 1.5, adj = c(0, 0.75))
 
-    time_ticks = seq(min(timegrid), max(timegrid), length.out = 6)
+    time_ticks = if (length(timegrid) == 1L) timegrid else
+      seq(min(timegrid), max(timegrid), length.out = 6)
     axis3d(edge = "y+", at = time_ticks/yscale*1.5,
            labels = round(time_ticks, 2),
            tick = TRUE, line = 0, nticks = 6, cex = 1.5, adj = c(0, -0.25))

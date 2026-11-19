@@ -335,8 +335,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // save_init
-double save_init(const arma::mat& B, const arma::mat& X, const arma::mat& Y, double bw, int ncore);
-RcppExport SEXP _orthoDr_save_init(SEXP BSEXP, SEXP XSEXP, SEXP YSEXP, SEXP bwSEXP, SEXP ncoreSEXP) {
+double save_init(const arma::mat& B, const arma::mat& X, const arma::mat& Y, double bw, int ncore, double identity_weight, double covariance_weight, double moment_scale);
+RcppExport SEXP _orthoDr_save_init(SEXP BSEXP, SEXP XSEXP, SEXP YSEXP, SEXP bwSEXP, SEXP ncoreSEXP, SEXP identity_weightSEXP, SEXP covariance_weightSEXP, SEXP moment_scaleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -345,13 +345,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type Y(YSEXP);
     Rcpp::traits::input_parameter< double >::type bw(bwSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(save_init(B, X, Y, bw, ncore));
+    Rcpp::traits::input_parameter< double >::type identity_weight(identity_weightSEXP);
+    Rcpp::traits::input_parameter< double >::type covariance_weight(covariance_weightSEXP);
+    Rcpp::traits::input_parameter< double >::type moment_scale(moment_scaleSEXP);
+    rcpp_result_gen = Rcpp::wrap(save_init(B, X, Y, bw, ncore, identity_weight, covariance_weight, moment_scale));
     return rcpp_result_gen;
 END_RCPP
 }
 // save_solver
-List save_solver(arma::mat B, arma::mat& X, arma::mat& Y, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
-RcppExport SEXP _orthoDr_save_solver(SEXP BSEXP, SEXP XSEXP, SEXP YSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
+List save_solver(arma::mat B, arma::mat& X, arma::mat& Y, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore, double identity_weight, double covariance_weight, double moment_scale);
+RcppExport SEXP _orthoDr_save_solver(SEXP BSEXP, SEXP XSEXP, SEXP YSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP, SEXP identity_weightSEXP, SEXP covariance_weightSEXP, SEXP moment_scaleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -370,7 +373,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(save_solver(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
+    Rcpp::traits::input_parameter< double >::type identity_weight(identity_weightSEXP);
+    Rcpp::traits::input_parameter< double >::type covariance_weight(covariance_weightSEXP);
+    Rcpp::traits::input_parameter< double >::type moment_scale(moment_scaleSEXP);
+    rcpp_result_gen = Rcpp::wrap(save_solver(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, identity_weight, covariance_weight, moment_scale));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -415,8 +421,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // sir_init
-double sir_init(const arma::mat& B, const arma::mat& X, const arma::mat& Y, double bw, int ncore);
-RcppExport SEXP _orthoDr_sir_init(SEXP BSEXP, SEXP XSEXP, SEXP YSEXP, SEXP bwSEXP, SEXP ncoreSEXP) {
+double sir_init(const arma::mat& B, const arma::mat& X, const arma::mat& Y, double bw, int ncore, double pooled_ratio);
+RcppExport SEXP _orthoDr_sir_init(SEXP BSEXP, SEXP XSEXP, SEXP YSEXP, SEXP bwSEXP, SEXP ncoreSEXP, SEXP pooled_ratioSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -425,13 +431,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type Y(YSEXP);
     Rcpp::traits::input_parameter< double >::type bw(bwSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(sir_init(B, X, Y, bw, ncore));
+    Rcpp::traits::input_parameter< double >::type pooled_ratio(pooled_ratioSEXP);
+    rcpp_result_gen = Rcpp::wrap(sir_init(B, X, Y, bw, ncore, pooled_ratio));
     return rcpp_result_gen;
 END_RCPP
 }
 // sir_solver
-List sir_solver(arma::mat B, arma::mat& X, arma::mat& Y, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore);
-RcppExport SEXP _orthoDr_sir_solver(SEXP BSEXP, SEXP XSEXP, SEXP YSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP) {
+List sir_solver(arma::mat B, arma::mat& X, arma::mat& Y, double bw, double rho, double eta, double gamma, double tau, double epsilon, double btol, double ftol, double gtol, int maxitr, int verbose, int ncore, double pooled_ratio);
+RcppExport SEXP _orthoDr_sir_solver(SEXP BSEXP, SEXP XSEXP, SEXP YSEXP, SEXP bwSEXP, SEXP rhoSEXP, SEXP etaSEXP, SEXP gammaSEXP, SEXP tauSEXP, SEXP epsilonSEXP, SEXP btolSEXP, SEXP ftolSEXP, SEXP gtolSEXP, SEXP maxitrSEXP, SEXP verboseSEXP, SEXP ncoreSEXP, SEXP pooled_ratioSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -450,7 +457,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
     Rcpp::traits::input_parameter< int >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type ncore(ncoreSEXP);
-    rcpp_result_gen = Rcpp::wrap(sir_solver(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore));
+    Rcpp::traits::input_parameter< double >::type pooled_ratio(pooled_ratioSEXP);
+    rcpp_result_gen = Rcpp::wrap(sir_solver(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, pooled_ratio));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -562,12 +570,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_orthoDr_local_solver", (DL_FUNC) &_orthoDr_local_solver, 15},
     {"_orthoDr_phd_init", (DL_FUNC) &_orthoDr_phd_init, 5},
     {"_orthoDr_phd_solver", (DL_FUNC) &_orthoDr_phd_solver, 15},
-    {"_orthoDr_save_init", (DL_FUNC) &_orthoDr_save_init, 5},
-    {"_orthoDr_save_solver", (DL_FUNC) &_orthoDr_save_solver, 15},
+    {"_orthoDr_save_init", (DL_FUNC) &_orthoDr_save_init, 8},
+    {"_orthoDr_save_solver", (DL_FUNC) &_orthoDr_save_solver, 18},
     {"_orthoDr_seff_init", (DL_FUNC) &_orthoDr_seff_init, 5},
     {"_orthoDr_seff_solver", (DL_FUNC) &_orthoDr_seff_solver, 15},
-    {"_orthoDr_sir_init", (DL_FUNC) &_orthoDr_sir_init, 5},
-    {"_orthoDr_sir_solver", (DL_FUNC) &_orthoDr_sir_solver, 15},
+    {"_orthoDr_sir_init", (DL_FUNC) &_orthoDr_sir_init, 6},
+    {"_orthoDr_sir_solver", (DL_FUNC) &_orthoDr_sir_solver, 16},
     {"_orthoDr_surv_dm_solver", (DL_FUNC) &_orthoDr_surv_dm_solver, 17},
     {"_orthoDr_surv_dn_solver", (DL_FUNC) &_orthoDr_surv_dn_solver, 17},
     {"_orthoDr_surv_forward_solver", (DL_FUNC) &_orthoDr_surv_forward_solver, 16},

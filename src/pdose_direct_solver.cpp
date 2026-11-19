@@ -34,7 +34,6 @@ using namespace Rcpp;
 namespace {
 
 struct DirectKernel {
-  arma::mat projected;
   arma::mat centered;
   arma::rowvec scales;
   arma::mat log_kernel;
@@ -100,6 +99,13 @@ struct DirectEvaluation {
     alpha(0), gradient_alpha(NA_REAL), residual_alpha(NA_REAL), norm_policy(NA_REAL) {}
 };
 
+arma::mat direct_predictor_differences(const arma::mat& X) {
+  if (X.n_rows == 0) return X;
+  // Work with observed differences so neither the projection nor its
+  // derivative depends on a large common predictor offset.
+  return X.each_row() - dose_origin(X);
+}
+
 bool direct_kernel(const arma::mat& B, const arma::mat& X,
                    const double bw, DirectKernel& out, std::string& message) {
   if (X.n_rows < 2 || X.n_cols == 0 || B.n_rows != X.n_cols ||
@@ -108,13 +114,13 @@ bool direct_kernel(const arma::mat& B, const arma::mat& X,
     message = "Direct-dose data, basis dimensions, and bandwidth must be valid and finite";
     return false;
   }
-  out.projected = X * B;
-  if (!out.projected.is_finite()) {
+  const arma::mat projected = X * B;
+  if (!projected.is_finite()) {
     message = "Projected covariates must be finite";
     return false;
   }
-  out.centered = out.projected.each_row() - arma::mean(out.projected, 0);
-  out.scales = arma::stddev(out.projected, 0, 0);
+  out.centered = projected.each_row() - arma::mean(projected, 0);
+  out.scales = arma::stddev(projected, 0, 0);
   if (!out.centered.is_finite() || !out.scales.is_finite() ||
       arma::any(out.scales <= 0)) {
     message = "Projected covariates must have positive finite standard deviations";
@@ -416,8 +422,8 @@ Rcpp::List pdose_direct_evaluate(const arma::mat B, const arma::mat X,
                                 Rcpp::Nullable<Rcpp::NumericVector> intercept_bounds = R_NilValue,
                                 double alpha = 0) {
   const DirectPolicy policy = direct_policy(intercept, intercept_bounds, A);
-  const DirectEvaluation state = direct_evaluate(B, X, A, R, bw, W, lambda_reward,
-                                                true, policy, alpha);
+  const DirectEvaluation state = direct_evaluate(B, direct_predictor_differences(X),
+                                                A, R, bw, W, lambda_reward, true, policy, alpha);
   Rcpp::List out = Rcpp::List::create(
     Rcpp::Named("valid") = state.valid,
     Rcpp::Named("message") = state.message,
@@ -751,7 +757,7 @@ double direct_next_step(const double accepted, const double eta,
   return accepted >= cap * eta ? cap : accepted / eta;
 }
 
-Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
+Rcpp::List direct_fit(arma::mat B, const arma::mat& predictors, const arma::vec& A,
                       const arma::mat& a_dist, const arma::vec& grid,
                       const arma::vec& R, const arma::vec& lambda,
                       const double bw, const double lambda_reward,
@@ -760,6 +766,7 @@ Rcpp::List direct_fit(arma::mat B, const arma::mat& X, const arma::vec& A,
                       const DirectPolicy& policy,
                       const Rcpp::Nullable<Rcpp::NumericVector>& alpha_initial,
                       const int audit_fail_final_sweep = -1) {
+  const arma::mat X = direct_predictor_differences(predictors);
   direct_validate(B, X, A, R, a_dist, grid, lambda, bw, lambda_reward, control);
   if (policy.intercept && lambda_reward <= 0)
     Rcpp::stop("lambda.reward must be positive when intercept = TRUE");

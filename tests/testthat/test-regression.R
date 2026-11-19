@@ -56,6 +56,56 @@ test_that("orthoDr_reg fits all 5 methods and returns correct structure", {
   }
 })
 
+test_that("one-predictor regression uses the sole direction and predicts kernel means", {
+  x <- matrix(0:11, ncol = 1)
+  y <- as.vector(x) + 0.17 * sin(2 * as.vector(x))
+  testx <- matrix(c(0.2, 4.3, 9.7), ncol = 1)
+  bw <- 0.6
+  weights <- exp(-0.5 * (outer(as.vector(testx), as.vector(x), "-") / (sd(x) * bw))^2)
+  pred <- as.vector(weights %*% y) / rowSums(weights)
+
+  for (method in c("sir", "save", "phd", "local", "seff")) {
+    fit <- orthoDr_reg(x, y, method, bw = bw, keep.data = TRUE, ncore = 1)
+    reversed <- orthoDr_reg(x, y, method, ndr = 1, B.initial = matrix(-3),
+                            bw = bw, keep.data = TRUE, ncore = 1)
+    expect_equal(fit$B, matrix(1))
+    expect_equal(reversed$B, matrix(-1))
+    expect_true(fit$converge)
+    expect_equal(fit$itr, 0)
+    expect_true(is.finite(fit$fn))
+    expect_equal(fit$fn, reversed$fn, tolerance = 1e-12)
+    expect_identical(fit$x, x)
+    expect_equal(predict(fit, testx)$pred, pred, tolerance = 1e-12)
+    expect_equal(predict(reversed, testx)$pred, pred, tolerance = 1e-12)
+  }
+})
+
+test_that("one-predictor regression requires finite, varying training data", {
+  for (start in list(NULL, matrix(1))) {
+    run <- function(x, y) orthoDr_reg(matrix(x, ncol = 1), y, B.initial = start, ncore = 1)
+    expect_error(run(1, 2), "at least two observations")
+    expect_error(run(rep(1, 3), 1:3), "predictor")
+    expect_error(run(c(1, Inf, 3), 1:3), "predictor")
+    expect_error(run(1:3, c(2, 2, 2)), "response")
+    expect_error(run(1:3, c(2, NA, 4)), "response")
+  }
+})
+
+test_that("multivariable regression requires a finite and varying response", {
+  set.seed(129)
+  x <- matrix(rnorm(60), 20, 3)
+  y <- x[, 1] > 0
+  invalid <- list(rep(1, 20), replace(y, 2, NA), replace(y, 2, NaN), replace(y, 2, Inf))
+  for (start in list(NULL, diag(3)[, 1, drop = FALSE])) {
+    run <- function(y) orthoDr_reg(x, y, ndr = 1, B.initial = start, maxitr = 5, ncore = 1)
+    for (bad in invalid)
+      expect_error(run(bad), "finite, varying response", fixed = TRUE)
+    numeric_fit <- run(as.numeric(y))
+    expect_equal(run(y), numeric_fit)
+    expect_equal(run(matrix(as.numeric(y))), numeric_fit)
+  }
+})
+
 # ── 2. ndr > 1 ────────────────────────────────────────────────────────────────
 
 test_that("orthoDr_reg works with ndr = 2", {

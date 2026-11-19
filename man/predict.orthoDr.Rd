@@ -52,10 +52,21 @@ Pseudo-direct fits made with \code{intercept = TRUE} instead predict
 kernel-mean centering. Previously saved dose models retain their prediction
 formulas.
 
+If all Gaussian weights for a regression prediction are zero, the prediction
+is \code{NaN}. This can occur when the observation is far from the training
+data relative to the bandwidth. A single warning lists the affected 1-based row
+positions in \code{testx}. If R shortens a long warning when displaying it,
+use \code{which(is.nan(result$pred))} to find all \code{NaN} positions, where
+\code{result} is the returned prediction.
+
 Legacy forward survival objects without a stored bandwidth require the
 original bandwidth to be restored or the model to be refitted. If all
 Gaussian weights for a survival prediction underflow to zero, a warning is
 issued and that curve contains \code{NA}.
+Within each risk set the curve uses the relative weights of those still
+under observation. It reaches zero if everyone remaining fails together.
+If a saved survival fit contains invalid follow-up times or event
+indicators, correct the original data and refit before predicting.
 }
 \examples{
 # generate some survival data

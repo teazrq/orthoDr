@@ -52,7 +52,7 @@ bool pseudo_constant(const arma::vec& x) {
 }
 
 struct PseudoData {
-  arma::mat centered_X;
+  arma::mat working_X;
   arma::vec q, A;
   double reward_scale, dose_scale, bw;
 };
@@ -79,16 +79,9 @@ PseudoData pseudo_data(const arma::mat& X, const arma::vec& R,
   out.dose_scale = scale * bw;
   if (!std::isfinite(out.dose_scale) || out.dose_scale <= 0)
     Rcpp::stop("Observed dose bandwidth scale must be positive and finite");
-  out.centered_X.set_size(X.n_rows, X.n_cols);
-  for (arma::uword j = 0; j < X.n_cols; ++j) {
-    // A constant predictor is allowed if no projected direction is constant.
-    if (pseudo_constant(X.col(j))) out.centered_X.col(j).zeros();
-    else {
-      if (!pseudo_center(X.col(j), centered, location, scale))
-        Rcpp::stop("Predictor centering must be finite and representable");
-      out.centered_X.col(j) = centered;
-    }
-  }
+  // Center the projected index below. Subtracting separate feature means
+  // here can discard a small contrast even if the index is well resolved.
+  out.working_X = X.each_row() - dose_origin(X);
   return out;
 }
 
@@ -105,12 +98,12 @@ PseudoEvaluation pseudo_evaluate(const arma::mat& B, const PseudoData& data,
                                  const bool derivatives) {
   PseudoEvaluation out;
   const arma::uword n = data.A.n_elem;
-  if (B.n_rows != data.centered_X.n_cols || B.n_cols == 0 ||
+  if (B.n_rows != data.working_X.n_cols || B.n_cols == 0 ||
       B.n_cols > B.n_rows || !B.is_finite()) {
     out.message = "Pseudo-direct basis dimensions and entries must be valid and finite";
     return out;
   }
-  arma::mat projected = data.centered_X * B;
+  arma::mat projected = data.working_X * B;
   arma::mat centered(n, B.n_cols);
   arma::rowvec scales(B.n_cols);
   out.log_kernel.zeros(n, n);
@@ -181,7 +174,7 @@ PseudoEvaluation pseudo_evaluate(const arma::mat& B, const PseudoData& data,
         scale_sensitivity * (centered.col(k) / scale) /
           ((static_cast<double>(n) - 1.0) * scale);
     }
-    out.gradient = data.centered_X.t() * gradient_projected;
+    out.gradient = data.working_X.t() * gradient_projected;
     out.residual = out.gradient - B * (out.gradient.t() * B);
     out.norm = arma::norm(out.residual, "fro");
     if (!out.gradient.is_finite() || !out.residual.is_finite() || !std::isfinite(out.norm)) {
@@ -238,6 +231,23 @@ struct PseudoTargets {
   arma::mat scores;
 };
 
+struct CompensatedSum {
+  double sum = 0;
+  double correction = 0;
+
+  void add(const double value) {
+    const double next = sum + value;
+    // Recover the rounding error even when the new summand is larger.
+    if (std::abs(sum) >= std::abs(value))
+      correction += (sum - next) + value;
+    else
+      correction += (value - next) + sum;
+    sum = next;
+  }
+
+  double total() const { return sum + correction; }
+};
+
 PseudoTargets pseudo_targets(const PseudoEvaluation& state, const PseudoData& data,
                               const arma::vec& grid, const double dose_factor,
                               const bool keep_scores) {
@@ -260,23 +270,36 @@ PseudoTargets pseudo_targets(const PseudoEvaluation& state, const PseudoData& da
   }
   if (!log_dose.is_finite())
     Rcpp::stop("Dose extraction has invalid joint log-weight geometry");
+  const double radius_factor = 4.0 * std::numeric_limits<double>::epsilon();
+  arma::vec upper(grid.n_elem);
   for (arma::uword i = 0; i < n; ++i) {
     if (i % 32 == 0) Rcpp::checkUserInterrupt();
-    double best = -std::numeric_limits<double>::infinity();
-    arma::uword selected = 0;
+    double best_lower = -std::numeric_limits<double>::infinity();
     for (arma::uword j = 0; j < grid.n_elem; ++j) {
       const arma::vec log_weight = state.log_kernel.col(i) + log_dose.col(j);
       if (!log_weight.is_finite())
         Rcpp::stop("Dose extraction has no finite joint log-weight reference");
-      arma::vec weights = arma::exp(log_weight - log_weight.max());
-      const double denominator = arma::accu(weights);
+      const arma::vec weights = arma::exp(log_weight - log_weight.max());
+      CompensatedSum weight_sum, reward_sum, magnitude_sum;
+      for (arma::uword k = 0; k < n; ++k) {
+        const double product = weights(k) * data.q(k);
+        weight_sum.add(weights(k));
+        reward_sum.add(product);
+        magnitude_sum.add(std::abs(product));
+      }
+      const double denominator = weight_sum.total();
       if (!std::isfinite(denominator) || denominator <= 0)
         Rcpp::stop("Dose extraction weights cannot be normalized");
-      const double score = arma::dot(weights, data.q) / denominator;
+      const double score = reward_sum.total() / denominator;
       if (!std::isfinite(score)) Rcpp::stop("Dose-grid reward scores must be finite");
       if (keep_scores) out.scores(i, j) = score;
-      if (score > best) { best = score; selected = j; }
+      const double radius = radius_factor * (magnitude_sum.total() / denominator);
+      best_lower = std::max(best_lower, score - radius);
+      upper(j) = score + radius;
     }
+    // At least the candidate attaining best_lower reaches that endpoint.
+    arma::uword selected = 0;
+    while (upper(selected) < best_lower) ++selected;
     out.dose(i) = grid(selected);
   }
   return out;

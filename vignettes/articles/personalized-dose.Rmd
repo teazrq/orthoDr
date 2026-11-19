@@ -4,7 +4,7 @@ title: Personalized Dose Finding
 
 Learn a personalized dose rule from predictors, observed doses, and rewards,
 then predict doses for new observations. See [Get Started](get-started.html)
-for installation and the complete R script for orthoDr 2.0.0.
+for installation and the complete R script for orthoDr 2.1.0.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)

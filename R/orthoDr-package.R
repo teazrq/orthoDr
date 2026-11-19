@@ -15,7 +15,7 @@ NULL
 
 #' @importFrom Rcpp evalCpp
 #' @importFrom pracma gramSchmidt repmat
-#' @importFrom stats pnorm cancor cov dist weighted.mean sd quantile predict
+#' @importFrom stats pnorm cancor cov dist weighted.mean sd quantile predict setNames
 #' @importFrom survival survfit Surv
 #' @importFrom plot3D mesh
 #' @importFrom rgl surface3d axis3d mtext3d box3d

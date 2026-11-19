@@ -15,6 +15,7 @@ src/*.dll
 # R CMD check
 *.Rcheck/
 *.tar.gz
+tests/testthat/testthat-problems.rds
 
 # OS files
 .DS_Store

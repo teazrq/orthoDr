@@ -5,6 +5,8 @@
 #' so the columns of \code{B} are orthonormal. Uses the curvilinear search
 #' algorithm of Wen & Yin (2013) on the Stiefel manifold.
 #' If no analytical gradient is provided, a numerical approximation is used.
+#' If the line search fails, the solver returns the last accepted state with
+#' `converge = FALSE`.
 #'
 #' @name ortho_optim
 #' @export
@@ -16,7 +18,7 @@
 #'   Should return a single numeric value.
 #' @param grad Gradient function. The first argument must be \code{B}. Should
 #'   return a matrix of the same dimension as \code{B}. If \code{NULL} (default),
-#'   the gradient is approximated numerically via finite differences.
+#'   the gradient is approximated numerically via central differences.
 #' @param ... Additional named arguments passed to \code{fn} and \code{grad}.
 #' @param maximize Logical; if \code{TRUE}, the solver maximizes \code{fn}
 #'   instead of minimizing it. Default is \code{FALSE}.
@@ -35,11 +37,12 @@
 #'       Default: \code{1e-6}.}
 #'     \item{\code{btol}}{Tolerance for the change in \code{B}, measured by
 #'       its Frobenius norm divided by the square root of the number of rows.
-#'       Used together with \code{ftol}. Default: \code{1e-6}.}
+#'       Used with \code{ftol} to detect stagnation when the projected
+#'       gradient norm stops improving. Default: \code{1e-6}.}
 #'     \item{\code{ftol}}{Tolerance for relative change in the objective value.
 #'       Default: \code{1e-6}.}
 #'     \item{\code{gtol}}{Tolerance for the gradient (projected onto the
-#'       manifold). Default: \code{1e-6}.}
+#'       manifold), measured by the Frobenius norm. Default: \code{1e-6}.}
 #'   }
 #' @param maxitr Maximum number of iterations. Default: \code{500}.
 #' @param verbose Integer; if > 0, prints iteration progress. Default: 0.
@@ -49,12 +52,12 @@
 #'   \describe{
 #'     \item{\code{B}}{The optimized matrix (columns are orthonormal).}
 #'     \item{\code{fn}}{The final objective function value.}
-#'     \item{\code{fn_Seq}}{Numeric vector of objective values at each iteration
-#'       (length \code{maxitr}, padded with zeros after convergence).}
-#'     \item{\code{itr}}{Number of completed updates; zero if the initial
-#'       constrained gradient already satisfies \code{gtol}.}
-#'     \item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
-#'       was reached, and \code{FALSE} when the iteration limit was exhausted.}
+#'     \item{\code{fn_Seq}}{Numeric vector of objective values at updates
+#'       accepted by the line search. The vector has length \code{maxitr}
+#'       and is padded with zeros.}
+#'     \item{\code{itr}}{Number of updates accepted by the line search.}
+#'     \item{\code{converge}}{Logical, \code{TRUE} when the projected gradient
+#'       norm is at most \code{gtol}.}
 #'     \item{\code{method}}{\code{"true gradient"} or \code{"approx. gradient"}.}
 #'   }
 #'
@@ -102,7 +105,7 @@ ortho_optim <- function(B, fn, grad = NULL, ..., maximize = FALSE,
   if (sum(abs(t(B) %*% B - diag(ncol(B)))) > 1e-15)
   {
     cat("Initial B not orthogonal, will be processed by Gram-Schmidt \n")
-    B = gramSchmidt(B)$Q
+    B = orthonormalize_start(B)
   }
 
   if (verbose)

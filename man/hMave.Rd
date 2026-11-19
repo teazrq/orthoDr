@@ -7,22 +7,28 @@
 hMave(x, y, censor, m0, B0 = NULL)
 }
 \arguments{
-\item{x}{A matrix (n x p) of features (continuous only).}
+\item{x}{A matrix (n x p) of features (continuous only). With one predictor,
+at least two observations and finite values with positive variance are required.}
 
-\item{y}{A numeric vector or one-column matrix of observed survival times.}
+\item{y}{A numeric vector or one-column matrix of observed survival times.
+With one predictor, all times must be finite.
+At least two distinct observed event times are required for the score.}
 
 \item{censor}{A logical or numeric vector or one-column matrix of event
 indicators (1 = event, 0 = censored).}
 
-\item{m0}{Integer; number of structural dimensions to estimate.}
+\item{m0}{Integer; number of structural dimensions to estimate. Must be 1
+with one predictor.}
 
 \item{B0}{An optional initial \code{B} matrix (p x m0). If \code{NULL}
-(default), the algorithm initializes from the eigenstructure of \code{x}.}
+(default), the algorithm initializes from the eigenstructure of \code{x}.
+With one predictor, a supplied basis must be a finite, nonzero 1 x 1 matrix.}
 }
 \value{
 A list with components:
 \describe{
-\item{\code{B}}{The estimated direction matrix (p x m0).}
+\item{\code{B}}{The estimated direction matrix (p x m0), including a
+1 x 1 matrix with one predictor.}
 \item{\code{cv}}{Sum of squared leave-one-out prediction errors for
 Gaussian kernel values of standardized event times, evaluated among
 observed events. This is not a survival-probability or hazard prediction loss.}
@@ -33,6 +39,10 @@ Estimates dimension reduction directions for right-censored survival data
 using hazard minimum average variance estimation (hMAVE). The implementation
 translates Xia, Zhang & Xu's (2010) MATLAB code and allows a custom starting
 matrix. It uses its own fitting algorithm rather than \code{\link{ortho_optim}}.
+}
+\details{
+Predictor whitening uses all training observations and variance
+divisor \code{n}, including with one predictor.
 }
 \examples{
 # generate some survival data

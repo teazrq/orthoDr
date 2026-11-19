@@ -8,17 +8,26 @@
 #' translates Xia, Zhang & Xu's (2010) MATLAB code and allows a custom starting
 #' matrix. It uses its own fitting algorithm rather than \code{\link{ortho_optim}}.
 #'
-#' @param x A matrix (n x p) of features (continuous only).
+#' @param x A matrix (n x p) of features (continuous only). With one predictor,
+#'   at least two observations and finite values with positive variance are required.
 #' @param y A numeric vector or one-column matrix of observed survival times.
+#'   With one predictor, all times must be finite.
+#'   At least two distinct observed event times are required for the score.
 #' @param censor A logical or numeric vector or one-column matrix of event
 #'   indicators (1 = event, 0 = censored).
-#' @param m0 Integer; number of structural dimensions to estimate.
+#' @param m0 Integer; number of structural dimensions to estimate. Must be 1
+#'   with one predictor.
 #' @param B0 An optional initial \code{B} matrix (p x m0). If \code{NULL}
 #'   (default), the algorithm initializes from the eigenstructure of \code{x}.
+#'   With one predictor, a supplied basis must be a finite, nonzero 1 x 1 matrix.
+#'
+#' @details Predictor whitening uses all training observations and variance
+#'   divisor \code{n}, including with one predictor.
 #'
 #' @return A list with components:
 #' \describe{
-#'   \item{\code{B}}{The estimated direction matrix (p x m0).}
+#'   \item{\code{B}}{The estimated direction matrix (p x m0), including a
+#'     1 x 1 matrix with one predictor.}
 #'   \item{\code{cv}}{Sum of squared leave-one-out prediction errors for
 #'     Gaussian kernel values of standardized event times, evaluated among
 #'     observed events. This is not a survival-probability or hazard prediction loss.}
@@ -64,18 +73,33 @@ hMave <- function(x, y, censor, m0, B0 = NULL)
     stop("censor must be a numeric or logical vector or a one-column matrix")
   if (length(censor) != n) stop("censor must have one value per observation")
 
+  if (p == 1L)
+  {
+    if (n < 2L) stop("At least two observations are required with one predictor")
+    if (!is.numeric(x) || any(!is.finite(x)))
+      stop("x must contain finite numeric values with one predictor")
+    if (any(!is.finite(y))) stop("y must contain only finite values with one predictor")
+    if (!is.numeric(m0) || length(m0) != 1L || !is.finite(m0) || m0 != 1)
+      stop("m0 must be 1 with one predictor")
+  }
+
   y = as.matrix(y)
   censor = as.matrix(as.numeric(censor))
   if (!all(censor %in% c(0,1)))
     stop("censor can only have two levels 0/1")
+  if (length(unique(y[censor == 1])) < 2L)
+    stop("At least two distinct observed event times are required")
 
   onen = matrix(1, n, 1)
   x = scale(x, scale = FALSE)
+  covariance = t(x) %*% x / n
+  if (p == 1L && (!is.finite(covariance[1L]) || covariance[1L] <= 0))
+    stop("x must have positive finite variance with one predictor")
 
-  xeigen = eigen(t(x) %*% x /n)
+  xeigen = eigen(covariance)
 
   ss = xeigen$vectors[, rev(1:p), drop = FALSE]
-  D = diag(rev(xeigen$values))
+  D = diag(rev(xeigen$values), nrow = p, ncol = p)
 
   ss = (ss/repmat(matrix(sqrt(diag(D)), 1, p), p, 1))
 
@@ -85,6 +109,12 @@ hMave <- function(x, y, censor, m0, B0 = NULL)
   if (!is.null(B0))
   {
     if (!is.matrix(B0)) stop("B0 must be a matrix")
+    if (p == 1L) {
+      if (!identical(dim(B0), c(1L, 1L)))
+        stop("B0 must be a 1 x 1 matrix with one predictor")
+      if (!is.numeric(B0) || !is.finite(B0[1L]) || B0[1L] == 0)
+        stop("B0 must contain a finite, nonzero starting direction")
+    }
     if (nrow(B0) != ncol(x)) stop("Dimension of B0 is not correct")
     B0 = solve(ss) %*% B0
     B = B0
@@ -232,7 +262,7 @@ hMave <- function(x, y, censor, m0, B0 = NULL)
 
   cv = sum((ky-kye)^2)
   B = ss %*% B
-  B = apply(B, 2, function(x) x / sqrt(sum(x^2)))
+  B = sweep(B, 2L, sqrt(colSums(B^2)), FUN = "/")
 
   return(list("B" = B, "cv" = cv))
 }

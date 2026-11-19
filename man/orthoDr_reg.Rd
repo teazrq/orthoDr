@@ -20,21 +20,23 @@ orthoDr_reg(
 }
 \arguments{
 \item{x}{A numeric matrix of predictors (n observations \eqn{\times} p
-features). Not automatically scaled.}
+features). A single predictor must be finite and varying.}
 
-\item{y}{A numeric vector of continuous outcomes (length n).}
+\item{y}{A numeric vector or one-column matrix of finite, varying continuous
+outcomes, one per observation.}
 
 \item{method}{The dimension reduction method. One of \code{"sir"},
 \code{"save"}, \code{"phd"}, \code{"local"}, or \code{"seff"}.
 See Details for method-specific behaviour.}
 
-\item{ndr}{Integer; number of directions to estimate (default 2). Must be
-\eqn{\ge 1} and \eqn{\le} \code{ncol(x)}. Values > 4 produce a warning.}
+\item{ndr}{Number of directions to estimate (default 2). The fit uses
+at least one direction and at most \code{ncol(x)}. Values > 4 produce a warning.}
 
 \item{B.initial}{Initial \eqn{B} matrix (\eqn{p \times ndr}), or \code{NULL}
-(default). When \code{NULL}, the function selects the starting matrix
-with the smallest squared estimating-equation norm among SIR, SAVE,
-and PHD candidates. For \code{ndr = 2}, it also considers the leading
+(default). With one predictor, the default is \code{matrix(1)}.
+With multiple predictors, the default selects the SIR, SAVE or PHD
+starting matrix with the smallest squared estimating-equation norm.
+For \code{ndr = 2}, it also considers the leading
 SIR and SAVE directions together when they are linearly independent.
 For \code{method = "local"} with \code{ndr = 1}, it instead fits from
 each of the three starting matrices and selects the result with the
@@ -80,10 +82,14 @@ components:
 \describe{
 \item{\code{B}}{Estimated \eqn{p \times ndr} direction matrix with
 orthonormal columns.}
-\item{\code{fn}}{Final objective value.}
+\item{\code{fn}}{Final objective value in the supplied predictor units.
+Optimizer output and stopping tolerances use the internal scaled
+objective. At extreme predictor scales the reported value can round
+to zero or overflow even when the fit converges.}
 \item{\code{itr}}{Number of iterations performed.}
-\item{\code{converge}}{Logical; \code{TRUE} when a convergence criterion
-was reached. This describes numerical stopping, not prediction accuracy.}
+\item{\code{converge}}{Logical. \code{TRUE} indicates a small constrained
+gradient or small changes in both the basis and the objective, measured
+in the latest step or averaged over the last five steps.}
 \item{\code{method}}{Method used (e.g., \code{"sir"}).}
 \item{\code{keep.data}}{Whether original data was stored.}
 }
@@ -97,32 +103,45 @@ direction matrix \code{B} subject to \eqn{B^\top B = I}; \eqn{xB} gives
 the reduced predictors.
 
 Kernel calculations divide each coordinate of \eqn{B^\top x} by its sample
-standard deviation and by \code{bw * sqrt(2)}. Raw predictor values still
-enter the estimating equations in their supplied units, so feature scaling
-can affect the fit. If predictors are standardized before fitting, apply
-the same training transformation to prediction data. The outcome \code{y}
-is centered and scaled internally for estimation; mean predictions use the
-original outcome units.
+standard deviation and by \code{bw * sqrt(2)}. SIR, PHD, LOCAL, and SEFF
+center the predictors and divide by one pooled sample standard deviation
+for optimization. A common change of units preserves these scaled objectives.
+SAVE uses its supplied-unit estimating equation and divides its squared norm
+by \eqn{\max(s^4, s^8)}, where \eqn{s} is the pooled sample standard deviation.
+A common change of units can change the SAVE fit because the equation
+includes the identity minus a conditional covariance matrix. Rescaling
+individual predictors can affect all five methods.
+With a very narrow kernel, a finite-difference step can move a projected
+observation by several bandwidths. If using such a bandwidth with SIR or
+SAVE, check whether a smaller \code{control$epsilon} changes the fitted
+directions or held-out predictions.
+With \code{keep.data = TRUE}, the original predictors
+are retained, and prediction accepts new data in the supplied coordinates.
+If predictors are standardized before fitting, apply the same training
+transformation to prediction data. The outcome \code{y} is centered and
+scaled internally for estimation; mean predictions use the original
+outcome units.
 }
 \details{
 \subsection{Methods}{
 \describe{
 \item{SIR}{Semiparametric sliced inverse regression (Ma & Zhu 2012).}
 \item{SAVE}{Semiparametric sliced average variance estimation.}
-\item{PHD}{Semiparametric principal Hessian directions.}
+\item{PHD}{Semiparametric principal Hessian directions. The estimating
+equation uses outer products of the centered predictors.}
 \item{Local}{Locally efficient estimator (Ma & Zhu 2013,
 Section~3.1) with a normal posited model for the conditional
 density. This yields a mean-regression estimator, which captures
 dependence of \eqn{Y} on \eqn{\beta^\top x} through the conditional
-mean only, not higher moments.  For \eqn{d = 1} with default
+mean only, not higher moments. For \eqn{d = 1 < p} with default
 initialisation, a multi-start strategy runs LOCAL from SIR, SAVE,
 and PHD starters and selects the result that maximises the
 nonparametric \eqn{R^2} of the Nadaraya–Watson regression of
 \eqn{Y} on \eqn{\beta^\top x}.}
 \item{SEFF}{Semiparametric efficient estimator (Ma & Zhu 2013,
-Section 3.2). During optimization, it uses the initial projected
-covariates as a fixed kernel reference and re-evaluates the nuisance
-components at each candidate projection.}
+Section 3.2). During optimization, it
+uses the initial projected covariates as a fixed kernel reference
+and re-evaluates the nuisance components at each candidate projection.}
 }
 }
 }

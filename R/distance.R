@@ -4,12 +4,12 @@
 #'
 #' @description
 #' Compares the linear subspaces spanned by the columns of \code{s1} and
-#' \code{s2} using projection-matrix distances or correlations.
+#' \code{s2} using projection matrices or correlations.
 #'
 #' @param s1 A matrix with linearly independent columns spanning the first subspace.
 #' @param s2 A matrix with linearly independent columns spanning the second subspace,
 #'   with the same number of rows as \code{s1}.
-#' @param type Character; the distance measure to use:
+#' @param type Character string specifying the comparison to use.
 #'   \describe{
 #'     \item{\code{"dist"}}{Frobenius norm of the difference between
 #'       projection matrices (default).}
@@ -18,13 +18,26 @@
 #'     \item{\code{"canonical"}}{Mean canonical correlation between
 #'       \code{x \%*\% s1} and \code{x \%*\% s2}, without centering;
 #'       requires \code{x}.}
-#'     \item{\code{"sine"}}{Sine metric between subspaces.}
+#'     \item{\code{"sine"}}{Sine discrepancy based on principal angles.}
 #'   }
 #' @param x A matrix of covariate values, required only when
 #'   \code{type = "canonical"}.
 #'
-#' @return A numeric scalar: the distance (or correlation) between the two
-#'   subspaces. Interpretation depends on \code{type}.
+#' @details
+#' Let \eqn{d_1}{d1} and \eqn{d_2}{d2} be the dimensions of the first and
+#' second subspaces, and let \eqn{\theta_i}{theta_i} be their principal angles.
+#' Then \code{type = "sine"} returns
+#' \deqn{\sqrt{\sum_{i=1}^{\min(d_1,d_2)} \sin^4(\theta_i) + \max(d_1-d_2,0)}.}{
+#' sqrt(sum of fourth powers of principal-angle sines + max(d1 - d2, 0)).}
+#' For equal dimensions, this is the square root of the sum of fourth powers
+#' of the sines. For unequal dimensions, the result depends on argument order.
+#' For example, a line in a plane gives 0 with the line first and 1 with the
+#' plane first. The sine discrepancy can violate the triangle inequality even
+#' at equal dimensions. Use \code{type = "dist"} for a metric.
+#'
+#' @return A scalar giving the comparison specified by \code{type}.
+#' For \code{type = "sine"}, R can return a complex scalar with zero imaginary
+#' part because of roundoff in the eigenvalue calculation.
 #' @examples
 #' # two spaces
 #' failEDR = as.matrix(cbind(c(1, 1, 0, 0, 0, 0),
@@ -34,6 +47,7 @@
 #'
 #' distance(failEDR, B, "dist")
 #' distance(failEDR, B, "trace")
+#' distance(failEDR, B, "sine")
 #'
 #' N=300
 #' P=6
@@ -56,19 +70,20 @@ distance <- function(s1, s2, type = "dist", x = NULL)
 
   type = match.arg(type, c("dist", "trace", "canonical", "sine"))
 
+  basis <- function(s) {
+    peak <- apply(abs(s), 2L, max)
+    if (nrow(s) < ncol(s) || any(!is.finite(peak) | peak == 0))
+      stop("Each basis must have finite, linearly independent columns.")
+    decomp <- qr(sweep(s, 2L, peak, "/"), tol = max(dim(s)) * .Machine$double.eps)
+    if (decomp$rank != ncol(s)) stop("Each basis must have linearly independent columns.")
+    qr.Q(decomp)
+  }
+  q1 <- basis(s1)
+  q2 <- basis(s2)
   if (type == "dist")
-  {
-    Mat_1 = s1 %*% solve(t(s1) %*% s1) %*% t(s1)
-    Mat_2 = s2 %*% solve(t(s2) %*% s2) %*% t(s2)
-    return( sqrt(sum((Mat_1 - Mat_2)^2)) )
-  }
-
+    return(sqrt(sum((tcrossprod(q1) - tcrossprod(q2))^2)))
   if (type == "trace")
-  {
-    Mat_1 = s1 %*% solve(t(s1) %*% s1) %*% t(s1)
-    Mat_2 = s2 %*% solve(t(s2) %*% s2) %*% t(s2)
-    return( sum(diag(x = Mat_1 %*% Mat_2 ))/ncol(s1) )
-  }
+    return(sum(crossprod(q1, q2)^2) / ncol(s1))
 
   if (type == "canonical")
   {
@@ -80,13 +95,13 @@ distance <- function(s1, s2, type = "dist", x = NULL)
 
 
 
-    return( mean(cancor(x %*% s1, x %*% s2, xcenter = FALSE, ycenter = FALSE)$cor) )
+    return( mean(cancor(x %*% q1, x %*% q2, xcenter = FALSE, ycenter = FALSE)$cor) )
   }
   
   if (type == "sine")
   {
-    Mat_1 = s1 %*% solve(t(s1) %*% s1) %*% t(s1)
-    Mat_2 = s2 %*% solve(t(s2) %*% s2) %*% t(s2)
+    Mat_1 = tcrossprod(q1)
+    Mat_2 = tcrossprod(q2)
     d = eigen(Mat_1 %*% (diag(1, ncol(Mat_2)) - Mat_2))$values
     
     return( sqrt(sum(d^2)) )

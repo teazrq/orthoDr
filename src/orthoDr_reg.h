@@ -117,7 +117,10 @@ double save_init(const arma::mat& B,
                  const arma::mat& X,
                  const arma::mat& Y,
                  double bw,
-                 int ncore);
+                 int ncore,
+                 double identity_weight,
+                 double covariance_weight,
+                 double moment_scale);
 				 
 Rcpp::List save_solver(arma::mat B,
                  arma::mat& X,
@@ -133,7 +136,10 @@ Rcpp::List save_solver(arma::mat B,
                  double gtol,
                  int maxitr,
                  int verbose,
-                 int ncore);
+                 int ncore,
+                 double identity_weight,
+                 double covariance_weight,
+                 double moment_scale);
 				 
 double seff_f_fixed(const arma::mat& B,
                      const arma::mat& X,
@@ -176,7 +182,8 @@ double sir_init(const arma::mat& B,
                 const arma::mat& X,
                 const arma::mat& Y,
                 double bw,
-                int ncore);
+                int ncore,
+                double pooled_ratio);
 
 Rcpp::List sir_solver(arma::mat B,
                 arma::mat& X,
@@ -192,7 +199,8 @@ Rcpp::List sir_solver(arma::mat B,
                 double gtol,
                 int maxitr,
                 int verbose,
-                int ncore);
+                int ncore,
+                double pooled_ratio);
 
 				
 #endif

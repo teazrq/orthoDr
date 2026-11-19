@@ -22,9 +22,11 @@ view_dr_surv(
 \item{x}{A numeric matrix of continuous predictors, with one row per
 observation. Columns are not scaled internally.}
 
-\item{y}{A numeric vector of observed survival times, one per row of \code{x}.}
+\item{y}{Observed follow-up times, one finite value per row of \code{x}.}
 
-\item{censor}{A vector of event indicators (1 = event, 0 = censored).}
+\item{censor}{A numeric or logical vector or one-column matrix, with one
+event indicator per observation (1 or \code{TRUE} = event, 0 or \code{FALSE} =
+censored). Missing and other values cause an error.}
 
 \item{B}{A vector or one-column matrix of direction weights, with one entry
 per predictor. Only one reduced predictor can be displayed.}
@@ -33,7 +35,9 @@ per predictor. Only one reduced predictor can be displayed.}
 \eqn{xB}. The default is \code{silverman(1, length(y)) * sd(x \%*\% B)}.}
 
 \item{FUN}{A function, or its name, applied to \code{y} before plotting.
-Default: \code{"log"}. Use \code{identity} to retain the supplied time scale.}
+The default logarithm requires positive times. Use \code{identity} to
+retain the supplied time scale. The transformation must give one finite
+display coordinate per observation.}
 
 \item{type}{Plot type: \code{"2D"} or \code{"3D"}.}
 
@@ -51,6 +55,17 @@ Invisible \code{NULL}. Called for its side-effect (producing a plot).
 \description{
 Plots observed survival times against \eqn{xB} in two dimensions, or a
 kernel-smoothed survival surface over time and \eqn{xB} in three dimensions.
+}
+\details{
+The 3D time grid combines the observed follow-up times at empirical
+percentiles 0 through 100 (including censored observations) with every
+distinct event time. Percentiles use the inverse empirical distribution,
+so each grid point is an observed time. The supplied \code{FUN} is applied
+once to all observation times, and the corresponding transformed values
+define the plotted grid. Risk sets use the original follow-up times.
+When several knots share a display coordinate, the surface shows survival
+at the latest of those follow-up times. A single distinct transformed time is displayed
+as a line across the reduced predictor.
 }
 \examples{
 # generate some survival data

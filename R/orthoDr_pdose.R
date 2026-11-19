@@ -178,7 +178,10 @@
 #' accurate dose rule. Stable kernel weights prevent undefined grid comparisons
 #' but do not supply evidence in sparsely observed dose regions.
 #'
-#' Its final ridge rule minimizes squared grid-target error plus
+#' For each training observation, pseudo-direct learning sets the target to
+#' the grid dose with the highest estimated reward. It uses the lowest dose
+#' among ties to numerical precision.
+#' Its final ridge rule minimizes squared error against these targets plus
 #' \eqn{\lambda w^\top K_B w}. Without an intercept, the rule is shrunk toward
 #' zero dose. With \code{intercept = TRUE}, it is
 #' \deqn{d(x)=\alpha+k_B(x)^\top w,}
@@ -188,6 +191,9 @@
 #' bounded average-dose parameter in direct learning.
 #' Both methods predict continuous doses, which need not lie on the
 #' grid or within the observed dose range.
+#' Fitting and prediction use the same origin for each predictor. Subtracting
+#' a large common offset before projection helps preserve small differences
+#' between patients.
 #'
 #' Dose comparisons use the standard deviation of the observed training doses
 #' for both observed and candidate doses. Returned doses remain in their

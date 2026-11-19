@@ -25,6 +25,25 @@
 #ifndef orthoDr_pdose
 #define orthoDr_pdose
 
+// Use the same origin regardless of observation order. Remove a column offset
+// only if every training subtraction preserves the represented differences.
+inline arma::rowvec dose_origin(const arma::mat& x)
+{
+  arma::rowvec origin = arma::min(x, 0);
+  for (arma::uword k = 0; k < x.n_cols; ++k) {
+    for (arma::uword i = 0; i < x.n_rows; ++i) {
+      const double a = x(i, k), b = origin(k), diff = a - b;
+      const double other = a - diff;
+      const double tail = (a - (diff + other)) + (other - b);
+      if (!std::isfinite(diff) || tail != 0) {
+        origin(k) = 0;
+        break;
+      }
+    }
+  }
+  return origin;
+}
+
 Rcpp::List pdose_direct_evaluate(const arma::mat B,
                                 const arma::mat X,
                                 const arma::colvec A,
