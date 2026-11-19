@@ -21,12 +21,72 @@
 //    ----------------------------------------------------------------
 
 #include <RcppArmadillo.h>
+#include <limits>
 #include "utilities.h"
 #include "orthoDr_reg.h"
+#include "reg_projection.h"
 
 using namespace Rcpp;
 
 //[[Rcpp::depends(RcppArmadillo)]]
+
+// Compute local deviations before taking moments in the supplied units.
+static void save_covariance(const arma::mat& X, const arma::mat& kernel,
+                            arma::mat& residual, arma::cube& covariance,
+                            int ncore)
+{
+  const int N = X.n_rows;
+  const arma::rowvec totals = sum(kernel, 0);
+
+#pragma omp parallel for schedule(static) num_threads(ncore) if(ncore > 1)
+  for (int i = 0; i < N; ++i) {
+    arma::rowvec local_mean(X.n_cols, arma::fill::zeros);
+    for (int j = 0; j < N; ++j) {
+      if (kernel(i,j) > 0)
+        local_mean += (X.row(j) - X.row(i)) * kernel(i,j);
+    }
+    local_mean /= totals(i);
+
+    arma::rowvec deviation(X.n_cols);
+    for (int j = 0; j < N; ++j) {
+      if (kernel(i,j) > 0) {
+        deviation = (X.row(j) - X.row(i)) - local_mean;
+        covariance.slice(i) += deviation.t() * (deviation * kernel(i,j));
+      }
+    }
+    covariance.slice(i) /= totals(i);
+    residual.row(i) = -local_mean;
+  }
+}
+
+static void save_response_moments(const arma::mat& X, const arma::mat& Y,
+                                  arma::mat& residual, arma::cube& covariance,
+                                  int ncore, double identity_weight,
+                                  double covariance_weight)
+{
+  save_covariance(X, KernelDist_multi(Y, ncore, 1), residual, covariance, ncore);
+  const arma::mat identity = identity_weight * arma::eye(X.n_cols, X.n_cols);
+  covariance.each_slice([&](arma::mat& slice) { slice = identity - covariance_weight * slice; });
+}
+
+static arma::mat save_projection_kernel(const arma::mat& X, const arma::mat& B,
+                                        double bw, int ncore)
+{
+  const arma::mat centered = X.each_row() - X.row(0);
+  arma::mat projected = centered * B;
+  const arma::rowvec scale = arma::stddev(projected, 0, 0) * bw * std::sqrt(2.0);
+  const double eps = std::numeric_limits<double>::epsilon();
+  const arma::rowvec roundoff = (eps * arma::max(arma::abs(centered), 0)) * arma::abs(B);
+  if (!arma::any(roundoff > std::sqrt(eps) * scale)) {
+    projected.each_row() /= scale;
+    return ncore > 1 ? KernelDist_multi(projected, ncore, 1)
+                     : KernelDist_single(projected, 1);
+  }
+
+  // A distant common origin can lose nearby differences at a narrow
+  // bandwidth. Form each feature difference before projection in this case.
+  return reg_pair_kernel(X, B, bw, ncore);
+}
 
 double save_f(const arma::mat& B,
               const arma::mat& X,
@@ -40,47 +100,9 @@ double save_f(const arma::mat& B,
 
   int N = X.n_rows;
   int P = X.n_cols;
-  int ndr = B.n_cols;
-
-  arma::mat BX = X * B;
-
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
-
-  for (int j=0; j<ndr; j++)
-    BX.col(j) /= BX_scale(j);
-
-  arma::mat kernel_matrix_x(N, N);
-
-  if (ncore > 1)
-    kernel_matrix_x = KernelDist_multi(BX, ncore, 1);
-  else
-    kernel_matrix_x = KernelDist_single(BX, 1);
-
-  arma::rowvec Kx = sum(kernel_matrix_x, 0);
-
-  // E[X | BX]
-
-  arma::mat Ex(N,P, arma::fill::zeros);
-
-  for(int i=0; i<N; i++){
-    for(int j=0; j<N; j++){
-      Ex.row(i) += X.row(j)*kernel_matrix_x(i,j);
-    }
-    Ex.row(i) /= Kx(i);
-  }
-
-  // cov[X | XB]
-
+  arma::mat Ex(N, P, arma::fill::none);
   arma::cube Covxx(P, P, N, arma::fill::zeros);
-
-  for(int i=0; i<N; i++){
-    for(int j=0; j<N; j++){
-      Covxx.slice(i) += (X.row(j).t() * X.row(j))*kernel_matrix_x(i,j);
-    }
-    Covxx.slice(i) /= Kx(i);
-    Covxx.slice(i) -= Ex.row(i).t() * Ex.row(i);
-    Ex.row(i) = X.row(i) - Ex.row(i);
-  }
+  save_covariance(X, save_projection_kernel(X, B, bw, ncore), Ex, Covxx, ncore);
 
   arma::mat Est(P, P, arma::fill::zeros);
 
@@ -103,7 +125,10 @@ double save_init(const arma::mat& B,
                  const arma::mat& X,
                  const arma::mat& Y,
                  double bw,
-                 int ncore)
+                 int ncore,
+                 double identity_weight = 1.0,
+                 double covariance_weight = 1.0,
+                 double moment_scale = 1.0)
 {
   int N = X.n_rows;
   int P = B.n_rows;
@@ -112,44 +137,15 @@ double save_init(const arma::mat& B,
 
   checkCores(ncore, 0.0);
 
-  //precalculate
-
-  arma::mat kernel_matrix_y = KernelDist_multi(Y, ncore, 1);
-
-  arma::rowvec Ky = sum(kernel_matrix_y, 0);
-
-  // X - E[X | Y]
-  arma::mat Exy(N, P, arma::fill::zeros);
-
-  // I - cov[X | Y]
+  arma::mat Exy(N, P, arma::fill::none);
   arma::cube Covxy(P, P, N, arma::fill::zeros);
-  arma::mat diag = arma::eye(P, P);
-
-#pragma omp parallel for schedule(static) num_threads(ncore)
-  for(int i=0; i<N; i++){
-    for(int j=0; j<N; j++){
-      Exy.row(i) += X.row(j)*kernel_matrix_y(i,j);
-      Covxy.slice(i) += (X.row(j).t() * X.row(j)) * kernel_matrix_y(i,j);
-    }
-
-    // E[X | Y]
-    Exy.row(i) /= Ky(i);
-
-    // E[XX | Y]
-    Covxy.slice(i) /= Ky(i);
-
-    // I - cov[X | Y]
-    Covxy.slice(i) = diag - Covxy.slice(i) + Exy.row(i).t()*Exy.row(i);
-
-    // X - E[X | Y]
-    Exy.row(i) = X.row(i) - Exy.row(i);
-  }
+  save_response_moments(X, Y, Exy, Covxy, ncore, identity_weight, covariance_weight);
 
   // Initial function value
 
   double F = save_f(B, X, Y, Exy, Covxy, bw, ncore);
 
-  return F;
+  return F * moment_scale;
 }
 
 
@@ -192,7 +188,10 @@ List save_solver(arma::mat B,
                  double gtol,
                  int maxitr,
                  int verbose,
-                 int ncore)
+                 int ncore,
+                 double identity_weight = 1.0,
+                 double covariance_weight = 1.0,
+                 double moment_scale = 1.0)
 {
   int N = X.n_rows;
   int P = B.n_rows;
@@ -208,51 +207,22 @@ List save_solver(arma::mat B,
 
   checkCores(ncore, verbose);
 
-  //precalculate
-
-  arma::mat kernel_matrix_y = KernelDist_multi(Y, ncore, 1);
-
-  arma::rowvec Ky = sum(kernel_matrix_y, 0);
-
-  // X - E[X | Y]
-  arma::mat Exy(N, P, arma::fill::zeros);
-
-  // I - cov[X | Y]
+  arma::mat Exy(N, P, arma::fill::none);
   arma::cube Covxy(P, P, N, arma::fill::zeros);
-  arma::mat diag = arma::eye(P, P);
-
-#pragma omp parallel for schedule(static) num_threads(ncore)
-  for(int i=0; i<N; i++){
-    for(int j=0; j<N; j++){
-      Exy.row(i) += X.row(j)*kernel_matrix_y(i,j);
-      Covxy.slice(i) += (X.row(j).t() * X.row(j)) * kernel_matrix_y(i,j);
-    }
-
-    // E[X | Y]
-    Exy.row(i) /= Ky(i);
-
-    // E[XX | Y]
-    Covxy.slice(i) /= Ky(i);
-
-    // I - cov[X | Y]
-    Covxy.slice(i) = diag - Covxy.slice(i) + Exy.row(i).t()*Exy.row(i);
-
-    // X - E[X | Y]
-    Exy.row(i) = X.row(i) - Exy.row(i);
-  }
+  save_response_moments(X, Y, Exy, Covxy, ncore, identity_weight, covariance_weight);
 
   // Build lambdas that capture the precalculated data and delegate to save_f
 
-  auto f_eval = [&X, &Y, &Exy, &Covxy, bw, ncore](const arma::mat& B_) -> double {
-    return save_f(B_, X, Y, Exy, Covxy, bw, ncore);
+  auto f_eval = [&X, &Y, &Exy, &Covxy, bw, ncore, moment_scale](const arma::mat& B_) -> double {
+    return save_f(B_, X, Y, Exy, Covxy, bw, ncore) * moment_scale;
   };
 
-  auto g_eval = [&X, &Y, &Exy, &Covxy, bw, epsilon, ncore](arma::mat& B_,
-                                                             const double F0,
-                                                             arma::mat& G) -> void {
+  auto g_eval = [&X, &Y, &Exy, &Covxy, bw, epsilon, ncore, moment_scale](arma::mat& B_,
+                                                                       const double F0,
+                                                                       arma::mat& G) -> void {
     numerical_gradient(B_, F0, G,
-      [&X, &Y, &Exy, &Covxy, bw](const arma::mat& B_) -> double {
-        return save_f(B_, X, Y, Exy, Covxy, bw, 1);
+      [&X, &Y, &Exy, &Covxy, bw, moment_scale](const arma::mat& B_) -> double {
+        return save_f(B_, X, Y, Exy, Covxy, bw, 1) * moment_scale;
       },
       epsilon, ncore);
   };

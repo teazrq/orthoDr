@@ -17,7 +17,7 @@ optimizer for problems with orthogonality constraints.
 
 ## Installation
 
-This website documents **development version 2.0.0**. Install it from GitHub
+This website documents **orthoDr 2.1.0**. Install it from GitHub
 to follow the tutorials:
 
 ```r
@@ -27,8 +27,8 @@ remotes::install_github("teazrq/orthoDr")
 
 Installation from GitHub requires R's C++ build tools. See
 [Get Started](https://teazrq.github.io/orthoDr/articles/get-started.html) for details.
-For the CRAN release, version 0.6.8, use `install.packages("orthoDr")` and its
-[reference manual](https://cran.r-project.org/web/packages/orthoDr/refman/orthoDr.html).
+To install from CRAN, use `install.packages("orthoDr")` and consult the
+[CRAN reference manual](https://cran.r-project.org/web/packages/orthoDr/refman/orthoDr.html).
 Numerical results can differ between versions.
 
 ## Getting started
@@ -38,9 +38,9 @@ Numerical results can differ between versions.
 - [Runnable guide](https://teazrq.github.io/orthoDr/examples/getting-started.R) and
   [supplemental survival example](https://teazrq.github.io/orthoDr/examples/survival-optimizer.R),
   including the bundled melanoma data and plots of reduced predictors.
-- [Development function reference](https://teazrq.github.io/orthoDr/reference/index.html),
+- [Function reference](https://teazrq.github.io/orthoDr/reference/index.html),
   [release notes](https://teazrq.github.io/orthoDr/news/index.html), and
-  [CRAN 0.6.8 reference manual](https://cran.r-project.org/web/packages/orthoDr/refman/orthoDr.html).
+  [CRAN reference manual](https://cran.r-project.org/web/packages/orthoDr/refman/orthoDr.html).
 
 For documentation matching your installed version, use `help(package = "orthoDr")`.
 For Python, see the [orthoDr Python package and documentation](https://teazrq.github.io/orthoDr-Python/).

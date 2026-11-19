@@ -244,6 +244,14 @@ test_that("unequal group moments transform affinely in raw selected coordinates"
   transformed <- pSAVE(shifted, a, r, ndr = 2)
   expect_equal(psave_projector(transformed), psave_projector(solve(change, actual)),
                tolerance = 3e-11)
+
+  for (scales in list(c(2^27, 1, 1, 1), 2^c(200, -200, 0, -27))) {
+    scaled <- pSAVE(sweep(x, 2L, scales, "*"), a, r, ndr = 2)
+    expect_equal(colSums(scaled^2), c(1, 1), tolerance = 1e-14)
+    mapped <- scaled * scales
+    mapped <- sweep(mapped, 2L, sqrt(colSums(mapped^2)), "/")
+    expect_equal(psave_projector(mapped), psave_projector(expected$B), tolerance = 3e-11)
+  }
 })
 
 test_that("mixed tiny slices are direction neutral in common coordinates", {
@@ -402,5 +410,65 @@ test_that("one-predictor automatic fitting matches the exact supplied basis", {
     supplied <- do.call(orthoDr_pdose, c(args, list(B.initial = matrix(1, 1, 1))))
     expect_identical(automatic$B, supplied$B)
     expect_identical(predict(automatic, x)$pred, predict(supplied, x)$pred)
+  }
+})
+
+test_that("pSAVE recognizes decimal constant columns and scalar variation", {
+  t <- seq_len(10000L)
+  expect_error(pSAVE(cbind(t, rep(.1, length(t))), cos(t), sin(t), ndr = 1),
+               "full centred predictor rank")
+  expect_error(pSAVE(matrix(.1, length(t), 1), t, t, ndr = 1),
+               "full centred predictor rank")
+  expect_identical(pSAVE(matrix(c(0, 2^-1074, 0)), 1:3, 1:3, ndr = 1), matrix(1))
+})
+
+test_that("pSAVE preserves group rank and local covariance under shifts", {
+  a <- 1:12
+  x <- cbind(a, c(rep(0, 7), 1, 0, 0, 1, 3))
+  reference <- psave_coordinate_reference(x, a, a)$B
+  observed <- integer()
+  original <- orthoDr:::.psave_grouped_moment
+  local_mocked_bindings(
+    .psave_grouped_moment = function(x, y, group, nslices) {
+      observed <<- c(observed, sum(group))
+      original(x, y, group, nslices)
+    },
+    .package = "orthoDr"
+  )
+  for (shift in c(0, .1, 2^50)) {
+    moved <- sweep(x, 2, c(0, shift), "+")
+    observed <- integer()
+    actual <- pSAVE(moved, a, a, ndr = 1)
+    expect_equal(observed, c(8, 9, 12))
+    expect_equal(tcrossprod(actual), tcrossprod(reference), tolerance = 2e-13)
+    permuted <- pSAVE(moved[12:1, , drop = FALSE], rev(a), rev(a), ndr = 1)
+    expect_equal(tcrossprod(permuted), tcrossprod(reference), tolerance = 2e-13)
+    local <- orthoDr:::.psave_group_moment(moved[1:8, , drop = FALSE], a[1:8], 2)
+    expect_equal(local$covariance[2, 2], 7 / 64, tolerance = 1e-15)
+  }
+})
+
+test_that("pSAVE dose policies match a shared start after predictor translation", {
+  t <- 0:31
+  u <- sin(t * 1.234)
+  v <- ifelse(t < 16, 0, cos(t * 3.339))
+  x <- cbind(u, v)
+  a <- t / 32
+  reward <- .2 * u - 3 * (a - .45 - .3 * sin(2 * u))^2
+  query <- cbind(sin(t * .91), cos(t * .51))
+  optimal <- .45 + .3 * sin(2 * query[, 1])
+  fixed <- pSAVE(x, a, reward, ndr = 1)
+  for (method in c("direct", "pseudo_direct")) {
+    control <- orthoDr_pdose(x, a, reward, ndr = 1, method = method, intercept = TRUE,
+                            keep.data = TRUE, B.initial = fixed, ncore = 1)
+    expected <- predict(control, query)$pred
+    expect_lt(sqrt(mean((expected - optimal)^2)), .09)
+    for (shift in c(0, .1)) {
+      moved <- sweep(x, 2, c(0, shift), "+")
+      fit <- orthoDr_pdose(moved, a, reward, ndr = 1, method = method, intercept = TRUE,
+                          keep.data = TRUE, ncore = 1)
+      actual <- predict(fit, sweep(query, 2, c(0, shift), "+"))$pred
+      expect_lt(max(abs(actual - expected)), 5e-7)
+    }
   }
 })

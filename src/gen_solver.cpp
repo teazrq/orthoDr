@@ -59,10 +59,8 @@ void gen_g(const arma::mat& B, arma::mat& G, Rcpp::Function g, Environment env)
 }
 
 
-void gen_g_approx(const arma::mat& B, arma::mat& G, Rcpp::Function f, Rcpp::Function g, Environment env, double epsilon)
+void gen_g_approx(const arma::mat& B, arma::mat& G, Rcpp::Function f, Environment env, double epsilon)
 {
-
-  double F0 = gen_f(B, f, env);
   int P = B.n_rows;
   int ndr = B.n_cols;
 
@@ -72,11 +70,10 @@ void gen_g_approx(const arma::mat& B, arma::mat& G, Rcpp::Function f, Rcpp::Func
   {
     for(int i = 0; i < P; i++)
     {
-      // perturb the local copy
       NewB(i,j) = B(i,j) + epsilon;
-
-      // calculate gradient
-      G(i,j) = (gen_f(NewB, f, env) - F0) / epsilon;
+      const double above = gen_f(NewB, f, env);
+      NewB(i,j) = B(i,j) - epsilon;
+      G(i,j) = (above - gen_f(NewB, f, env)) / (2 * epsilon);
 
       // reset from original
       NewB(i,j) = B(i,j);
@@ -86,6 +83,14 @@ void gen_g_approx(const arma::mat& B, arma::mat& G, Rcpp::Function f, Rcpp::Func
   return;
 }
 
+arma::mat tangent_gradient(const arma::mat& B, const arma::mat& G)
+{
+  const arma::mat BtG = B.t() * G;
+  arma::mat projected = G - B * (0.5 * BtG + 0.5 * BtG.t());
+  // Remove any residual normal component left by subtraction of a large term.
+  const arma::mat residual = B.t() * projected;
+  return projected - B * (0.5 * residual + 0.5 * residual.t());
+}
 
 //  @title General solver \code{C++} function
 //  @name gen_solver
@@ -133,196 +138,97 @@ List gen_solver(arma::mat B,
                  int verbose)
 {
 
-  int P = B.n_rows;
-  int ndr = B.n_cols;
+  const int P = B.n_rows;
+  const int ndr = B.n_cols;
+  const bool dense = ndr >= P / 2;
+  if (B.is_empty() || !B.is_finite() ||
+      orthoDr::feasibility_error(B) > orthoDr::feasibility_tolerance)
+    Rcpp::stop("Initial B must have orthonormal columns");
 
-  arma::mat crit(maxitr,3);
-  bool invH = true;
-  arma::mat eye2P(2*ndr,2*ndr);
+  auto objective = [&](const arma::mat& b) { return gen_f(b, f, env); };
+  auto projected_gradient = [&](const arma::mat& b, double value) {
+    arma::mat G(P, ndr);
+    if (useg)
+      gen_g(b, G, g, env);
+    else
+      gen_g_approx(b, G, f, env, epsilon);
+    orthoDr::check_state(value, G);
+    return tangent_gradient(b, G);
+  };
+  auto gradient_norm = [](const arma::mat& D) {
+    const double norm = arma::norm(D, "fro");
+    if (!std::isfinite(norm)) Rcpp::stop("Constrained gradient norm must be finite");
+    return norm;
+  };
 
-  if(ndr < P/2){
-    invH = false;
-    eye2P.eye();
-  }
-
-  // Initial function value and gradient, prepare for iterations
-
-  double F = gen_f(B, f, env);
-  arma::vec F_seq(maxitr);
-  F_seq.fill(0.0);
-
-  arma::mat G(P, ndr);
-  G.fill(0);
-
-  if (useg)
-    gen_g(B, G, g, env);
-  else
-    gen_g_approx(B, G, f, g, env, epsilon);
-  orthoDr::check_state(F, G);
-
-  arma::mat GX = G.t() * B;
-  arma::mat GXT;
-  arma::mat H;
-  arma::mat RX;
-  arma::mat U;
-  arma::mat V;
-  arma::mat VU;
-  arma::mat VX;
-
-  if(invH){
-    GXT = G * B.t();
-    H = 0.5 * (GXT - GXT.t());
-    RX = H * B;
-  }else{
-    U = join_rows(G, B);
-    V = join_rows(B, -G);
-    VU = V.t() * U;
-    VX = V.t() * B;
-  }
-
-  arma::mat dtX = G - B * GX;
-  double nrmG = norm(dtX, "fro");
-  if (!std::isfinite(nrmG)) Rcpp::stop("Constrained gradient norm must be finite");
-  bool converged = nrmG < gtol;
+  double F = objective(B);
+  arma::vec F_seq(maxitr, arma::fill::zeros);
+  arma::mat changes(5, 2, arma::fill::zeros);
+  arma::mat D = projected_gradient(B, F);
+  double nrmG = gradient_norm(D);
+  double best_norm = nrmG;
   int completed = 0;
-  int clean_updates = 0;
-  double previous_tau = tau;
-
+  int last_improvement = 0;
+  const char* reason = "iteration limit reached";
   double Q = 1;
   double Cval = F;
-
-  // main iteration
-  int itr;
-  arma::mat BP;
-  double FP;
-  arma::mat GP;
-  arma::mat dtXP;
-  arma::mat diag_n(P, P);
-  arma::mat aa;
-  arma::mat S;
-  double BDiff;
-  double FDiff;
-  arma::mat Y;
-  double SY;
 
   if (verbose > 1)
     Rcout << "Initial value,   F = " << F << std::endl;
 
-  for(itr = 1; !converged && itr < maxitr + 1; itr++){
-
-    BP = B;
-    FP = F;
-    GP = G;
-    dtXP = dtX;
-
-    int nls = 1;
-    double deriv = rho * nrmG * nrmG;
-
-    // line search
-    while(true){
-      if(invH){
-        diag_n.eye();
-        B = solve(diag_n + tau * H, BP - tau * RX);
-      }else{
-        aa = solve(eye2P + 0.5 * tau * VU, VX);
-        B = BP - U * (tau * aa);
-      }
-
-      if (!B.is_finite()) Rcpp::stop("Optimizer update must be finite");
-      F = gen_f(B, f, env);
-
-      if (useg)
-        gen_g(B, G, g, env);
-      else
-        gen_g_approx(B, G, f, g, env, epsilon);
-      orthoDr::check_state(F, G);
-
-      if((F <= (Cval - tau*deriv)) || (nls >= 5)){
-        break;
-      }
-      tau = eta * tau;
-      nls = nls + 1;
-    }
-
-    completed = itr;
-    F_seq[itr-1] = F;
-    GX = G.t() * B;
-
-    if(invH){
-      GXT = G * B.t();
-      H = 0.5 * (GXT - GXT.t());
-      RX = H * B;
-    }else{ // algorithm 1
-      U = join_rows(G, B);
-      V = join_rows(B, -G);
-      VU = V.t() * U;
-      VX = V.t() * B;
-    }
-
-    dtX = G - B * GX;
-    nrmG = norm(dtX, "fro");
-    if (!std::isfinite(nrmG)) Rcpp::stop("Constrained gradient norm must be finite");
-    if (nrmG < gtol) {
-      converged = true;
+  while (nrmG > gtol && completed < maxitr) {
+    const arma::mat BP = B;
+    const double FP = F;
+    // Removing the normal component leaves the skew generator unchanged.
+    // Scaling keeps the reduced system well scaled even for large gradients.
+    const arma::mat unit = D / nrmG;
+    const arma::mat direction = unit - B * (unit.t() * B);
+    const double slope = rho * nrmG * arma::accu(unit % direction);
+    const orthoDr::CayleyCurve curve(B, unit, dense);
+    double scaled_step = tau * nrmG;
+    if (!orthoDr::backtrack(B, F, scaled_step, eta, Cval, slope, curve, objective)) {
+      reason = "line search failed to find a feasible sufficient-decrease step";
       break;
     }
 
-    S = B - BP;
-    BDiff = norm(S, "fro")/sqrt((double) P);
-    FDiff = std::abs(FP - F)/(std::abs(FP)+1);
-
-    Y = dtX - dtXP;
-    SY = std::abs(accu(S % Y));
-
-    const double SS = accu(S % S);
-    bool valid_bb;
-    tau = orthoDr::bb_step(SS, SY, accu(Y % Y), itr%2 == 0,
-                          previous_tau, 1e20, valid_bb);
-    previous_tau = tau;
-    clean_updates = valid_bb && std::isfinite(SS) && SS > 0 ? clean_updates + 1 : 0;
-    crit(itr-1,0) = nrmG;
-    crit(itr-1,1) = BDiff;
-    crit(itr-1,2) = FDiff;
-
-    if (verbose > 1 && (itr % 10 == 0) )
-      Rcout << "At iteration " << itr << ", F = " << F << std::endl;
-
-    if (itr >= 5) // so I will run at least 5 iterations before checking for convergence
-    {
-      arma::mat mcrit(5, 3);
-      for (int i=0; i<5; i++)
-      {
-        mcrit.row(i) = crit.row(itr-i-1);
-      }
-
-      if ( (clean_updates > 0 && BDiff < btol && FDiff < ftol) ||
-           (clean_updates >= 5 && mean(mcrit.col(1)) < btol && mean(mcrit.col(2)) < ftol) )
-      {
-        converged = true;
-        if (verbose > 0) Rcout << "converge" << std::endl;
-        break;
-      }
+    const arma::mat nextD = projected_gradient(B, F);
+    const arma::mat S = B - BP;
+    const arma::mat Y = nextD - D;
+    const double accepted_tau = scaled_step / nrmG;
+    D = nextD;
+    nrmG = gradient_norm(D);
+    F_seq[completed] = F;
+    changes(completed % 5, 0) = arma::norm(S, "fro") / std::sqrt(static_cast<double>(P));
+    changes(completed % 5, 1) = std::abs(FP - F) / (std::abs(FP) + 1);
+    ++completed;
+    if (verbose > 1 && completed % 10 == 0)
+      Rcout << "At iteration " << completed << ", F = " << F << std::endl;
+    if (nrmG <= gtol) break;
+    if (nrmG < best_norm) {
+      best_norm = nrmG;
+      last_improvement = completed;
+    }
+    if (completed - last_improvement >= 5 && arma::mean(changes.col(0)) < btol &&
+        arma::mean(changes.col(1)) < ftol) {
+      reason = "parameter and objective changes stagnated";
+      break;
     }
 
-    double Qp = Q;
-    Q = gamma * Qp + 1;
-    Cval = (gamma*Qp*Cval + F)/Q;
-
+    bool valid_bb;
+    tau = orthoDr::bb_step(arma::accu(S % S), std::abs(arma::accu(S % Y)),
+                           arma::accu(Y % Y), completed % 2 == 0,
+                           accepted_tau > 0 ? accepted_tau : tau, 1e20, valid_bb);
+    Q = gamma * Q + 1;
+    Cval += (F - Cval) / Q;
   }
 
-  if(!converged){
-    if (verbose > 0) Rcout << "exceed max iteration before convergence ... " << std::endl;
-  }
-
-  arma::mat diag_P(ndr,ndr);
-  diag_P.eye();
-  double feasi = norm(B.t() * B - diag_P, "fro");
-
+  const bool converged = nrmG <= gtol;
   if (verbose > 0){
+    if (!converged) Rcout << reason << std::endl;
     Rcout << "number of iterations: " << completed << std::endl;
     Rcout << "norm of functional value: " << F << std::endl;
     Rcout << "norm of gradient: " << nrmG << std::endl;
-    Rcout << "norm of feasibility: " << feasi << std::endl;
+    Rcout << "norm of feasibility: " << orthoDr::feasibility_error(B) << std::endl;
   }
 
   List ret;

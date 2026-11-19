@@ -28,8 +28,9 @@
 #' predictor rank. Repeated thresholds retain their repeated weights, and a
 #' threshold with one observed dose group is allowed. Group and slice
 #' covariances are divided by their observation counts. Each group's
-#' symmetrically whitened SAVE moment is transformed to the original predictor
-#' coefficient coordinates before pooling.
+#' symmetrically whitened SAVE moment is transformed to shared predictor
+#' coefficient coordinates before pooling. The calculation uses one scale
+#' per predictor to improve whitening when their units differ greatly.
 #' Its eigenproblem uses the group-size-weighted average within-group
 #' covariance as a common reference, and the selected directions are mapped
 #' back to the original predictor coordinates.
@@ -89,10 +90,17 @@ pSAVE <- function(x, a, r, ndr = 2, nslices0 = 2) {
     stop("ndr must be an integer between 1 and ncol(x)")
   if (!finite_scalar(nslices0) || nslices0 < 1 || nslices0 != floor(nslices0))
     stop("nslices0 must be a positive integer")
-  centred_rank <- function(z) qr(sweep(z, 2L, colMeans(z), "-"))$rank
-  if (centred_rank(x) < p)
+  if (p == 1L && any(x[, 1L] != x[1L, 1L])) return(matrix(1, 1, 1))
+
+  # Use the same predictor scales for all groups and the pooled reference.
+  x <- sweep(x, 2L, as.double(x[1L, ]), "-")
+  scales <- apply(abs(x), 2L, max)
+  if (any(!is.finite(scales)) || any(scales == 0))
     stop("pSAVE requires full centred predictor rank; supply B.initial to orthoDr_pdose")
-  if (p == 1L) return(matrix(1, 1, 1))
+  x <- sweep(x, 2L, scales, "/")
+  centred_rank <- function(z) qr(.psave_center(z))$rank
+  if (centred_rank(x) != p)
+    stop("pSAVE requires full centred predictor rank; supply B.initial to orthoDr_pdose")
 
   # Preserve the central threshold multiset, including odd-size truncation and ties.
   Z <- sort(a)[seq.int(max(1L, floor(n / 2 - 50)), min(n, floor(n / 2 + 50)))]
@@ -128,13 +136,18 @@ pSAVE <- function(x, a, r, ndr = 2, nslices0 = 2) {
   # The omitted total fallback mass multiplies I and changes no directions.
   common <- (common + t(common)) / 2
   vectors <- eigen(common, symmetric = TRUE)$vectors[, seq_len(ndr), drop = FALSE]
-  directions <- roots$inverse.sqrt %*% vectors
-  directions <- sweep(directions, 2L, sqrt(colSums(directions^2)), "/")
+  directions <- raw_predictor_directions(roots$inverse.sqrt %*% vectors, scales)
   for (j in seq_len(ndr)) {
     pivot <- which.max(abs(directions[, j]))
     if (directions[pivot, j] < 0) directions[, j] <- -directions[, j]
   }
   directions
+}
+
+.psave_center <- function(x) {
+  # Subtract an observed row first so constant columns have exact zero residuals.
+  differences <- sweep(x, 2L, as.double(x[1L, ]), "-")
+  sweep(differences, 2L, colMeans(differences), "-")
 }
 
 # Small explicit local moments avoid relying on the dr object's pooled layout.
@@ -151,7 +164,7 @@ pSAVE <- function(x, a, r, ndr = 2, nslices0 = 2) {
 .psave_group_moment <- function(x, y, nslices) {
   n <- nrow(x)
   p <- ncol(x)
-  centered <- sweep(x, 2L, colMeans(x), "-")
+  centered <- .psave_center(x)
   covariance <- crossprod(centered) / n
   inverse <- .psave_covariance_roots(covariance)$inverse.sqrt
   z <- centered %*% inverse

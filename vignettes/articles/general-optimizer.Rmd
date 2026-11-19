@@ -4,7 +4,7 @@ title: General Optimizer
 
 Optimize a supplied objective subject to orthonormal directions, using
 principal component analysis as an example. See [Get Started](get-started.html)
-for installation and the complete R script for orthoDr 2.0.0.
+for installation and the complete R script for orthoDr 2.1.0.
 
 ```{r load-package, eval=FALSE}
 library(orthoDr)

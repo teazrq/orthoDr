@@ -39,10 +39,21 @@
 #' kernel-mean centering. Previously saved dose models retain their prediction
 #' formulas.
 #'
+#' If all Gaussian weights for a regression prediction are zero, the prediction
+#' is \code{NaN}. This can occur when the observation is far from the training
+#' data relative to the bandwidth. A single warning lists the affected 1-based row
+#' positions in \code{testx}. If R shortens a long warning when displaying it,
+#' use \code{which(is.nan(result$pred))} to find all \code{NaN} positions, where
+#' \code{result} is the returned prediction.
+#'
 #' Legacy forward survival objects without a stored bandwidth require the
 #' original bandwidth to be restored or the model to be refitted. If all
 #' Gaussian weights for a survival prediction underflow to zero, a warning is
 #' issued and that curve contains \code{NA}.
+#' Within each risk set the curve uses the relative weights of those still
+#' under observation. It reaches zero if everyone remaining fails together.
+#' If a saved survival fit contains invalid follow-up times or event
+#' indicators, correct the original data and refit before predicting.
 #' @examples
 #' # generate some survival data
 #' N = 100; P = 4; dataX = matrix(rnorm(N*P), N, P)
@@ -148,42 +159,20 @@ predict.orthoDr <- function(object, testx, ...)
 #' @noRd
 predict_orthoDr_surv <- function(object, testx, ...)
 {
-  testKernel = prediction_kernel(object, testx)
-  ord = order(object$y)
-  times = object$y[ord]
-  Censor = (object$censor[ord] == 1)
-  testKernel = testKernel[, ord, drop = FALSE]
-
-  # Complete risk sets include every observation at the current time.
-  blocks = cumsum(c(TRUE, diff(times) != 0))
-  blockWeights = rowsum(t(testKernel), blocks, reorder = FALSE)
-  deaths = rowsum(t(sweep(testKernel, 2, Censor, FUN = "*")),
-                  blocks, reorder = FALSE)
-  S = matrix(NA_real_, nrow(blockWeights), ncol(blockWeights))
-  underflow = colSums(blockWeights) == 0
+  check_survival_censor(object$censor, nrow(object$x), retained = TRUE)
+  check_survival_time(object$y, nrow(object$x), name = "Stored y", retained = TRUE)
+  stored_times = if (is.matrix(object$y)) object$y[, 1L] else object$y
+  log_weights = prediction_log_weights(object, testx)
+  # A positive subnormal absolute weight is sufficient to support a row.
+  underflow = exp(apply(log_weights, 1L, max)) == 0
   if (any(underflow))
     warning("Gaussian prediction weights underflowed to zero; returning NA survival probabilities for affected test observations.")
 
-  for (j in which(!underflow)) {
-    # Reverse sums retain representable small risk masses late in follow-up.
-    risk = rev(cumsum(rev(blockWeights[, j])))
-    d = deaths[, j]
-    if (any(!is.finite(risk) | !is.finite(d) | risk < 0 | d < 0))
-      stop("Invalid weighted survival risk or death mass")
-    excess = d - risk
-    # Independently summed masses may differ by at most 64 eps relatively.
-    tolerance = 64 * .Machine$double.eps * pmax(abs(d), abs(risk))
-    if (any(excess > tolerance))
-      stop("Weighted survival death mass exceeds its risk mass")
-    d = pmin(d, risk)
-    factors = rep(1, length(risk))
-    positive = d > 0
-    factors[positive] = 1 - d[positive] / risk[positive]
-    S[, j] = cumprod(factors)
-  }
-
-  surv = S[blocks[Censor], , drop = FALSE]
-  timepoints = times[Censor]
+  km = weighted_km(log_weights[!underflow, , drop = FALSE], stored_times, object$censor)
+  observed = object$censor[km$order] == 1
+  surv = matrix(NA_real_, sum(observed), nrow(testx))
+  surv[, !underflow] = km$surv[km$blocks[observed], , drop = FALSE]
+  timepoints = stored_times[km$order[observed]]
 
   return(list("surv" = surv, "timepoints" = timepoints))
 }
@@ -197,37 +186,22 @@ predict_orthoDr_surv <- function(object, testx, ...)
 #' @noRd
 predict_orthoDr_reg <- function(object, testx, ...)
 {
-  testKernel = prediction_kernel(object, testx)
+  log_weights = prediction_log_weights(object, testx)
+  underflow = exp(apply(log_weights, 1L, max)) == 0
+  if (any(underflow)) {
+    positions = which(underflow)
+    row_label = if (length(positions) == 1L) "row" else "rows"
+    msg = paste0("All Gaussian prediction weights are zero. Returning NaN for testx ",
+                 row_label, " ", paste(positions, collapse = ", "), ".")
+    if (nchar(msg, type = "bytes") > getOption("warning.length"))
+      msg = paste("Use which(is.nan(result$pred)) on the returned result for the full list.", msg)
+    warning(simpleWarning(msg))
+  }
 
-  pred = apply(testKernel, 1, function(w, x) weighted.mean(x, w), object$y)
+  pred = rep(NaN, nrow(testx))
+  for (j in which(!underflow)) pred[j] = gaussian_mean(log_weights[j, ], object$y)
 
   return(list("pred" = pred))
-}
-
-#' Gaussian prediction kernel in the returned raw-feature basis
-#' @keywords internal
-#' @noRd
-prediction_kernel <- function(object, testx)
-{
-  if (is.null(object$bw))
-    stop("This fitted object has no bandwidth. Supply the original bandwidth as object$bw or refit the model.")
-  if (length(object$bw) != 1L || !is.finite(object$bw) || object$bw <= 0)
-    stop("The fitted bandwidth must be a positive finite scalar")
-
-  XB = object$x %*% object$B
-  testXB = testx %*% object$B
-  XBmean = colMeans(XB)
-  XBscale = apply(XB, 2, sd)
-  if (any(!is.finite(XBscale) | XBscale <= 0))
-    stop("Training projection scales must be positive and finite for prediction")
-
-  denominator = XBscale * object$bw * sqrt(2)
-  XB = sweep(sweep(XB, 2, XBmean, FUN = "-"), 2, denominator, FUN = "/")
-  testXB = sweep(sweep(testXB, 2, XBmean, FUN = "-"), 2, denominator, FUN = "/")
-  weights = KernelDist_cross(testXB, XB)
-  if (any(!is.finite(weights) | weights < 0))
-    stop("Prediction kernel weights must be finite and nonnegative")
-  weights
 }
 
 #' Internal prediction function for personalized dose models

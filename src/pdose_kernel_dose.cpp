@@ -48,21 +48,11 @@ arma::vec dosepred(arma::mat B,
 {
   int N = X.n_rows;
   int N_test = X_test.n_rows;
-  int ndr = B.n_cols;
-
-  arma::mat BX = X * B;
-  arma::mat BX_test = X_test * B;
-
-  arma::rowvec BX_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
-  arma::rowvec BX_test_scale = stddev(BX, 0, 0)*bw*sqrt(2.0);
-
-  for (int j=0; j<ndr; j++)
-    BX.col(j) /= BX_scale(j);
-
-  for (int j=0; j<ndr; j++)
-    BX_test.col(j) /= BX_test_scale(j);
-
-  // calculate distance
+  // Both projections use the training origin and sample bandwidths.
+  const arma::rowvec origin = dose_origin(X);
+  const arma::mat BX = (X.each_row() - origin) * B;
+  const arma::mat BX_test = (X_test.each_row() - origin) * B;
+  const arma::rowvec scale = arma::stddev(BX, 0, 0) * bw;
 
   arma::mat kernel_matrix_X(N, N_test);
 
@@ -70,7 +60,8 @@ arma::vec dosepred(arma::mat B,
   {
     for (int j = 0; j < N; j ++)
     {
-      kernel_matrix_X(j,i) = exp(-sum(pow(BX.row(j)-BX_test.row(i),2)));
+      const arma::rowvec delta = (BX.row(j) - BX_test.row(i)) / scale;
+      kernel_matrix_X(j,i) = std::exp(-0.5 * arma::dot(delta, delta));
     }
   }
 

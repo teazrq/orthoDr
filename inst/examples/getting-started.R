@@ -1,11 +1,10 @@
 #' ## Version and installation
 #'
-#' These tutorials use **orthoDr 2.0.0**, available from GitHub.
-#' The CRAN release is 0.6.8. For results matching these tutorials, install
-#' the GitHub version; see the [release notes](https://teazrq.github.io/orthoDr/news/index.html)
+#' These tutorials use **orthoDr 2.1.0**, available from GitHub.
+#' See the [release notes](https://teazrq.github.io/orthoDr/news/index.html)
 #' for changes between versions.
 #'
-#' Install the development package in your usual R user library:
+#' Install the GitHub version in your usual R user library:
 #'
 #' ```r
 #' install.packages("remotes") # once, if needed
@@ -255,7 +254,9 @@ round(data.frame(
 ), 3)
 
 #' The direct method uses the candidate grid only to initialize its rule;
-#' pseudo-direct learning uses it to construct the final ridge rule.
+#' pseudo-direct learning sets each training target to the grid dose with the
+#' highest estimated reward. It uses the lowest dose among ties to numerical
+#' precision, then fits a ridge rule to those targets.
 #' Final predictions come from a continuous fitted rule, so they need not be
 #' grid points and are not constrained to the observed dose range. This table
 #' illustrates the returned values, not

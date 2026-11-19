@@ -9,10 +9,14 @@
 #' directions are used by default to initialize \code{\link{orthoDr_surv}};
 #' that function also accepts a custom starting matrix.
 #'
-#' @param x A matrix (n x p) of features (continuous only).
-#' @param y A numeric vector of observed survival times.
-#' @param censor A numeric vector of event indicators (1 = event,
-#'   0 = censored).
+#' @param x A finite numeric matrix of continuous predictors. Centered columns
+#'   must be linearly independent. Remove constant or redundant predictors.
+#' @param y Observed follow-up times, one finite value per subject, including
+#'   censored subjects.
+#' @param censor A numeric or logical vector or one-column matrix, with one
+#'   event indicator per observation (1 or `TRUE` = event, 0 or `FALSE` =
+#'   censored). Missing and other values cause an error. At least one event
+#'   is required.
 #' @param bw Numeric; kernel bandwidth for nonparametric estimation
 #'   (one-dimensional). Default: Silverman's rule via \code{\link{silverman}}.
 #'
@@ -24,6 +28,11 @@
 #' }
 #'
 #' @details
+#' The estimation matrix pairs each event subject's deviation from the risk-set
+#' mean with a contrast estimated from neighboring events. Smoothing the
+#' neighborhood can make this matrix asymmetric. CP-SIR uses its left singular
+#' vectors and maps them back to the original feature coordinates.
+#'
 #' Events at the same observed time share the midpoint of their event ranks
 #' when selecting a neighborhood. Neighborhood endpoints are bounded by the
 #' first and last event ranks and truncated to integer indices. Risk sets
@@ -57,27 +66,22 @@
 CP_SIR <- function(x, y, censor, bw = silverman(1, length(y)))
 {
   if (!is.matrix(x)) stop("X must be a matrix")
-  if (nrow(x) != length(y) || nrow(x) != length(censor)) stop("Number of observations do not match")
+  check_survival_time(y, nrow(x))
+  check_survival_censor(censor, nrow(x))
 
   N = nrow(x)
   P = ncol(x)
   nFail = sum(censor == 1)
   if (nFail == 0) stop("CP_SIR requires at least one event")
 
-  X_cov = cov(x)
+  coords = survival_coordinates(x)
+  design = survival_design_svd(coords$x, nv = P)
+  whitener = tcrossprod(sweep(design$v, 2L, sqrt(N - 1L) / design$d, "*"), design$v)
+  X_sd = coords$x %*% whitener
 
-  ee = eigen(X_cov)
-  if (any(!is.finite(ee$values)) || any(ee$values <= 0))
-    stop("CP_SIR requires a positive definite feature covariance for whitening")
-  X_cov_RI = ee$vectors %*% diag(1/sqrt(ee$values), nrow = P, ncol = P) %*% t(ee$vectors)
-
-  X_sd = scale(x, scale = FALSE) %*% X_cov_RI
-
-  FailInd = cbind(y, censor, "obs" = 1:N)
-  FailInd = FailInd[FailInd[, 2] == 1, , drop = FALSE]
-  OrderedFailObs = FailInd[order(FailInd[,1]), 3]
-
-  timepoints = sort(y[censor == 1])
+  events = which(censor == 1)
+  OrderedFailObs = events[order(y[events])]
+  timepoints = y[OrderedFailObs]
   nFail = length(timepoints)
 
   inRisk = matrix(NA, nrow(x), nFail)
@@ -115,8 +119,8 @@ CP_SIR <- function(x, y, censor, bw = silverman(1, length(y)))
   }
 
   Meigen = svd(t(X_sd[OrderedFailObs, , drop = FALSE] - Gu_risk) %*% (Gu - Gu_risk))
-  vectors = X_cov_RI %*% Meigen$v
-  vectors = sweep(vectors, 2, sqrt(colSums(vectors^2)), FUN = "/")
+  # The event subject's residual is on the left of the moment.
+  vectors = raw_predictor_directions(whitener %*% Meigen$u, coords$scale)
 
   return(list("values" = Meigen$d,
               "vectors" = vectors))

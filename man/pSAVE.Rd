@@ -38,8 +38,9 @@ every nonempty dose group has at least p + 1 observations and full centred
 predictor rank. Repeated thresholds retain their repeated weights, and a
 threshold with one observed dose group is allowed. Group and slice
 covariances are divided by their observation counts. Each group's
-symmetrically whitened SAVE moment is transformed to the original predictor
-coefficient coordinates before pooling.
+symmetrically whitened SAVE moment is transformed to shared predictor
+coefficient coordinates before pooling. The calculation uses one scale
+per predictor to improve whitening when their units differ greatly.
 Its eigenproblem uses the group-size-weighted average within-group
 covariance as a common reference, and the selected directions are mapped
 back to the original predictor coordinates.

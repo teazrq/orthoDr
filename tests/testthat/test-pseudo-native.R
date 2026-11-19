@@ -13,6 +13,16 @@ pseudo_native_fixture <- function(p = 6L, d = 2L) {
        grid = seq(min(a), max(a), length.out = 9L), lambda = c(.03, .2, 1))
 }
 
+pseudo_tie_data <- function(shift = 0) {
+  group <- rep(-1:1, 12L)
+  x <- rbind(c(2^55, 2^55), cbind(group, 0))
+  a <- c(.5, rep(seq(0, 1, length.out = 12L), each = 3L))
+  optimum <- .5 + shift
+  list(x = x, a = a, r = -(a - c(optimum, optimum + .4 * group))^2,
+       B = matrix(c(1, -1) / sqrt(2)), bw = .5,
+       grid = seq(0, 1, length.out = 6L), lambda = .1)
+}
+
 pseudo_native_reference <- function(z, B = z$B, intercept = FALSE,
                                     dose.factor = 1 / sqrt(2)) {
   n <- nrow(z$x)
@@ -40,13 +50,18 @@ pseudo_native_reference <- function(z, B = z$B, intercept = FALSE,
       delta^2 * drop(covariance %*% B[, k]) / (z$bw^2 * s2[k]^2)
     gradient[, k] <- gradient[, k] + sensitivity[j, i] * pair
   }
-  scores <- matrix(0, n, length(z$grid))
+  scores <- radii <- matrix(0, n, length(z$grid))
   for (i in seq_len(n)) for (j in seq_along(z$grid)) {
     logw <- logk[, i] - (z$a - z$grid[j])^2 /
       (2 * z$bw^2 * var(z$a) * dose.factor^2)
-    scores[i, j] <- sum(stable(logw) * q)
+    w <- exp(logw - max(logw))
+    products <- w * q
+    denominator <- sum(w)
+    scores[i, j] <- sum(products) / denominator
+    radii[i, j] <- 4 * .Machine$double.eps * (sum(abs(products)) / denominator)
   }
-  targets <- z$grid[max.col(scores, ties.method = "first")]
+  eligible <- scores + radii >= apply(scores - radii, 1, max)
+  targets <- z$grid[max.col(eligible, ties.method = "first")]
   K <- exp(logk)
   ridges <- lapply(z$lambda, function(lambda) {
     Cinv <- solve(K + diag(lambda, n))
@@ -183,6 +198,113 @@ test_that("raw log-weight dose extraction is finite at narrow bandwidths", {
   aligned <- pseudo_native_eval(z, factor = 1)
   reference <- pseudo_native_reference(z, dose.factor = 1)
   expect_equal(aligned$grid.scores, reference$scores, tolerance = 1e-12)
+})
+
+test_that("private grids select the first eligible dose in supplied order", {
+  z <- pseudo_tie_data()
+  ascending <- pseudo_native_eval(z)
+  expect_identical(ascending$grid.targets[1], z$grid[3])
+
+  reversed <- z
+  reversed$grid <- rev(z$grid)
+  reverse_fit <- pseudo_native_eval(reversed)
+  expect_identical(reverse_fit$grid.targets[1], z$grid[4])
+  expect_identical(reverse_fit$grid.scores, ascending$grid.scores[, 6:1])
+
+  repeated <- z
+  repeated$grid <- z$grid[c(1L, 4L, 4L, 3L, 6L)]
+  repeat_fit <- pseudo_native_eval(repeated)
+  expect_identical(repeat_fit$grid.targets[1], z$grid[4])
+  expect_identical(repeat_fit$grid.scores, ascending$grid.scores[, c(1L, 4L, 4L, 3L, 6L)])
+
+  singleton <- z
+  singleton$grid <- z$grid[4]
+  one <- pseudo_native_eval(singleton)
+  expect_identical(drop(one$grid.targets), rep(singleton$grid, nrow(z$x)))
+})
+
+test_that("dose selection compares the upper endpoint with every lower endpoint", {
+  eps <- .Machine$double.eps
+  z <- list(x = matrix(c(rep(0, 6), 10)), B = matrix(1), bw = .03, lambda = .1,
+            a = c(0, 0, 1, 1, 2, 2, 1), r = c(0, 0, 1, -1 + 4 * eps, eps, eps, -6 * eps),
+            grid = c(0, 1, 2))
+  fit <- pseudo_native_eval(z)
+  expect_identical(drop(fit$grid.targets)[1:6], rep(1, 6))
+  # Dose 1 has the highest score, yet dose 2's lower endpoint excludes dose 0.
+  expect_true(all(fit$grid.scores[1:6, 2] > fit$grid.scores[1:6, 3]))
+  z$grid <- c(0, 2, 1)
+  expect_identical(drop(pseudo_native_eval(z)$grid.targets)[1:6], rep(2, 6))
+})
+
+test_that("public pseudo-direct predictions are stable across row orders for tied doses", {
+  z <- pseudo_tie_data()
+  testx <- cbind(-1:1, 0)
+  fit <- function(data, K = length(data$grid)) {
+    orthoDr_pdose(data$x, data$a, data$r, method = "pseudo_direct",
+                 ndr = 1, B.initial = data$B, K = K, bw = data$bw,
+                 lambda = data$lambda, maxitr = 10, keep.data = TRUE, ncore = 1)
+  }
+  original <- seq_len(nrow(z$x))
+  set.seed(18026L)
+  shuffled <- replicate(12L, sample(original), simplify = FALSE)
+  # Both shuffled orders previously selected 0.6 for the first patient.
+  orders <- c(list(original, rev(original), c(original[-1L], 1L)), shuffled[c(9L, 12L)])
+  reference <- fit(z)
+  targets <- drop(pseudo_native_eval(z, reference$B)$grid.targets)
+  predictions <- drop(predict(reference, testx)$pred)
+  expect_identical(targets[1], z$grid[3])
+  expect_equal(predictions, c(.000143919348393184, .397310352889135, .991879406179212),
+               tolerance = 2e-12)
+
+  optimizer <- c("B", "objective.scaled", "stop.reason", "itr")
+  for (o in orders) {
+    reordered <- z
+    reordered$x <- z$x[o, , drop = FALSE]
+    reordered$a <- z$a[o]
+    reordered$r <- z$r[o]
+    actual <- fit(reordered)
+    # A singleton grid has the same optimizer state at this row order.
+    expect_identical(actual[optimizer], fit(reordered, K = 1L)[optimizer])
+    audited <- pseudo_native_eval(reordered, actual$B)
+    expect_identical(drop(audited$grid.targets)[order(o)], targets)
+    expect_equal(actual$W, audited$W, tolerance = 1e-14)
+    expect_identical(actual$lambda.init, audited$lambda.init)
+    expect_equal(drop(predict(actual, testx)$pred), predictions, tolerance = 2e-12)
+  }
+
+  rescaled <- z
+  rescaled$a <- 4 * z$a
+  rescaled$r <- 8 * z$r
+  rescaled$grid <- 4 * z$grid
+  transformed <- fit(rescaled)
+  expect_identical(drop(pseudo_native_eval(rescaled, transformed$B)$grid.targets), 4 * targets)
+  expect_equal(drop(predict(transformed, testx)$pred), 4 * predictions, tolerance = 2e-12)
+})
+
+test_that("dose selection keeps resolved differences in estimated rewards", {
+  for (shift in c(-1e-12, 1e-12)) {
+    z <- pseudo_tie_data(shift)
+    fit <- pseudo_native_eval(z)
+    winner <- if (shift > 0) 4L else 3L
+    expect_identical(fit$grid.targets[1], z$grid[winner])
+    expect_gt(fit$grid.scores[1, winner] - fit$grid.scores[1, 7L - winner], 1e-13)
+  }
+
+  z <- pseudo_tie_data()
+  z$grid <- seq(0, 1, length.out = 7L)
+  z$r <- (z$a - .5)^2
+  two_peaks <- pseudo_native_eval(z)
+  expect_identical(two_peaks$grid.targets[1], 0)
+  expect_gt(min(two_peaks$grid.scores[1, c(1L, 7L)]) - two_peaks$grid.scores[1, 4], 1)
+
+  group <- rep(-1:1, each = 11L)
+  a <- rep(seq(0, 1, by = .1), 3L)
+  small <- list(x = matrix(group), B = matrix(1), a = a,
+                r = ifelse(group == 0, 2e-15 * (a - .5), group),
+                grid = seq(0, 1, by = .2), bw = .05, lambda = .1)
+  near_zero <- pseudo_native_eval(small)
+  expect_true(all(abs(near_zero$grid.scores[12, ]) < 2e-15))
+  expect_identical(near_zero$grid.targets[12], 1)
 })
 
 test_that("ridge solves and intercept GCV match the explicit smoother", {

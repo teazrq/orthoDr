@@ -23,10 +23,79 @@
 #include <RcppArmadillo.h>
 #include "utilities.h"
 #include "orthoDr_reg.h"
+#include "reg_projection.h"
 
 using namespace Rcpp;
 
 //[[Rcpp::depends(RcppArmadillo)]]
+
+static void sir_add_with_tail(double value, double& sum, double& tail)
+{
+  const double next = sum + value;
+  const double added = next - sum;
+  tail += (sum - (next - added)) + (value - added);
+  sum = next;
+}
+
+struct SirResponseMean {
+  arma::mat value;
+  arma::mat tail;
+};
+
+static SirResponseMean sir_local_means(const arma::mat& X, const arma::mat& kernel,
+                                       int ncore)
+{
+  const int N = X.n_rows;
+  SirResponseMean result{arma::mat(N, X.n_cols, arma::fill::zeros),
+                         arma::mat(N, X.n_cols, arma::fill::zeros)};
+#pragma omp parallel for schedule(static) num_threads(ncore) if(ncore > 1)
+  for (int i = 0; i < N; ++i) {
+    double mass = 0.0;
+    double mass_tail = 0.0;
+    for (int j = 0; j < N; ++j) {
+      const double w = kernel(i,j);
+      sir_add_with_tail(w, mass, mass_tail);
+      for (arma::uword p = 0; p < X.n_cols; ++p) {
+        const double product = w * X(j,p);
+        sir_add_with_tail(product, result.value(i,p), result.tail(i,p));
+        result.tail(i,p) += std::fma(w, X(j,p), -product);
+      }
+    }
+    for (arma::uword p = 0; p < X.n_cols; ++p) {
+      // Keep the tail through division so equal large means can still have
+      // different local increments when they are subtracted in the objective.
+      const double numerator = result.value(i,p);
+      const double mean = numerator / mass;
+      result.value(i,p) = mean;
+      result.tail(i,p) = (std::fma(-mean, mass, numerator)
+                        + (result.tail(i,p) - mean * mass_tail)) / mass;
+    }
+  }
+  return result;
+}
+
+static double sir_local_f(const arma::mat& B, const arma::mat& X,
+                          const SirResponseMean& response, double bw,
+                          int ncore, double pooled_ratio)
+{
+  const int N = X.n_rows;
+  const arma::mat kernel = reg_pair_kernel(X, B, bw, ncore);
+  const arma::rowvec totals = sum(kernel, 0);
+  arma::mat moment(X.n_cols, X.n_cols, arma::fill::zeros);
+  for (int i = 0; i < N; ++i) {
+    arma::rowvec residual_x(X.n_cols, arma::fill::zeros);
+    arma::rowvec residual_y(X.n_cols, arma::fill::zeros);
+    for (int j = 0; j < N; ++j) {
+      const double weight = kernel(i,j) / totals(i);
+      if (i == j || weight == 0) continue;
+      residual_x += weight * (X.row(i) - X.row(j));
+      residual_y += weight * ((response.value.row(i) - response.value.row(j))
+                             + (response.tail.row(i) - response.tail.row(j)));
+    }
+    moment += (pooled_ratio * residual_y).t() * (pooled_ratio * residual_x);
+  }
+  return accu(arma::square(moment / N));
+}
 
 double sir_f(const arma::mat& B,
              const arma::mat& X,
@@ -89,7 +158,8 @@ double sir_init(const arma::mat& B,
                 const arma::mat& X,
                 const arma::mat& Y,
                 double bw,
-                int ncore)
+                int ncore,
+                double pooled_ratio = 0.0)
 {
   int N = X.n_rows;
   int P = B.n_rows;
@@ -100,6 +170,8 @@ double sir_init(const arma::mat& B,
 
   arma::mat kernel_matrix_y = KernelDist_multi(Y, ncore, 1);
 
+  if (pooled_ratio > 0.0)
+    return sir_local_f(B, X, sir_local_means(X, kernel_matrix_y, ncore), bw, ncore, pooled_ratio);
   arma::rowvec Ky = sum(kernel_matrix_y, 0);
   arma::mat Exy(N,P, arma::fill::zeros);
 
@@ -157,7 +229,8 @@ List sir_solver(arma::mat B,
                 double gtol,
                 int maxitr,
                 int verbose,
-                int ncore)
+                int ncore,
+                double pooled_ratio = 0.0)
 {
   int N = X.n_rows;
   int P = B.n_rows;
@@ -176,18 +249,25 @@ List sir_solver(arma::mat B,
 
   arma::rowvec Ky = sum(kernel_matrix_y, 0);
   arma::mat Exy(N, P, arma::fill::zeros);
+  SirResponseMean response;
 
+  if (pooled_ratio > 0.0) {
+    response = sir_local_means(X, kernel_matrix_y, ncore);
+  } else {
 #pragma omp parallel for schedule(static) num_threads(ncore)
-  for(int i=0; i<N; i++){
-    for(int j=0; j<N; j++){
-      Exy.row(i) += X.row(j)*kernel_matrix_y(i,j);
+    for(int i=0; i<N; i++){
+      for(int j=0; j<N; j++){
+        Exy.row(i) += X.row(j)*kernel_matrix_y(i,j);
+      }
+      Exy.row(i) /= Ky(i);
     }
-    Exy.row(i) /= Ky(i);
   }
 
   // Bind parameters into lambdas for the shared solver infrastructure
   std::function<double(const arma::mat&)> f_eval =
-    [&X, &Exy, bw, ncore](const arma::mat& B_eval) -> double {
+    [&X, &Exy, &response, bw, ncore, pooled_ratio](const arma::mat& B_eval) -> double {
+      if (pooled_ratio > 0.0)
+        return sir_local_f(B_eval, X, response, bw, ncore, pooled_ratio);
       return sir_f(B_eval, X, Exy, bw, ncore);
     };
 

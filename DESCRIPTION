@@ -2,8 +2,8 @@ Package: orthoDr
 Type: Package
 Title: Semi-Parametric Dimension Reduction Models Using Orthogonality
         Constrained Optimization
-Version: 2.0.0
-Date: 2026-05-23
+Version: 2.1.0
+Date: 2026-11-19
 Authors@R: c(
     person("Ruilin", "Zhao", role = "aut"),
     person("Wenzhuo", "Zhou", role = "aut"),
@@ -13,15 +13,16 @@ Authors@R: c(
     person("Jiyang", "Zhang", role = "ctb"),
     person("Peng", "Xu", role = "ctb")
     )
-Description: Utilize an orthogonality constrained optimization algorithm of
-    Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1> to solve a variety of
-    dimension reduction problems in the semiparametric framework, such as
+Description: Fit semiparametric dimension reduction models for regression,
+    censored survival outcomes, and personalized dose finding using the
+    orthogonality constrained optimization algorithm of
+    Wen & Yin (2013) <DOI:10.1007/s10107-012-0584-1>. See
     Ma & Zhu (2012) <DOI:10.1080/01621459.2011.646925>, Ma & Zhu (2013)
     <DOI:10.1214/12-AOS1072>, Sun, Zhu, Wang & Zeng (2019) <doi:10.1093/biomet/asy064>
-    and Zhou, Zhu & Zeng (2021) <doi:10.1093/biomet/asaa087>. It also serves as a
-    general purpose optimization solver for problems with orthogonality constraints.
-    Parallel computing for approximating the gradient is enabled
-    through `OpenMP'.
+    and Zhou, Zhu & Zeng (2021) <doi:10.1093/biomet/asaa087>. The package
+    implements direct and pseudo-direct dose learning and provides a general
+    optimizer for objectives with orthonormal direction matrices. The optimizer
+    can approximate gradients in parallel with 'OpenMP'.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true

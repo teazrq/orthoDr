@@ -16,7 +16,7 @@ and find function arguments and release notes.
 
 The source package supports regression, censored survival outcomes,
 personalized dose finding, and general orthogonality constrained optimization.
-Tutorials describe the revised development version 2.0.0 and reuse the checked
+Tutorials describe the GitHub version 2.1.0 and reuse the checked
 examples in `inst/examples`. Documentation must distinguish this version from
 the CRAN release.
 

@@ -27,7 +27,7 @@
 
 double gen_f(const arma::mat& B, Rcpp::Function f, Rcpp::Environment env);
 void gen_g(const arma::mat& B, arma::mat& G, Rcpp::Function g, Rcpp::Environment env);
-void gen_g_approx(const arma::mat& B, arma::mat& G, Rcpp::Function f, Rcpp::Function g, Rcpp::Environment env, double epsilon);
+void gen_g_approx(const arma::mat& B, arma::mat& G, Rcpp::Function f, Rcpp::Environment env, double epsilon);
 
 Rcpp::List gen_solver(arma::mat B,
                  Rcpp::Function f,

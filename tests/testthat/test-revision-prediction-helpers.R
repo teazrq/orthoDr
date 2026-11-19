@@ -33,7 +33,7 @@ test_that("prediction kernels use the fitted raw-coordinate projections", {
     for (nr in c(1L, 3L)) {
       tx <- testx[seq_len(nr), , drop = FALSE]
       k <- revision_kernel_reference(x, tx, basis, object$bw)
-      expect_equal(orthoDr:::prediction_kernel(object, tx), k, tolerance = 1e-12)
+      expect_equal(exp(orthoDr:::prediction_log_weights(object, tx)), k, tolerance = 1e-12)
       expect_equal(predict(object, tx)$pred,
                    drop(k %*% y / rowSums(k)), tolerance = 1e-12)
     }
@@ -51,6 +51,55 @@ test_that("prediction kernels use the fitted raw-coordinate projections", {
                drop(k %*% y / rowSums(k)), tolerance = 1e-12)
 })
 
+test_that("regression warns once with the row positions of zero-weight predictions", {
+  x <- matrix(1:10, ncol = 1)
+  y <- (1:10)^2
+  object <- revision_fit_object(x, y, matrix(1), .5)
+  testx <- matrix(c(2, 1e6, 5, 8, -1e6), ncol = 1,
+                  dimnames = list(letters[1:5], NULL))
+
+  warnings <- character()
+  ans <- withCallingHandlers(predict(object, testx), warning = function(w) {
+    warnings <<- c(warnings, conditionMessage(w))
+    invokeRestart("muffleWarning")
+  })
+  expect_identical(warnings, paste0(
+    "All Gaussian prediction weights are zero. ",
+    "Returning NaN for testx rows 2, 5."
+  ))
+  expect_identical(which(is.nan(ans$pred)), c(2L, 5L))
+
+  unaffected <- c(1L, 3L, 4L)
+  k <- revision_kernel_reference(x, testx[unaffected, , drop = FALSE],
+                                 object$B, object$bw)
+  expect_equal(ans$pred[unaffected], drop(k %*% y / rowSums(k)), tolerance = 1e-12)
+
+  expect_warning(
+    single <- predict(object, testx[5, , drop = FALSE]),
+    "Returning NaN for testx row 1.",
+    fixed = TRUE
+  )
+  expect_true(is.nan(single$pred))
+})
+
+test_that("long regression warnings explain how to retrieve every affected row", {
+  previous <- options(warning.length = 100L)
+  on.exit(options(previous), add = TRUE)
+  x <- matrix(1:10, ncol = 1)
+  object <- revision_fit_object(x, (1:10)^2, matrix(1), .5)
+  testx <- matrix(rep(c(2, 1e6), 30), ncol = 1)
+  messages <- character()
+  result <- withCallingHandlers(predict(object, testx), warning = function(w) {
+    messages <<- c(messages, conditionMessage(w))
+    invokeRestart("muffleWarning")
+  })
+  rows <- seq.int(2L, nrow(testx), 2L)
+  expect_length(messages, 1L)
+  expect_true(startsWith(messages, "Use which(is.nan(result$pred))"))
+  expect_true(endsWith(messages, paste0(paste(rows, collapse = ", "), ".")))
+  expect_identical(which(is.nan(result$pred)), rows)
+})
+
 test_that("survival raw-coordinate bases retain the fitted kernel", {
   set.seed(7102)
   x <- sweep(sweep(matrix(rnorm(50 * 3), 50, 3), 2, c(.4, 8, 2), "*"),
@@ -65,7 +114,7 @@ test_that("survival raw-coordinate bases retain the fitted kernel", {
     object <- revision_fit_object(x, seq_len(nrow(x)), basis, .6, rep(1, nrow(x)))
     fitted_kernel <- revision_kernel_reference(scale(x), std_test,
                                                std_basis[, seq_len(d), drop = FALSE], .6)
-    expect_equal(orthoDr:::prediction_kernel(object, testx), fitted_kernel,
+    expect_equal(exp(orthoDr:::prediction_log_weights(object, testx)), fitted_kernel,
                  tolerance = 1e-12)
     expect_identical(predict(unserialize(serialize(object, NULL)), testx),
                      predict(object, testx))
@@ -140,13 +189,130 @@ test_that("survival reverse sums retain small late risk masses", {
   expect_true(all(is.na(ans$surv[, 2])))
 })
 
-test_that("invalid survival masses are diagnosed instead of replaced", {
+test_that("invalid survival log weights are diagnosed", {
   local_mocked_bindings(
-    prediction_kernel = function(...) matrix(c(1, -2), 1, 2),
+    prediction_log_weights = function(...) matrix(c(0, 2), 1, 2),
     .package = "orthoDr"
   )
   object <- revision_fit_object(matrix(1:2), 1:2, matrix(1), .5, c(1, 1))
-  expect_error(predict(object, matrix(0)), "Invalid weighted survival")
+  expect_error(predict(object, matrix(0)), "Invalid weighted survival log weights")
+})
+
+test_that("a remote terminal failure still ends a supported 256-subject curve", {
+  n <- 256L
+  x <- matrix(c(seq(-1, 1, length.out = n - 1L), 100))
+  times <- seq_len(n)
+  failures <- c(60L, 120L, 180L, 256L)
+  event <- as.integer(times %in% failures)
+  fit <- orthoDr_surv(x, times, event, ndr = 1, method = "forward",
+                     keep.data = TRUE, ncore = 1)
+  expect_no_warning(ans <- predict(fit, matrix(0)))
+  expect_identical(ans$timepoints, failures)
+  expect_equal(ans$surv[1:3, 1], c(.9949181125960931, .9873658069139568,
+                                  .9738847865250174), tolerance = 1e-13)
+  expect_identical(ans$surv[4, 1], 0)
+  empty <- predict(fit, matrix(numeric(0), 0, 1))
+  expect_identical(empty$timepoints, failures)
+  expect_identical(dim(empty$surv), c(4L, 0L))
+})
+
+test_that("weighted KM preserves tiny survivor fractions and cumulative losses", {
+  x <- matrix(c(0, 1))
+  bw <- 1 / sqrt(20 * log(10))
+  object <- revision_fit_object(x, 1:2, matrix(1), bw, c(1, 0))
+  expect_lt(abs(predict(object, matrix(0))$surv[1, 1] / 1e-20 - 1), 1e-13)
+
+  n <- 200L
+  x <- matrix(c(rep(1, n), 0))
+  bw <- 1 / (sd(x[, 1]) * sqrt(2 * 38))
+  object <- revision_fit_object(x, seq_len(n + 1L), matrix(1), bw, c(rep(1, n), 0))
+  ans <- predict(object, matrix(0))$surv[n, 1]
+  expect_lt(ans, 1)
+  expect_lte(abs(ans - exp(-log1p(n * exp(-38)))), .Machine$double.eps)
+})
+
+test_that("unresolvable mixed risk sets report overflowed log distances", {
+  x <- matrix(c(0, 100, 100))
+  object <- revision_fit_object(x, 1:3, matrix(1), 1e-200, c(0, 1, 0))
+  expect_error(predict(object, matrix(0)), "overflowed in a mixed survival risk set")
+})
+
+test_that("regression averages responses when absolute products vanish", {
+  x <- matrix(c(seq(-1, -.9, length.out = 20), seq(.9, 1, length.out = 20)))
+  y <- .4 + .09 * (x[, 1] + 1) / 2
+  fit <- orthoDr_reg(x, y, ndr = 1, bw = .02423, keep.data = TRUE, ncore = 1)
+  expect_no_warning(ans <- predict(fit, matrix(0)))
+  expect_equal(ans$pred, .445, tolerance = 1e-13)
+  expect_identical(predict(fit, matrix(numeric(0), 0, 1))$pred, numeric(0))
+
+  x <- matrix(c(0, 1))
+  fit <- orthoDr_reg(x, c(0, 1e150), ndr = 1, bw = 1 / sqrt(750),
+                    keep.data = TRUE, ncore = 1)
+  expected <- 1.9016849634750065e-176
+  expect_lt(abs(predict(fit, matrix(0))$pred / expected - 1), 1e-12)
+})
+
+test_that("regression means retain subnormal responses and avoid overflow", {
+  x <- matrix(c(0, 0, 0, 1))
+  smallest <- .Machine$double.xmin * .Machine$double.eps
+  for (response in c(smallest, .Machine$double.xmax, -.Machine$double.xmax)) {
+    object <- revision_fit_object(x, c(rep(response, 3), 0), matrix(1), .01)
+    expect_no_warning(ans <- predict(object, matrix(0)))
+    expect_identical(ans$pred, response)
+  }
+})
+
+test_that("fixed-basis regression predictions preserve units and common origins", {
+  x <- rbind(c(0, 0), c(.25, 0), c(-.25, .25), c(.5, .25))
+  testx <- rbind(c(.25, .25), c(-.25, 0))
+  y <- c(-3, 2, 4, -1)
+  object <- revision_fit_object(x, y, matrix(sqrt(.5), 2, 1), .4)
+  expected <- predict(object, testx)$pred
+  expect_true(all(expected >= min(y) & expected <= max(y)))
+  for (scale in c(1e-200, 1e200)) {
+    object$x <- x * scale
+    expect_equal(predict(object, testx * scale)$pred, expected, tolerance = 1e-13)
+  }
+  object$x <- x + 2^50
+  expect_identical(predict(object, testx + 2^50)$pred, expected)
+})
+
+test_that("an extreme training anchor keeps neighboring predictor distances", {
+  x <- matrix(c(2^54, 0, 1, 2))
+  y <- c(0, 0, 1, 0)
+  bw <- .22 / sd(x[, 1])
+  epsilon <- exp(-.5 / .22^2)
+  object <- revision_fit_object(x, y, matrix(1), bw)
+  expect_equal(predict(object, matrix(1))$pred, 1 / (1 + 2 * epsilon), tolerance = 1e-13)
+
+  survival <- revision_fit_object(x, 1:4, matrix(1), bw, c(0, 0, 1, 0))
+  expected <- epsilon / (1 + epsilon)
+  ans <- predict(survival, matrix(1))$surv[1, 1]
+  expect_lt(abs(ans / expected - 1), 1e-13)
+  order <- c(2L, 3L, 4L, 1L)
+  survival$x <- x[order, , drop = FALSE]
+  survival$y <- survival$y[order]
+  survival$censor <- survival$censor[order]
+  expect_lt(abs(predict(survival, matrix(1))$surv[1, 1] / ans - 1), 1e-13)
+})
+
+test_that("finite standardized distances survive overflow in raw differences", {
+  x <- matrix(c(-3e307, 0, 3e307))
+  object <- revision_fit_object(x, c(0, 0, 1), matrix(1), 10)
+  expect_equal(predict(object, matrix(1.7e308))$pred, .3518031938714887, tolerance = 1e-13)
+})
+
+test_that("cancelling predictors preserve the training projection scale", {
+  x <- rbind(c(2^54, 2^54), c(0, 0), c(1, 0), c(0, 1), c(1, 1))
+  y <- c(0, 0, 1, -1, 0)
+  basis <- matrix(c(1, -1) / sqrt(2), 2, 1)
+  reduced <- c(0, 0, 1, -1, 0) / sqrt(2)
+  weight <- exp(-.5 * ((reduced - reduced[3L]) / (.6 * sd(reduced)))^2)
+  expected <- sum(weight * y) / sum(weight)
+  for (i in list(1:5, c(2:5, 1L))) {
+    object <- revision_fit_object(x[i, ], y[i], basis, .6)
+    expect_equal(predict(object, matrix(c(1, 0), 1, 2))$pred, expected, tolerance = 1e-13)
+  }
 })
 
 test_that("public fitted models predict with unchanged fitted fields", {
@@ -263,6 +429,7 @@ test_that("pSAVE bounds the central interval and preserves threshold multiplicit
     reference <- Reduce("+", lapply(moments, `[[`, "covariance")) / length(moments)
     raw <- Reduce("+", lapply(moments, `[[`, "raw.moment")) / length(moments)
     expected <- eigen(raw %*% reference, symmetric = FALSE)$vectors[, 1, drop = FALSE]
+    expected <- expected / apply(abs(sweep(x, 2L, x[1L, ], "-")), 2L, max)
     expected <- expected / sqrt(sum(expected^2))
     expect_equal(tcrossprod(B), tcrossprod(expected), tolerance = 1e-12)
   }
@@ -317,4 +484,14 @@ test_that("distance vector coercion and abbreviated dispatch preserve metrics", 
   expect_warning(b <- distance(diag(2), matrix(c(1, 0)), "sine"), "Dimension d")
   expect_equal(a, 0)
   expect_equal(b, 1)
+})
+
+test_that("prediction uses the full range of integer predictor differences", {
+  x <- matrix(c(-2000000000L, 2000000000L, 0L, 1000000000L), ncol = 1)
+  y <- c(0, 1, 0, 1)
+  fit <- structure(list(B = matrix(1), x = x, y = y, bw = 1, keep.data = TRUE),
+                   class = c("orthoDr", "fit", "reg"))
+  weights <- exp(-0.5 * (as.double(x) / sd(as.double(x)))^2)
+  expect_silent(result <- predict(fit, matrix(0L)))
+  expect_equal(as.numeric(result$pred), weighted.mean(y, weights), tolerance = 1e-14)
 })

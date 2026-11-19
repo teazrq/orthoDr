@@ -21,13 +21,18 @@ orthoDr_surv(
 }
 \arguments{
 \item{x}{A numeric matrix with one row per observation and one column per
-predictor. Predictors are standardized
-internally for fitting; the returned directions use the original units.}
+predictor. Remove constant columns. Automatic initialization also requires
+linearly independent centered columns. With a supplied start, its projected
+predictors must vary independently. Fitting standardizes the predictors
+and returns directions in their original units.}
 
-\item{y}{A numeric vector of observed survival times.}
+\item{y}{Observed follow-up times, one finite value per subject, including
+censored subjects. Correct missing or infinite times before fitting.}
 
-\item{censor}{A numeric vector of event indicators (1 = event,
-0 = censored).}
+\item{censor}{A numeric or logical vector or one-column matrix, with one
+event indicator per observation (1 or \code{TRUE} = event, 0 or \code{FALSE} =
+censored). Missing and other values cause an error. At least one event
+is required.}
 
 \item{method}{The estimating equation: \code{"forward"} (1-d model),
 \code{"dn"} (counting process), or \code{"dm"} (martingale).
@@ -69,8 +74,8 @@ list containing:
 units, with columns normalized to unit length.}
 \item{\code{fn}}{The final objective function value.}
 \item{\code{itr}}{Number of iterations performed.}
-\item{\code{converge}}{Logical; \code{TRUE} when a numerical stopping
-criterion was reached. This does not establish prediction accuracy.}
+\item{\code{converge}}{Logical. \code{TRUE} indicates a small constrained
+gradient or small changes in both the basis and the objective.}
 \item{\code{method}}{The method used (e.g., \code{"dm"}).}
 \item{\code{keep.data}}{Whether original data was retained.}
 }

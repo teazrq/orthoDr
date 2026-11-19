@@ -57,12 +57,12 @@ phd_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, g
     .Call(`_orthoDr_phd_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
 
-save_init <- function(B, X, Y, bw, ncore) {
-    .Call(`_orthoDr_save_init`, B, X, Y, bw, ncore)
+save_init <- function(B, X, Y, bw, ncore, identity_weight = 1.0, covariance_weight = 1.0, moment_scale = 1.0) {
+    .Call(`_orthoDr_save_init`, B, X, Y, bw, ncore, identity_weight, covariance_weight, moment_scale)
 }
 
-save_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_save_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+save_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, identity_weight = 1.0, covariance_weight = 1.0, moment_scale = 1.0) {
+    .Call(`_orthoDr_save_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, identity_weight, covariance_weight, moment_scale)
 }
 
 seff_init <- function(B, X, Y, bw, ncore) {
@@ -73,12 +73,12 @@ seff_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, 
     .Call(`_orthoDr_seff_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
 }
 
-sir_init <- function(B, X, Y, bw, ncore) {
-    .Call(`_orthoDr_sir_init`, B, X, Y, bw, ncore)
+sir_init <- function(B, X, Y, bw, ncore, pooled_ratio = 0.0) {
+    .Call(`_orthoDr_sir_init`, B, X, Y, bw, ncore, pooled_ratio)
 }
 
-sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {
-    .Call(`_orthoDr_sir_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore)
+sir_solver <- function(B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, pooled_ratio = 0.0) {
+    .Call(`_orthoDr_sir_solver`, B, X, Y, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore, pooled_ratio)
 }
 
 surv_dm_solver <- function(B, X, Phit, Fail_Ind, Risk_Start, bw, rho, eta, gamma, tau, epsilon, btol, ftol, gtol, maxitr, verbose, ncore) {

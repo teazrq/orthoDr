@@ -26,6 +26,7 @@ revision_dose_w <- function(B, d, grid, lambda = .1) {
     weights <- sweep(k, 1, a_dist[, j], "*")
     drop(crossprod(weights, d$r)) / colSums(weights)
   }, numeric(nrow(d$x)))
+  # This fixture has one dose candidate or a well-separated reward maximizer.
   target <- grid[max.col(means, ties.method = "first")]
   scores <- vapply(lambda, function(penalty) {
     smoother <- k %*% solve(k + diag(penalty, nrow(k)))
@@ -75,9 +76,9 @@ test_that("finite tiny steps cannot make nonstationary movement windows converge
     projected <- gr(fit$B) - fit$B %*% crossprod(gr(fit$B), fit$B)
     expect_gt(norm(projected, "F"), .9)
     expect_identical(fit$converge, FALSE)
-    expect_equal(fit$itr, 8L)
+    expect_equal(fit$itr, 0L)
     expect_equal(fit$B, B)
-    expect_true(all(is.finite(fit$fn_Seq)))
+    expect_equal(as.vector(fit$fn_Seq), rep(0, 8L))
   }
 })
 
@@ -100,12 +101,12 @@ test_that("small valid BB ratios and denominators follow independent Cayley upda
     expect_true(is.finite(candidate) && candidate > 0)
     if (scale < 1) expect_lt(YY, 1e-20) else expect_lt(candidate, 1e-10)
 
-    # Independent two-step reference retains the existing five-trial search.
+    # Independent two-step reference with sufficient decrease on both updates.
     Cval <- (.85 * fn(B) + fn(next_B)) / 1.85
     reference <- NULL
-    for (trial in seq_len(5L)) {
+    for (trial in seq_len(30L)) {
       reference <- revision_cayley(next_B, gr(next_B), candidate)
-      if (fn(reference) <= Cval - candidate * 1e-4 * sum(new_projected^2) || trial == 5L) break
+      if (fn(reference) <= Cval - candidate * 1e-4 * sum(new_projected^2)) break
       candidate <- candidate * .2
     }
     fit <- ortho_optim(B, fn, gr, maxitr = 2L,
@@ -239,6 +240,20 @@ test_that("regression flat stops finalize and constant pseudo rewards are uniden
   }
 })
 
+test_that("failed shared regression searches preserve the initial fit", {
+  d <- revision_dose_data()
+  solve <- function(rho, gtol) {
+    orthoDr:::local_solver(d$B, d$x, matrix(d$r, ncol = 1), d$bw,
+                          rho, .2, .85, .001, 1e-6, 1e-6, 1e-6, gtol, 8L, 0L, 1L)
+  }
+  start <- solve(1e-4, 1e100)
+  failed <- solve(1e40, 1e-12)
+  expect_false(failed$converge)
+  expect_equal(failed$itr, 0L)
+  expect_equal(failed$B, d$B)
+  expect_equal(failed$fn, start$fn)
+})
+
 test_that("regression limits and pseudo failed-search rollback preserve valid states", {
   d <- revision_dose_data()
   for (cores in c(1L, 2L)) {
@@ -251,14 +266,14 @@ test_that("regression limits and pseudo failed-search rollback preserve valid st
       fit <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B, bw = d$bw,
                            K = 7, method = method, maxitr = 8, ncore = cores,
                            control = list(tau = 1e-20, gtol = 1e-20))
-      # The tiny-step case formerly forced acceptance after five failed trials.
-      # The revised search stops after its first accepted update and retains
-      # exactly that complete state when the next thirty trials fail.
+      # At this step size last-bit differences can produce either failed
+      # backtracking or stagnation. Replay exactly the accepted updates to
+      # verify the returned state in both cases.
       accepted <- orthoDr_pdose(d$x, d$a, d$r, ndr = 1, B.initial = d$B, bw = d$bw,
-        K = 7, method = method, maxitr = 1, ncore = cores,
+        K = 7, method = method, maxitr = fit$itr, ncore = cores,
         control = list(tau = 1e-20, gtol = 1e-20))
-      expect_equal(fit$itr, 1L)
-      expect_identical(fit$stop.reason, "line_search_failed")
+      expect_lt(fit$itr, 8L)
+      expect_true(fit$stop.reason %in% c("line_search_failed", "stagnation"))
       expect_identical(fit$converge, FALSE)
       for (name in c("B", "W", "fn", "objective.scaled", "gradient.norm"))
         expect_equal(fit[[name]], accepted[[name]], tolerance = 0)

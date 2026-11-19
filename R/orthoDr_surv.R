@@ -10,11 +10,16 @@
 #' @export
 #'
 #' @param x A numeric matrix with one row per observation and one column per
-#'   predictor. Predictors are standardized
-#'   internally for fitting; the returned directions use the original units.
-#' @param y A numeric vector of observed survival times.
-#' @param censor A numeric vector of event indicators (1 = event,
-#'   0 = censored).
+#'   predictor. Remove constant columns. Automatic initialization also requires
+#'   linearly independent centered columns. With a supplied start, its projected
+#'   predictors must vary independently. Fitting standardizes the predictors
+#'   and returns directions in their original units.
+#' @param y Observed follow-up times, one finite value per subject, including
+#'   censored subjects. Correct missing or infinite times before fitting.
+#' @param censor A numeric or logical vector or one-column matrix, with one
+#'   event indicator per observation (1 or `TRUE` = event, 0 or `FALSE` =
+#'   censored). Missing and other values cause an error. At least one event
+#'   is required.
 #' @param method The estimating equation: \code{"forward"} (1-d model),
 #'   \code{"dn"} (counting process), or \code{"dm"} (martingale).
 #'   Default: \code{"dm"}.
@@ -46,8 +51,8 @@
 #'       units, with columns normalized to unit length.}
 #'     \item{\code{fn}}{The final objective function value.}
 #'     \item{\code{itr}}{Number of iterations performed.}
-#'     \item{\code{converge}}{Logical; \code{TRUE} when a numerical stopping
-#'       criterion was reached. This does not establish prediction accuracy.}
+#'     \item{\code{converge}}{Logical. \code{TRUE} indicates a small constrained
+#'       gradient or small changes in both the basis and the objective.}
 #'     \item{\code{method}}{The method used (e.g., \code{"dm"}).}
 #'     \item{\code{keep.data}}{Whether original data was retained.}
 #'   }
@@ -108,7 +113,8 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
 {
   if (!is.matrix(x)) stop("x must be a matrix")
   if (!is.numeric(x)) stop("x must be numerical")
-  if (nrow(x) != length(y) || nrow(x) != length(censor)) stop("Number of observations do not match")
+  check_survival_time(y, nrow(x))
+  check_survival_censor(censor, nrow(x))
 
   # check tuning parameters
   control = control.check(control)
@@ -127,6 +133,7 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
   N = nrow(x)
   P = ncol(x)
   if (!any(censor == 1)) stop("orthoDr_surv requires at least one event")
+  coords = survival_coordinates(x)
 
   if (is.null(bw))
     bw = silverman(ndr, N)
@@ -138,11 +145,11 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
   Y = if (sd(time.rank) == 0) rep(0, N) else
     drop(scale(time.rank)) / sqrt(2) / silverman(1, N)
 
-  xscale = apply(x, 2, sd)
-  X = scale(x)
+  X = coords$x
 
   # get initial value
-  if (is.null(B.initial))
+  supplied <- !is.null(B.initial)
+  if (!supplied)
   {
     B.initial = CP_SIR(X, Y, censor)$vectors[,1:ndr, drop = FALSE]
   }else{
@@ -151,7 +158,12 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
     if (method == "forward" && ncol(B.initial) > 1) stop("forward method can only use 1-d B.initial")
   }
 
-  B.initial = gramSchmidt(B.initial)$Q
+  if (supplied) {
+    B.initial = orthonormalize_start(B.initial)
+    check_survival_projection(X, B.initial)
+  } else {
+    B.initial = gramSchmidt(B.initial)$Q
+  }
 
   # pre-process
 
@@ -202,8 +214,8 @@ orthoDr_surv <- function(x, y, censor, method = "dm", ndr = ifelse(method == "fo
 
   # rescale B back to the original scale
 
-  fit$B = sweep(fit$B, 1, xscale, FUN = "/")
-  fit$B = sweep(fit$B, 2, sqrt(colSums(fit$B^2)), FUN = "/")
+  if (supplied) check_survival_projection(X, fit$B)
+  fit$B = raw_predictor_directions(fit$B, coords$scale)
   fit$bw = bw
   fit$method = method
   fit$keep.data = keep.data

@@ -1,4 +1,58 @@
-# orthoDr (development version)
+# orthoDr 2.1.0
+
+* Pseudo-direct learning now uses the lowest grid dose when several doses tie
+  for the highest estimated reward to numerical precision. Refitting can change
+  the continuous dose prediction for observations near such a tie.
+* Survival fitting rejects constant predictors. CP-SIR also detects redundant
+  predictors regardless of column order. The 3D survival plot forms risk sets
+  on original follow-up times even when the display transform merges time points.
+* The general optimizer checks orthogonality and the projected gradient before
+  reporting convergence. A failed line search returns the last accepted fit.
+* Both personalized-dose methods preserve small predictor differences when
+  fitting and predicting at a large common offset. pSAVE balances predictor
+  scales during whitening and returns directions in their original units.
+* Subspace distances use orthonormal bases, so rescaling individual basis
+  columns preserves the comparison.
+
+* Survival fitting and prediction check follow-up times for every subject.
+  Weighted survival curves and 3D views now retain late failures when the
+  remaining subjects have very small Gaussian weights.
+* Regression predictions use relative Gaussian weights to compute the
+  conditional mean. All five methods adjust the optimization objective using
+  a common predictor scale and return `fn` in supplied predictor units. PHD
+  uses centered outer products. SAVE computes covariances around local
+  weighted means and retains its supplied-unit estimating equation.
+* pSAVE now detects constant predictors reliably in the full sample and
+  within dose groups. This can change an automatic dose-rule start.
+
+* `CP_SIR()` now uses left singular vectors of its estimation matrix. Smoothing
+  the event neighborhood can make this matrix asymmetric, so automatic starts
+  and fitted results from `orthoDr_surv()` can change.
+
+* Regression prediction now warns when all Gaussian kernel weights round to
+  zero and lists the affected rows of `testx`. Those rows return `NaN`.
+
+* The 3D survival plot now evaluates curves at empirical percentiles of the
+  observed follow-up times and at every observed event time. Its time axis
+  ends at the last observation. This fixes incorrect increases or a plotting
+  error that could occur when all follow-up times were below one.
+
+* Survival fitting, CP-SIR, plotting, and prediction require event indicators
+  coded as 0 (censored) or 1 (event), or the equivalent logical values.
+  Errors identify the observation rows with invalid values.
+
+* With one varying predictor, all five regression methods now use a default
+  starting direction of +1 and can fit without slicing the response.
+* For one predictor, `hMave()` now returns a one-by-one direction matrix
+  and a leave-one-out score that is consistent across predictor units.
+  The score requires at least two distinct observed event times.
+
+* SEFF regression now subtracts the training column means before choosing a
+  starting direction and fitting the model. Changing a predictor's origin
+  could previously change the fit or cause a nonfinite objective. Supply new
+  observations in the same units and with the same preprocessing as the training data.
+
+# orthoDr 2.0.0
 
 * Corrected pSAVE to combine group SAVE information in common coordinates and
   return directions in the original predictor units. Automatic starts for both
@@ -64,7 +118,7 @@
 * Used a common observed-dose scale for dose kernels, resolved the default
   method, and made fractional and single-point dose grids consistent.
 * Protected optimizer step calculations at stationary and degenerate updates,
-  prevented numerical stagnation from reporting movement-based convergence,
+  guarded movement-based stopping when a step-size estimate is undefined,
   and corrected completed iteration counts and maximization histories.
   Direct-dose convergence now requires stationarity in both parameter blocks.
 * Validated general optimizer callback values on every evaluation and accepted

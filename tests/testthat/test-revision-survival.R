@@ -69,10 +69,10 @@ surv_revision_grouped_dm <- function(B, dat, bw = .6) {
 
 surv_revision_native <- function(B, dat, method, maxitr = 0L,
                                  tau = .02, gtol = 1e-12, ncore = 1L,
-                                 btol = 1e-12, ftol = 1e-12) {
+                                 btol = 1e-12, ftol = 1e-12, rho = 1e-4) {
   solver <- get(paste0("surv_", method, "_solver"), asNamespace("orthoDr"))
   args <- list(B = B, X = dat$x, Fail_Ind = dat$fail, Risk_Start = dat$risk,
-               bw = .6, rho = 1e-4, eta = .2, gamma = .85,
+               bw = .6, rho = rho, eta = .2, gamma = .85,
                tau = tau, epsilon = 1e-6, btol = btol, ftol = ftol,
                gtol = gtol, maxitr = maxitr, verbose = 0L, ncore = ncore)
   if (method != "forward") args$Phit <- dat$phi
@@ -89,7 +89,7 @@ surv_revision_step <- function(B, dat, method, tau = .02) {
     gradient[i, j] <- (objective(trial) - f0) / 1e-6
   }
   tangent <- gradient - B %*% crossprod(gradient, B)
-  for (ls in seq_len(5)) {
+  for (ls in seq_len(30)) {
     if (ncol(B) < floor(nrow(B) / 2)) {
       u <- cbind(gradient, B)
       v <- cbind(B, -gradient)
@@ -99,11 +99,27 @@ surv_revision_step <- function(B, dat, method, tau = .02) {
       h <- .5 * (tcrossprod(gradient, B) - tcrossprod(B, gradient))
       trial <- solve(diag(nrow(B)) + tau * h, B - tau * h %*% B)
     }
-    if (objective(trial) <= f0 - tau * 1e-4 * sum(tangent^2) || ls == 5)
+    if (objective(trial) <= f0 - tau * 1e-4 * sum(tangent^2))
       return(trial)
     tau <- .2 * tau
   }
+  B
 }
+
+test_that("failed native survival searches preserve the initial fit", {
+  set.seed(881)
+  dat <- surv_revision_preprocess(matrix(rnorm(24 * 3), 24, 3),
+                                  rep(1:8, each = 3), rep(c(1, 0, 1), 8))
+  B <- matrix(c(1, 0, 0), 3, 1)
+  for (method in c("forward", "dn", "dm")) {
+    start <- surv_revision_native(B, dat, method)
+    failed <- surv_revision_native(B, dat, method, maxitr = 8L, rho = 1e40)
+    expect_false(failed$converge)
+    expect_equal(failed$itr, 0L)
+    expect_equal(failed$B, B)
+    expect_equal(failed$fn, start$fn)
+  }
+})
 
 test_that("survival native objectives and gradient updates use complete risk sets", {
   set.seed(881)
@@ -177,11 +193,37 @@ test_that("CP-SIR tied neighborhoods match an independent estimation matrix", {
     expect_equal(fit$values, decomposition$d, tolerance = 1e-10)
     expect_equal(other$values, fit$values, tolerance = 1e-10)
     expect_gt(decomposition$d[1] - decomposition$d[2], 1e-3)
-    leading <- direct$inverse %*% decomposition$v[, 1, drop = FALSE]
+    leading <- direct$inverse %*% decomposition$u[, 1, drop = FALSE]
     leading <- leading / sqrt(sum(leading^2))
     expect_equal(tcrossprod(fit$vectors[, 1]), tcrossprod(leading[, 1]), tolerance = 1e-9)
     expect_equal(tcrossprod(other$vectors[, 1]), tcrossprod(fit$vectors[, 1]), tolerance = 1e-9)
   }
+})
+
+test_that("CP-SIR recovers the failure direction with covariate-dependent censoring", {
+  # The full grid represents independent failure and censoring times, each
+  # paired with its own noisy predictor. The mean of the censoring predictor
+  # among failures at a given time matches its risk-set mean at that time.
+  times <- seq_len(12) / 13
+  noise <- c(-.05, .05)
+  dat <- expand.grid(failure = times, censoring = times,
+                     failure.noise = noise, censoring.noise = noise)
+  proxies <- cbind(dat$failure + dat$failure.noise,
+                   dat$censoring + dat$censoring.noise)
+  mixing <- matrix(c(1, .3, -.4, 1.5), 2, 2)
+  x <- proxies %*% mixing
+  time <- pmin(dat$failure, dat$censoring)
+  event <- as.numeric(dat$failure <= dat$censoring)
+  truth <- solve(mixing, c(1, 0))
+  truth <- truth / sqrt(sum(truth^2))
+
+  # Each event neighborhood contains all observed failures at this bandwidth.
+  cp <- CP_SIR(x, time, event, bw = 2)
+  expect_equal(tcrossprod(cp$vectors[, 1]), tcrossprod(truth), tolerance = 1e-10)
+
+  fit <- orthoDr_surv(x, time, event, method = "dn", ndr = 1,
+                     maxitr = 0, ncore = 1)
+  expect_equal(tcrossprod(fit$B), tcrossprod(truth), tolerance = 1e-10)
 })
 
 test_that("CP-SIR preserves one-feature and one-event matrices without a moment-rank gate", {
@@ -252,7 +294,8 @@ test_that("survival loops report completed updates and reject false stagnation s
     stagnant <- surv_revision_native(B, dat, method, maxitr = 7L, tau = 1e-300,
                                      btol = 1e-8, ftol = 1e-8)
     expect_false(stagnant$converge)
-    expect_equal(stagnant$itr, 7L)
-    expect_true(is.finite(stagnant$fn))
+    expect_equal(stagnant$itr, 0L)
+    expect_equal(stagnant$B, B)
+    expect_equal(stagnant$fn, no_updates$fn)
   }
 })
